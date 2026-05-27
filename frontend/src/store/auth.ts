@@ -1,9 +1,9 @@
 /**
- * Auth store — Zustand untuk client-side auth state.
+ * Auth store — Zustand dengan persist (localStorage).
  *
- * Sprint 1 (TSK-001): Simple state (user + token).
- * Sprint 1 (TSK-002): Tambah refresh token + auto-refresh logic.
- * Sprint 1 (TSK-005): Tambah session expiry + auto-logout.
+ * TSK-001: user + accessToken
+ * TSK-002: + refreshToken (untuk auto-refresh interceptor)
+ * TSK-005: + session expiry timestamp (auto-logout di idle)
  */
 
 import { create } from 'zustand';
@@ -14,8 +14,10 @@ import type { User } from '@/api/auth';
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, accessToken: string) => void;
+  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   clearAuth: () => void;
 }
 
@@ -24,17 +26,21 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken) =>
-        set({ user, accessToken, isAuthenticated: true }),
-      clearAuth: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+      setAuth: (user, accessToken, refreshToken) =>
+        set({ user, accessToken, refreshToken, isAuthenticated: true }),
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken }),
+      clearAuth: () =>
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
     }),
     {
       name: 'idea-auth-storage',
-      // Hanya persist token + user, bukan loading states
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     },

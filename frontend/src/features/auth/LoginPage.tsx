@@ -55,7 +55,7 @@ function LoginPage() {
   const mutation = useMutation<LoginResponse, AxiosError<{ detail: ApiError }>, LoginRequest>({
     mutationFn: login,
     onSuccess: (data) => {
-      setAuth(data.user, data.access_token);
+      setAuth(data.user, data.access_token, data.refresh_token);
       setServerError(null);
       navigate('/');
     },
