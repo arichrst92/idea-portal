@@ -24,18 +24,47 @@ URL produksi: `portal.ide.asia`
 
 ## Quick Start
 
+### Prerequisites
+- **Docker Desktop** (untuk semua services)
+- **Python 3.12+** + [uv](https://github.com/astral-sh/uv) (backend dev)
+- **Node.js 22+** (frontend dev)
+- **Git** dengan SSH key ter-link ke GitHub
+
+### Setup pertama (5 menit)
+
 ```bash
 # Clone repo
 git clone git@github.com:arichrst92/idea-portal.git
 cd idea-portal
 
-# Buka dokumen kunci
-open knowledge.md                       # Spec & aturan bisnis
-open IDEA_Development_Roadmap.md        # Timeline & milestone
-open IDEA_Task_Management.xlsx          # Backlog 200 task
+# Setup env files
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+cp .env.example .env
 
-# Buka mockup di browser
-open "GUI html/IDEA_Login.html"
+# Boot infra + backend
+docker compose up -d postgres redis minio backend
+
+# Verifikasi backend
+curl http://localhost:8000/health
+# Expected: {"status":"ok"}
+
+# Run frontend (HMR di host = lebih cepat dari Docker)
+cd frontend && npm install && npm run dev
+```
+
+Browse:
+- Frontend: http://localhost:5173
+- API docs: http://localhost:8000/docs
+- MinIO Console: http://localhost:9001 (`minio_admin` / `minio_dev_pass`)
+
+### Buka dokumen kunci
+
+```bash
+open knowledge.md                       # Spec & aturan bisnis (21 section)
+open IDEA_Development_Roadmap.md        # Timeline 14 bulan
+open IDEA_Task_Management.xlsx          # Backlog 200 task
+open "GUI html/IDEA_Login.html"         # Visual reference
 ```
 
 ---
@@ -53,10 +82,31 @@ idea-portal/
 ├── IDEA_Negative_Cases.docx         # 45 NC grup / ~216 cases
 ├── GUI html/                        # 37 UI mockup HTML
 │   ├── IDEA_Login.html
-│   ├── IDEA_Dashboard.html
-│   └── ... (35 file lain)
-├── .gitignore
-└── (future: backend/, frontend/, infra/)
+│   └── ... (36 file lain)
+├── backend/                         # FastAPI (Python 3.12 + uv)
+│   ├── app/                         # Domain-driven structure
+│   │   ├── identity/                # EP-01 Auth
+│   │   ├── organization/            # EP-02 Employee
+│   │   ├── payroll/                 # EP-05 Payroll
+│   │   └── ...
+│   ├── alembic/                     # DB migrations
+│   ├── tests/                       # pytest
+│   ├── Dockerfile
+│   └── pyproject.toml
+├── frontend/                        # Vite + React 18 + TS + AntD
+│   ├── src/
+│   │   ├── api/                     # axios + interceptors
+│   │   ├── features/                # Feature-based modules
+│   │   ├── store/                   # Zustand
+│   │   └── ...
+│   ├── Dockerfile
+│   └── package.json
+├── infra/                           # Docker, nginx config
+│   ├── nginx/nginx.conf
+│   └── init-scripts/01-extensions.sql
+├── docker-compose.yml               # Dev environment
+├── .github/                         # PR template, issue templates, CI
+└── .gitignore
 ```
 
 ---
