@@ -1,0 +1,16 @@
+# Code ownership untuk IDEA Portal — solo dev setup
+# Format: <pattern> <owner1> [<owner2> ...]
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default — semua file
+*                              @arichrst92
+
+# Master docs — extra careful saat modifikasi
+/knowledge.md                  @arichrst92
+/CLAUDE.md                     @arichrst92
+/IDEA_Development_Roadmap.md   @arichrst92
+
+# Infrastructure
+/infra/                        @arichrst92
+/docker-compose.yml            @arichrst92
+/.github/                      @arichrst92
