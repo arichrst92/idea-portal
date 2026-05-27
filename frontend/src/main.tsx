@@ -8,7 +8,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
-import App from './App';
+import AppRoutes from './routes/AppRoutes';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -38,7 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AntApp>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-            <App />
+            <AppRoutes />
           </BrowserRouter>
           {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>

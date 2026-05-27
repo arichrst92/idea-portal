@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Card, Space, Spin, Typography } from 'antd';
+import { Alert, Button, Card, Space, Spin, Typography } from 'antd';
 
 import { apiClient } from './api/client';
+import { useAuthStore } from './store/auth';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -17,6 +18,9 @@ interface RootResponse {
 }
 
 function App() {
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
   const { data: health, isLoading, error } = useQuery<HealthResponse>({
     queryKey: ['health'],
     queryFn: async () => {
@@ -36,11 +40,22 @@ function App() {
   return (
     <div style={{ padding: '40px', maxWidth: 720, margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Title level={1}>🚀 IDEA Portal — Frontend</Title>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={1} style={{ margin: 0 }}>🚀 IDEA Portal</Title>
+          {user && (
+            <Space>
+              <Text>
+                Hi, <strong>{user.nik}</strong> ({user.roles[0]?.name ?? '—'})
+              </Text>
+              <Button onClick={() => { clearAuth(); window.location.href = '/login'; }}>
+                Logout
+              </Button>
+            </Space>
+          )}
+        </div>
         <Paragraph>
-          Sprint 0 skeleton — Vite + React + TS + Ant Design + React Query + Zustand.
-          <br />
-          Backend connection test di bawah.
+          Sprint 1 — TSK-001 Login Portal Setup ✓<br />
+          Anda berhasil login. Selamat datang di IDEA Portal.
         </Paragraph>
 
         <Card title="Backend Health Check">
