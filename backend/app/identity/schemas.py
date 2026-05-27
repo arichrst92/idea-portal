@@ -1,11 +1,4 @@
-"""Pydantic schemas untuk Identity domain — request/response models.
-
-Konvensi:
-- *Request    — input dari API consumer
-- *Response   — output ke API consumer
-- *In         — internal service input (DTO)
-- *Out        — internal service output (DTO)
-"""
+"""Pydantic schemas untuk Identity domain — request/response models."""
 
 from datetime import datetime
 from uuid import UUID
@@ -31,16 +24,31 @@ class LoginRequest(BaseModel):
     )
 
 
-class LoginResponse(BaseModel):
-    """POST /api/v1/auth/login response.
+class RefreshRequest(BaseModel):
+    """POST /api/v1/auth/refresh request body."""
 
-    Sprint 1 (TSK-001): placeholder access_token field.
-    Sprint 1 (TSK-002): isi dengan real JWT.
-    """
+    refresh_token: str = Field(..., description="Refresh token dari /auth/login")
 
-    access_token: str = Field(..., description="JWT access token (placeholder di TSK-001)")
-    token_type: str = Field(default="bearer", description="Token type — always 'bearer'")
+
+class TokenPair(BaseModel):
+    """Access + refresh token pair."""
+
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int = Field(..., description="Access token expiry in seconds")
+
+
+class LoginResponse(TokenPair):
+    """POST /api/v1/auth/login response — token pair + user info."""
+
     user: "UserPublic"
+
+
+class RefreshResponse(TokenPair):
+    """POST /api/v1/auth/refresh response — new token pair (rotated)."""
+
+    pass
 
 
 class UserPublic(BaseModel):
