@@ -4,3 +4,23 @@ Epic mapping:
 - EP-01 (PH1): Authentication & Authorization
 - Tasks: TSK-001 to TSK-012, TSK-193 (Wakil Direktur)
 """
+
+from app.identity.models import (
+    AuditLog,
+    HierarchyLevel,
+    Permission,
+    Role,
+    RolePermission,
+    User,
+    UserRole,
+)
+
+__all__ = [
+    "AuditLog",
+    "HierarchyLevel",
+    "Permission",
+    "Role",
+    "RolePermission",
+    "User",
+    "UserRole",
+]

@@ -1,4 +1,8 @@
-"""Alembic env — sync engine, async-aware via run_migrations_online."""
+"""Alembic env — sync engine, async-aware via run_migrations_online.
+
+Import semua domain models di sini agar Alembic autogenerate mendeteksi
+schema changes dari Base.metadata.
+"""
 
 from logging.config import fileConfig
 
@@ -8,9 +12,71 @@ from sqlalchemy import engine_from_config, pool
 from app.config import get_settings
 from app.database import Base
 
-# Import semua model di sini agar Alembic mendeteksi schema changes
-# Sprint 1+: from app.identity.models import User, Role, Permission  # noqa
-# Sprint 2+: from app.organization.models import Department, Employee  # noqa
+# ─── Import semua models untuk autogenerate ──────────────────────
+# Per ERD knowledge.md sec.20 — 47 tabel di 7 domain
+from app.identity.models import (  # noqa: F401  — Identity & Auth (4)
+    AuditLog,
+    Permission,
+    Role,
+    RolePermission,
+    User,
+    UserRole,
+)
+from app.organization.models import (  # noqa: F401  — Organization (5)
+    Department,
+    Employee,
+    EmployeeContract,
+    OrgChange,
+    Position,
+)
+from app.assessment.models import (  # noqa: F401  — Assessment & Performance (7)
+    Assessment,
+    AssessmentConfig,
+    AssessmentItem,
+    AssessmentPeriod,
+    OkrKeyResult,
+    OkrObjective,
+    WarningLetter,
+)
+from app.project.models import (  # noqa: F401  — Project & Work (6)
+    Project,
+    ProjectDocument,
+    ProjectInvoice,
+    ProjectMember,
+    ProjectMilestone,
+    ProjectTask,
+)
+from app.outsource.models import (  # noqa: F401  — Outsource (7)
+    BeritaAcara,
+    Client,
+    ClientComplaint,
+    OutsourcePlacement,
+    Timesheet,
+    TimesheetItem,
+    WarningLetterOutsource,
+)
+from app.payroll.models import (  # noqa: F401  — HR & Payroll (11)
+    Holiday,
+    LeaveRequest,
+    LeaveType,
+    PayrollComponent,
+    PayrollConfig,
+    PayrollPeriod,
+    PayrollSlip,
+    ProcurementRequest,
+    Reimbursement,
+    Vendor,
+    WorkCalendar,
+)
+from app.sales.models import (  # noqa: F401  — Sales (7)
+    Lead,
+    LeadActivity,
+    Proposal,
+    ProposalItem,
+    SalesActionItem,
+    SalesCommission,
+    SalesTarget,
+)
 
 config = context.config
 
