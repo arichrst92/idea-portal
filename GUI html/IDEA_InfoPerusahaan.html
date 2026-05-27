@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Info Perusahaan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--tl);color:var(--teal)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--teal);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
+.btn-p{background:var(--teal);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow:hidden;display:flex}
+
+/* CATEGORY PANE */
+.cat-pane{width:260px;flex-shrink:0;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;padding:20px 0}
+.cat-search{padding:0 18px 14px;border-bottom:1px solid var(--border2);margin-bottom:8px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px}
+.search-box input{border:none;outline:none;font-family:var(--font);font-size:12px;flex:1;background:transparent}
+.cat-sec{padding:10px 8px 6px}
+.cat-sec-label{padding:0 10px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3)}
+.cat-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--rs);cursor:pointer;transition:background .12s;font-size:13px;font-weight:500;color:var(--ink2)}
+.cat-item:hover{background:var(--bg)}
+.cat-item.active{background:var(--tl);color:var(--teal);font-weight:700}
+.cat-ic{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.cat-count{margin-left:auto;font-size:10px;color:var(--ink3);font-weight:600;background:var(--bg);padding:1px 6px;border-radius:20px}
+
+/* MAIN DOCS */
+.docs-pane{flex:1;overflow-y:auto;padding:24px}
+.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.dh-title{font-size:22px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
+.dh-icon{width:36px;height:36px;border-radius:10px;background:var(--tl);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:18px}
+.dh-meta{font-size:11px;color:var(--ink3);margin-top:2px}
+
+/* DOC GRID */
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:16px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--ink)}
+.doc-card:hover{border-color:rgba(50,210,242,.4);box-shadow:0 4px 12px rgba(0,0,0,.05);transform:translateY(-2px)}
+.doc-ic{width:42px;height:48px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;position:relative}
+.doc-ic.pdf{background:linear-gradient(135deg,#FF453A,#C0392B)}
+.doc-ic.docx{background:linear-gradient(135deg,#007AFF,#0064CC)}
+.doc-ic.xlsx{background:linear-gradient(135deg,#30D158,#28b549)}
+.doc-ic.md{background:linear-gradient(135deg,#86868B,#5C5C61)}
+.doc-ic.video{background:linear-gradient(135deg,#BF5AF2,#7C3AED)}
+.doc-name{font-size:13px;font-weight:700;line-height:1.3}
+.doc-meta{font-size:10px;color:var(--ink3);display:flex;justify-content:space-between;margin-top:auto}
+.doc-tag{display:inline-flex;align-items:center;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* HERO CARD */
+.hero-card{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;border-radius:var(--r);padding:24px;margin-bottom:18px;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;background:rgba(255,255,255,.08);border-radius:50%}
+.hero-icon{font-size:42px;flex-shrink:0;position:relative;z-index:1}
+.hero-info{flex:1;position:relative;z-index:1}
+.hero-title{font-size:18px;font-weight:800;margin-bottom:4px}
+.hero-desc{font-size:13px;opacity:.9}
+
+/* SECTION */
+.section-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:24px 0 10px;display:flex;align-items:center;justify-content:space-between}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tt{background:var(--tl);color:var(--teal)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📢</div>Pengumuman</div>
+    <div class="ni"><div class="ni-ic">🎉</div>Event</div>
+    <div class="ni active"><div class="ni-ic">📚</div>Info Perusahaan</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Info Perusahaan</strong></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-s">📥 Download Handbook</button>
+      <button class="btn btn-p">+ Upload (Operation)</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- CATEGORY SIDEBAR -->
+    <aside class="cat-pane">
+      <div class="cat-search">
+        <div class="search-box">
+          <span style="color:var(--ink3)">🔍</span>
+          <input type="text" placeholder="Cari dokumen / kata kunci...">
+        </div>
+      </div>
+
+      <div class="cat-sec">
+        <div class="cat-sec-label">Kategori</div>
+        <div class="cat-item active">
+          <div class="cat-ic" style="background:var(--tl);color:var(--teal)">🏠</div>
+          <span>Beranda</span>
+          <span class="cat-count">—</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bl);color:var(--blue)">🎯</div>
+          <span>Visi &amp; Misi</span>
+          <span class="cat-count">3</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--pl);color:var(--purple)">📖</div>
+          <span>Handbook Karyawan</span>
+          <span class="cat-count">8</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--gl);color:var(--green)">📋</div>
+          <span>SOP</span>
+          <span class="cat-count">24</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--ol);color:var(--orange)">⚖️</div>
+          <span>Kebijakan HR</span>
+          <span class="cat-count">12</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--rl);color:var(--red)">🚨</div>
+          <span>Compliance &amp; Legal</span>
+          <span class="cat-count">7</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bg);color:var(--ink2)">📝</div>
+          <span>Template Dokumen</span>
+          <span class="cat-count">15</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--tl);color:var(--teal)">🎓</div>
+          <span>Training Materials</span>
+          <span class="cat-count">11</span>
+        </div>
+      </div>
+
+      <div class="cat-sec">
+        <div class="cat-sec-label">Per Departemen</div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bl);color:var(--blue)">💻</div>
+          <span>Teknologi</span>
+          <span class="cat-count">9</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--ol);color:var(--orange)">👥</div>
+          <span>Operation</span>
+          <span class="cat-count">14</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--gl);color:var(--green)">💰</div>
+          <span>Finance</span>
+          <span class="cat-count">10</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--rl);color:var(--red)">📈</div>
+          <span>Sales</span>
+          <span class="cat-count">6</span>
+        </div>
+      </div>
+
+      <div class="cat-sec">
+        <div class="cat-sec-label">Berdasarkan</div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bg)">⭐</div>
+          <span>Favorit Saya</span>
+          <span class="cat-count">5</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bg)">🕐</div>
+          <span>Recent</span>
+          <span class="cat-count">12</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-ic" style="background:var(--bg)">🆕</div>
+          <span>Baru Diupdate</span>
+          <span class="cat-count">7</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN DOCS -->
+    <main class="docs-pane">
+      <!-- HERO -->
+      <div class="hero-card">
+        <div class="hero-icon">📚</div>
+        <div class="hero-info">
+          <div class="hero-title">Selamat datang di Pusat Informasi IDEA</div>
+          <div class="hero-desc">Semua dokumen resmi perusahaan — SOP, handbook, kebijakan, dan template. Update terakhir 23 Mei 2026.</div>
+        </div>
+      </div>
+
+      <!-- FEATURED -->
+      <div class="section-title">⭐ Dokumen Wajib Dibaca</div>
+      <div class="doc-grid">
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">Employee Handbook 2026</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.4">Panduan lengkap untuk semua karyawan — hak, kewajiban, dan kebijakan.</div>
+          <div class="doc-meta"><span>📅 23 Mei 2026</span><span>2,4 MB</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic docx">📘</div>
+          <div class="doc-name">Code of Conduct</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.4">Etika kerja, anti-harassment, conflict of interest.</div>
+          <div class="doc-meta"><span>📅 15 Apr 2026</span><span>340 KB</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">Update Kebijakan Cuti 2026</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.4">Efektif 1 Juni — perubahan carry forward, paternity leave.</div>
+          <div class="doc-meta"><span class="doc-tag" style="background:var(--gl);color:var(--green)">NEW</span><span>480 KB</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic md">📝</div>
+          <div class="doc-name">IT Security Policy</div>
+          <div style="font-size:11px;color:var(--ink2);line-height:1.4">Password policy, BYOD, data classification, incident response.</div>
+          <div class="doc-meta"><span>📅 1 Mar 2026</span><span>120 KB</span></div>
+        </a>
+      </div>
+
+      <!-- SOP -->
+      <div class="section-title">
+        <span>📋 SOP — Sering Diakses</span>
+        <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Lihat semua SOP →</button>
+      </div>
+      <div class="doc-grid">
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Pengajuan Cuti</div>
+          <div class="doc-meta"><span>v2.1 · 18 Mei</span><span>👁 142</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Reimbursement</div>
+          <div class="doc-meta"><span>v1.8 · 10 Mei</span><span>👁 98</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Pengadaan Barang</div>
+          <div class="doc-meta"><span>v3.0 · 5 Mei</span><span>👁 67</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Onboarding Karyawan</div>
+          <div class="doc-meta"><span>v2.5 · 1 Mei</span><span>👁 35</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Penilaian Kinerja</div>
+          <div class="doc-meta"><span>v4.2 · 28 Apr</span><span>👁 124</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">SOP Komplain Client</div>
+          <div class="doc-meta"><span class="doc-tag" style="background:var(--gl);color:var(--green)">NEW</span><span>👁 12</span></div>
+        </a>
+      </div>
+
+      <!-- TEMPLATES -->
+      <div class="section-title">
+        <span>📝 Template Dokumen</span>
+        <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Semua template →</button>
+      </div>
+      <div class="doc-grid">
+        <a class="doc-card">
+          <div class="doc-ic docx">📘</div>
+          <div class="doc-name">Template Proposal Project</div>
+          <div class="doc-meta"><span>Word · 2,1 MB</span><span>👁 89</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic xlsx">📗</div>
+          <div class="doc-name">Template Budget Project</div>
+          <div class="doc-meta"><span>Excel · 380 KB</span><span>👁 56</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic docx">📘</div>
+          <div class="doc-name">Template Berita Acara</div>
+          <div class="doc-meta"><span>Word · 480 KB</span><span>👁 145</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic docx">📘</div>
+          <div class="doc-name">Template Surat Tugas</div>
+          <div class="doc-meta"><span>Word · 220 KB</span><span>👁 78</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic xlsx">📗</div>
+          <div class="doc-name">Template Timesheet</div>
+          <div class="doc-meta"><span>Excel · 195 KB</span><span>👁 234</span></div>
+        </a>
+      </div>
+
+      <!-- TRAINING -->
+      <div class="section-title">
+        <span>🎓 Training Materials</span>
+        <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Lihat semua →</button>
+      </div>
+      <div class="doc-grid">
+        <a class="doc-card">
+          <div class="doc-ic video">🎬</div>
+          <div class="doc-name">Onboarding Series — Welcome to IDEA</div>
+          <div class="doc-meta"><span>Video · 35 min</span><span>👁 234</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic video">🎬</div>
+          <div class="doc-name">Cara Pakai Portal IDEA</div>
+          <div class="doc-meta"><span>Video · 12 min</span><span>👁 198</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic pdf">📕</div>
+          <div class="doc-name">Manager 101 — Effective Feedback</div>
+          <div class="doc-meta"><span>PDF · 1,8 MB</span><span>👁 67</span></div>
+        </a>
+        <a class="doc-card">
+          <div class="doc-ic md">📝</div>
+          <div class="doc-name">Engineering Best Practices</div>
+          <div class="doc-meta"><span>Markdown</span><span class="doc-tag" style="background:var(--bl);color:var(--blue)">Dept</span></div>
+        </a>
+      </div>
+
+      <!-- ACCESS NOTICE -->
+      <div style="margin-top:24px;padding:14px 16px;background:var(--bl);border-radius:var(--rm);font-size:12px;color:var(--ink2);display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px">ℹ</span>
+        <div>
+          <strong>Read-only untuk semua karyawan.</strong> Hanya tim <strong>Operation</strong> dan <strong>HR</strong> yang bisa upload/edit dokumen. Lihat ada yang outdated? Lapor ke <a href="#" style="color:var(--blue);font-weight:600">ops@ide.asia</a>.
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</div>
+</body>
+</html>

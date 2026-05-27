@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA Portal — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#F2F2F7;--surface:#FFFFFF;--surface2:#F9F9FB;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.04);
+  --ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--ink4:#3C3C4330;
+  --blue:#007AFF;--blue-light:#E8F1FF;--green:#30D158;--green-light:#E5F9EC;
+  --orange:#FF9F0A;--orange-light:#FFF3E0;--red:#FF453A;--red-light:#FFECEB;
+  --purple:#BF5AF2;--purple-light:#F5EEFE;--teal:#32D2F2;--indigo:#5E5CE6;--indigo-light:#EEEEF9;
+  --sidebar-w:260px;--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --r-xl:20px;--r-lg:16px;--r-md:12px;--r-sm:8px;
+  --sh-sm:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
+  --sh-md:0 2px 4px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden}
+.sb-brand{padding:22px 20px 18px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border2)}
+.sb-logo-icon{width:36px;height:36px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon svg{width:18px;height:18px}
+.sb-brand-name{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.sb-brand-sub{font-size:10px;color:var(--ink3);letter-spacing:.3px;font-weight:500}
+.sb-user{margin:14px 14px 6px;padding:12px 14px;background:var(--bg);border-radius:var(--r-lg);display:flex;align-items:center;gap:11px;cursor:pointer;transition:background .15s;border:1px solid var(--border2)}
+.sb-user:hover{background:var(--border)}
+.sb-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#007AFF 0%,#32D2F2 100%);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;box-shadow:0 2px 8px rgba(0,122,255,.35)}
+.sb-user-name{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.sb-user-role{font-size:11px;color:var(--ink3);font-weight:500;margin-top:1px}
+.sb-user-chevron{margin-left:auto;color:var(--ink4)}
+.sb-section{padding:16px 20px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);transition:all .12s;margin-bottom:1px}
+.nav-item:hover{background:var(--bg);color:var(--ink)}
+.nav-item.active{background:var(--blue-light);color:var(--blue)}
+.nav-icon{width:28px;height:28px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--bg)}
+.nav-item.active .nav-icon{background:var(--blue);color:white;font-size:13px}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.nav-badge.red{background:var(--red);color:white}
+.nav-badge.gray{background:var(--ink4);color:var(--ink2)}
+.sb-divider{height:1px;background:var(--border2);margin:8px 14px}
+.sb-footer{margin-top:auto;padding:10px 10px 16px;border-top:1px solid var(--border2)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;background:rgba(255,255,255,.82);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-date{font-size:12px;color:var(--ink3);font-weight:500;padding:5px 12px;background:var(--bg);border:1px solid var(--border);border-radius:20px}
+.tb-bc{font-size:14px;color:var(--ink3);display:flex;align-items:center;gap:6px}
+.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-bc .sep{color:var(--ink4)}
+.icon-btn{width:34px;height:34px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;position:relative;color:var(--ink2)}
+.icon-btn:hover{background:var(--border);color:var(--ink)}
+.notif-pip{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid white}
+.content{flex:1;overflow-y:auto;padding:28px 28px 40px}
+/* GREETING */
+.greeting-hero{background:var(--ink);border-radius:var(--r-xl);padding:28px 32px;margin-bottom:20px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.greeting-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 0% 50%,rgba(0,122,255,.25) 0%,transparent 60%),radial-gradient(ellipse 50% 60% at 100% 20%,rgba(50,210,242,.15) 0%,transparent 55%),radial-gradient(ellipse 40% 40% at 70% 80%,rgba(191,90,242,.12) 0%,transparent 50%);pointer-events:none}
+.greeting-hero::after{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+.gh-left{position:relative;z-index:1}
+.gh-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.45);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.gh-eyebrow::before{content:'';display:block;width:16px;height:1.5px;background:rgba(0,122,255,.8)}
+.gh-title{font-size:30px;font-weight:800;color:white;letter-spacing:-.8px;line-height:1.1;margin-bottom:8px}
+.gh-title span{color:#60B3FF}
+.gh-sub{font-size:13px;color:rgba(255,255,255,.45);font-weight:500}
+.gh-actions{display:flex;gap:8px;position:relative;z-index:1;flex-shrink:0}
+.gh-btn{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.gh-btn-primary{background:var(--blue);color:white;box-shadow:0 2px 12px rgba(0,122,255,.5)}
+.gh-btn-primary:hover{background:#0069DB;transform:translateY(-1px)}
+.gh-btn-secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.1)}
+.gh-btn-secondary:hover{background:rgba(255,255,255,.14)}
+/* STATS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.stat-card-glow{position:absolute;width:80px;height:80px;border-radius:50%;top:-20px;right:-20px;opacity:.12;filter:blur(20px)}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sc-icon{width:38px;height:38px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:17px}
+.sc-trend{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;display:flex;align-items:center;gap:3px}
+.sc-value{font-size:32px;font-weight:800;letter-spacing:-1.2px;line-height:1;margin-bottom:4px}
+.sc-label{font-size:12px;color:var(--ink3);font-weight:500}
+/* GRIDS */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+.card-header{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
+.card-title{font-size:14px;font-weight:700;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.card-action{font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.card-action:hover{opacity:.7}
+.card-body{padding:18px 22px}
+.card-body.np{padding:0}
+/* PERFORMANCE */
+.perf-wrap{display:flex;align-items:flex-start;gap:22px}
+.ring-wrap{position:relative;width:110px;height:110px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--border);stroke-width:9}
+.ring-fill{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-score{font-size:24px;font-weight:800;letter-spacing:-.8px;line-height:1}
+.ring-unit{font-size:10px;color:var(--ink3);font-weight:500;margin-top:1px}
+.perf-details{flex:1}
+.perf-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.perf-row:last-child{border-bottom:none}
+.perf-row-label{color:var(--ink3);font-weight:500}
+.perf-row-val{font-weight:700}
+.trend-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-items:flex-end;height:44px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)}
+.trend-bar-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.trend-bar-fill{width:100%;border-radius:3px 3px 0 0;transition:height .6s ease}
+.trend-bar-label{font-size:9px;color:var(--ink3);font-weight:600}
+/* NOTIFS */
+.notif-item{display:flex;align-items:flex-start;gap:12px;padding:13px 22px;border-bottom:1px solid var(--border2);transition:background .12s;cursor:pointer}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--bg)}
+.notif-item.unread{background:#F8FBFF}
+.notif-item.unread:hover{background:#F0F6FF}
+.notif-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:13px;line-height:1.4;margin-bottom:3px;color:var(--ink2)}
+.notif-text strong{color:var(--ink);font-weight:700}
+.notif-time{font-size:11px;color:var(--ink3);font-weight:500}
+.notif-pip2{width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px}
+/* LEAVE */
+.leave-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.leave-card{padding:14px 16px;border-radius:var(--r-lg);border:1px solid var(--border2);cursor:pointer;transition:all .15s}
+.leave-card:hover{border-color:var(--border);transform:translateY(-1px)}
+.leave-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:6px}
+.leave-num{font-size:28px;font-weight:800;letter-spacing:-.8px;line-height:1;margin-bottom:2px}
+.leave-unit{font-size:11px;color:var(--ink3);font-weight:500}
+.leave-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:10px;overflow:hidden}
+.leave-fill{height:100%;border-radius:2px}
+/* PROJECTS */
+.project-item{display:flex;align-items:center;gap:14px;padding:13px 22px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.project-item:last-child{border-bottom:none}
+.project-item:hover{background:var(--bg)}
+.project-color{width:4px;border-radius:2px;flex-shrink:0;align-self:stretch}
+.project-info{flex:1;min-width:0}
+.project-name{font-size:13px;font-weight:700;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.project-meta{font-size:11px;color:var(--ink3);font-weight:500}
+.project-right{text-align:right;flex-shrink:0}
+.project-pct{font-size:12px;font-weight:700;margin-bottom:4px}
+.pbar{width:80px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:2px}
+.project-due{font-size:10px;color:var(--ink3);font-weight:500;margin-top:3px}
+/* BOTTOM */
+.event-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.event-item:last-child{border-bottom:none}
+.event-date{width:42px;text-align:center;flex-shrink:0;padding:6px 0;border-radius:var(--r-sm);background:var(--blue-light)}
+.event-day{font-size:20px;font-weight:800;color:var(--blue);line-height:1}
+.event-month{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--blue);opacity:.7}
+.event-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.event-meta{font-size:11px;color:var(--ink3);font-weight:500}
+.payslip-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)}
+.payslip-item:last-child{border-bottom:none}
+.payslip-month{font-size:13px;font-weight:700;margin-bottom:2px}
+.payslip-status{font-size:11px;color:var(--green);font-weight:600}
+.payslip-right{display:flex;align-items:center;gap:8px}
+.payslip-amount{font-size:13px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px}
+.dl-btn{width:28px;height:28px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;color:var(--ink2)}
+.dl-btn:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
+.bcast-item{padding:11px 0;border-bottom:1px solid var(--border2);cursor:pointer}
+.bcast-item:last-child{border-bottom:none}
+.bcast-header{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.bcast-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.bcast-time{font-size:11px;color:var(--ink3);font-weight:500;margin-left:auto}
+.bcast-title{font-size:13px;font-weight:700;margin-bottom:3px;transition:color .15s}
+.bcast-item:hover .bcast-title{color:var(--blue)}
+.bcast-preview{font-size:12px;color:var(--ink3);line-height:1.4;font-weight:400;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px}
+.tag-blue{background:var(--blue-light);color:var(--blue)}
+.tag-green{background:var(--green-light);color:var(--green)}
+.tag-orange{background:var(--orange-light);color:var(--orange)}
+.tag-red{background:var(--red-light);color:var(--red)}
+.tag-gray{background:var(--bg);color:var(--ink3)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.greeting-hero{animation:scaleIn .4s ease both}
+.stat-card{animation:fadeUp .5s ease both}
+.stat-card:nth-child(1){animation-delay:.06s}.stat-card:nth-child(2){animation-delay:.12s}
+.stat-card:nth-child(3){animation-delay:.18s}.stat-card:nth-child(4){animation-delay:.24s}
+.card{animation:fadeUp .5s ease .2s both}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-brand-name">IDEA</div><div class="sb-brand-sub">Employee Portal</div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar">RH</div>
+    <div><div class="sb-user-name">Rizky Hanafi</div><div class="sb-user-role">Lead Dev · Teknologi</div></div>
+    <svg class="sb-user-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 10l4-4-4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </div>
+  <div class="sb-section">Menu Utama</div>
+  <nav class="sb-nav">
+    <div class="nav-item active">
+      <div class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.2" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1.2" fill="currentColor" opacity=".5"/><rect x="1" y="8" width="5" height="5" rx="1.2" fill="currentColor" opacity=".5"/><rect x="8" y="8" width="5" height="5" rx="1.2" fill="currentColor" opacity=".8"/></svg></div>
+      Dashboard
+    </div>
+    <div class="nav-item"><div class="nav-icon">👤</div>Profil Saya</div>
+    <div class="nav-item"><div class="nav-icon">🗓️</div>Cuti &amp; Absensi<span class="nav-badge gray">12</span></div>
+    <div class="nav-item"><div class="nav-icon">🧾</div>Reimburse<span class="nav-badge red">2</span></div>
+    <div class="nav-item"><div class="nav-icon">💳</div>Slip Gaji</div>
+    <div class="nav-item"><div class="nav-icon">⭐</div>Penilaian</div>
+  </nav>
+  <div class="sb-divider"></div>
+  <div class="sb-section">Dept. Teknologi</div>
+  <nav class="sb-nav">
+    <div class="nav-item"><div class="nav-icon">🗂️</div>Project Management</div>
+    <div class="nav-item"><div class="nav-icon">⏱️</div>Timesheet</div>
+    <div class="nav-item"><div class="nav-icon">📁</div>Dokumentasi</div>
+  </nav>
+  <div class="sb-divider"></div>
+  <div class="sb-section">Perusahaan</div>
+  <nav class="sb-nav">
+    <div class="nav-item"><div class="nav-icon">📢</div>Pengumuman<span class="nav-badge red">3</span></div>
+    <div class="nav-item"><div class="nav-icon">🎉</div>Event</div>
+    <div class="nav-item"><div class="nav-icon">🏢</div>Org Chart</div>
+  </nav>
+  <div class="sb-footer">
+    <nav class="sb-nav">
+      <div class="nav-item"><div class="nav-icon">⚙️</div>Pengaturan</div>
+      <div class="nav-item" style="color:var(--red)">
+        <div class="nav-icon" style="background:var(--red-light)">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 6.5H2M9 6.5L6 3.5M9 6.5L6 9.5" stroke="var(--red)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 2H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2" stroke="var(--red)" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        Keluar
+      </div>
+    </nav>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-bc">IDEA Portal <span class="sep">/</span> <strong>Dashboard</strong></div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-date">Senin, 7 Juli 2025</div>
+      <div class="icon-btn" id="notifBtn">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5v3l1.5 2.5H1L2.5 9.5v-3a5 5 0 0 1 5-5z" stroke="currentColor" stroke-width="1.4"/><path d="M6 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4"/></svg>
+        <div class="notif-pip"></div>
+      </div>
+      <div class="icon-btn">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M2 13c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- GREETING HERO -->
+    <div class="greeting-hero">
+      <div class="gh-left">
+        <div class="gh-eyebrow">Employee Portal · EMP-047</div>
+        <div class="gh-title">Selamat pagi,<br><span>Rizky</span> 👋</div>
+        <div class="gh-sub">Lead Developer · Dept. Teknologi · Bergabung 12 Mar 2021</div>
+      </div>
+      <div class="gh-actions">
+        <button class="gh-btn gh-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v3M10 1v3M1 6h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Ajukan Cuti
+        </button>
+        <button class="gh-btn gh-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" stroke="currentColor" stroke-width="1.3"/><path d="M5 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/></svg>
+          Reimburse
+        </button>
+        <button class="gh-btn gh-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Request Baru
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-card-glow" style="background:var(--blue)"></div>
+        <div class="sc-top"><div class="sc-icon" style="background:var(--blue-light)">📊</div><div class="sc-trend" style="background:var(--green-light);color:var(--green)">↑ 5 pts</div></div>
+        <div class="sc-value" style="color:var(--blue)">82</div>
+        <div class="sc-label">Skor Penilaian Bulan Ini</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-glow" style="background:var(--green)"></div>
+        <div class="sc-top"><div class="sc-icon" style="background:var(--green-light)">🗓️</div><div class="sc-trend" style="background:var(--bg);color:var(--ink3)">dari 12</div></div>
+        <div class="sc-value" style="color:var(--green)">8</div>
+        <div class="sc-label">Sisa Cuti Tahunan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-glow" style="background:var(--purple)"></div>
+        <div class="sc-top"><div class="sc-icon" style="background:var(--purple-light)">🗂️</div><div class="sc-trend" style="background:var(--purple-light);color:var(--purple)">+1 baru</div></div>
+        <div class="sc-value" style="color:var(--purple)">3</div>
+        <div class="sc-label">Project Aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-glow" style="background:var(--orange)"></div>
+        <div class="sc-top"><div class="sc-icon" style="background:var(--orange-light)">🧾</div><div class="sc-trend" style="background:var(--red-light);color:var(--red)">Pending</div></div>
+        <div class="sc-value" style="color:var(--orange)">2</div>
+        <div class="sc-label">Reimburse Menunggu</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Performance -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⭐ Penilaian Kinerja</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="tag tag-blue">Juli 2025</span>
+              <button class="card-action">Lihat detail →</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="perf-wrap">
+              <div class="ring-wrap">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                  <circle class="ring-track" cx="55" cy="55" r="46"/>
+                  <circle class="ring-fill" cx="55" cy="55" r="46" stroke="var(--blue)" stroke-dasharray="289.03" stroke-dashoffset="289.03" id="perfRing"/>
+                </svg>
+                <div class="ring-center"><div class="ring-score" style="color:var(--blue)" id="ringScoreEl">82</div><div class="ring-unit">/100</div></div>
+              </div>
+              <div class="perf-details">
+                <div class="perf-row"><span class="perf-row-label">OKR Achievement</span><span class="perf-row-val" style="color:var(--blue)">85%</span></div>
+                <div class="perf-row"><span class="perf-row-label">Weighted Score</span><span class="perf-row-val" style="color:var(--blue)">78</span></div>
+                <div class="perf-row"><span class="perf-row-label">Attitude</span><span class="perf-row-val">90</span></div>
+                <div class="perf-row"><span class="perf-row-label">Kehadiran</span><span class="perf-row-val">75</span></div>
+                <div class="perf-row"><span class="perf-row-label">Kolaborasi</span><span class="perf-row-val">80</span></div>
+              </div>
+            </div>
+            <div class="trend-bars">
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:58%;background:var(--border)"></div><div class="trend-bar-label">Feb</div></div>
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:64%;background:var(--border)"></div><div class="trend-bar-label">Mar</div></div>
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:61%;background:var(--border)"></div><div class="trend-bar-label">Apr</div></div>
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:62%;background:var(--border)"></div><div class="trend-bar-label">Mei</div></div>
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:62%;background:var(--border)"></div><div class="trend-bar-label">Jun</div></div>
+              <div class="trend-bar-col"><div class="trend-bar-fill" style="height:82%;background:var(--blue)"></div><div class="trend-bar-label" style="color:var(--blue);font-weight:700">Jul</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Projects -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🗂️ Project Aktif</div><button class="card-action">Semua →</button></div>
+          <div class="card-body np">
+            <div class="project-item">
+              <div class="project-color" style="background:var(--blue)"></div>
+              <div class="project-info"><div class="project-name">HRIS Modernisasi — Bank Nusantara</div><div class="project-meta">Client: Bank Nusantara · PM: Andi Suryadi</div></div>
+              <div class="project-right"><div class="project-pct" style="color:var(--blue)">72%</div><div class="pbar"><div class="pbar-fill" style="width:72%;background:var(--blue)"></div></div><div class="project-due">Due: 31 Agt 2025</div></div>
+            </div>
+            <div class="project-item">
+              <div class="project-color" style="background:var(--green)"></div>
+              <div class="project-info"><div class="project-name">API Gateway Integration — PT Telkom</div><div class="project-meta">Client: PT Telkom Indonesia · PM: Rizky Hanafi</div></div>
+              <div class="project-right"><div class="project-pct" style="color:var(--green)">45%</div><div class="pbar"><div class="pbar-fill" style="width:45%;background:var(--green)"></div></div><div class="project-due">Due: 15 Okt 2025</div></div>
+            </div>
+            <div class="project-item">
+              <div class="project-color" style="background:var(--purple)"></div>
+              <div class="project-info"><div class="project-name">Portal Internal IDEA (R&amp;D)</div><div class="project-meta">Internal · PM: Budi Santoso</div></div>
+              <div class="project-right"><div class="project-pct" style="color:var(--purple)">28%</div><div class="pbar"><div class="pbar-fill" style="width:28%;background:var(--purple)"></div></div><div class="project-due">Due: 1 Jan 2026</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Notifs -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔔 Notifikasi</div>
+            <div style="display:flex;align-items:center;gap:6px"><span class="tag tag-blue">5 baru</span><button class="card-action">Semua →</button></div>
+          </div>
+          <div class="card-body np">
+            <div class="notif-item unread"><div class="notif-icon" style="background:var(--green-light)">✅</div><div class="notif-body"><div class="notif-text"><strong>Cuti disetujui</strong> — 14–16 Jul telah disetujui Andi W.</div><div class="notif-time">2 jam lalu</div></div><div class="notif-pip2"></div></div>
+            <div class="notif-item unread"><div class="notif-icon" style="background:var(--orange-light)">⏰</div><div class="notif-body"><div class="notif-text"><strong>Task deadline besok</strong> — "Deploy staging API Gateway"</div><div class="notif-time">4 jam lalu</div></div><div class="notif-pip2"></div></div>
+            <div class="notif-item unread"><div class="notif-icon" style="background:var(--green-light)">💳</div><div class="notif-body"><div class="notif-text"><strong>Slip gaji tersedia</strong> — Juni 2025 bisa didownload</div><div class="notif-time">1 hari lalu</div></div><div class="notif-pip2"></div></div>
+            <div class="notif-item"><div class="notif-icon" style="background:var(--bg)">📢</div><div class="notif-body"><div class="notif-text">Pengumuman: <strong>Kebijakan WFH Juli 2025</strong></div><div class="notif-time">2 hari lalu</div></div></div>
+            <div class="notif-item"><div class="notif-icon" style="background:var(--purple-light)">🗂️</div><div class="notif-body"><div class="notif-text">Ditambahkan ke project <strong>Portal Internal IDEA</strong></div><div class="notif-time">3 hari lalu</div></div></div>
+          </div>
+        </div>
+        <!-- Leave -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🗓️ Saldo Cuti</div><button class="card-action">Ajukan →</button></div>
+          <div class="card-body">
+            <div class="leave-grid">
+              <div class="leave-card" style="background:var(--blue-light);border-color:rgba(0,122,255,.15)"><div class="leave-type" style="color:var(--blue)">Tahunan</div><div class="leave-num" style="color:var(--blue)">8</div><div class="leave-unit">hari tersisa</div><div class="leave-bar"><div class="leave-fill" style="width:66%;background:var(--blue)"></div></div></div>
+              <div class="leave-card"><div class="leave-type">Sakit</div><div class="leave-num">12</div><div class="leave-unit">hari/tahun</div><div class="leave-bar"><div class="leave-fill" style="width:100%;background:var(--green)"></div></div></div>
+              <div class="leave-card"><div class="leave-type">Digunakan</div><div class="leave-num" style="color:var(--ink3)">4</div><div class="leave-unit">hari tahun ini</div><div class="leave-bar"><div class="leave-fill" style="width:33%;background:var(--ink3)"></div></div></div>
+              <div class="leave-card" style="background:var(--orange-light);border-color:rgba(255,159,10,.15)"><div class="leave-type" style="color:var(--orange)">Pending</div><div class="leave-num" style="color:var(--orange)">0</div><div class="leave-unit">menunggu</div><div class="leave-bar"><div class="leave-fill" style="width:0%;background:var(--orange)"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="bottom-grid">
+      <!-- Events -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎉 Event Mendatang</div><button class="card-action">Semua →</button></div>
+        <div class="card-body">
+          <div class="event-item"><div class="event-date"><div class="event-day">14</div><div class="event-month">Jul</div></div><div class="event-info"><div class="event-name">Town Hall Q3 2025</div><div class="event-meta">10:00 · Aula Utama · Semua karyawan</div></div></div>
+          <div class="event-item"><div class="event-date" style="background:var(--purple-light)"><div class="event-day" style="color:var(--purple)">18</div><div class="event-month" style="color:var(--purple)">Jul</div></div><div class="event-info"><div class="event-name">Tech Talk: AI in Enterprise</div><div class="event-meta">14:00 · Zoom · Dept. Teknologi</div></div></div>
+          <div class="event-item"><div class="event-date" style="background:var(--green-light)"><div class="event-day" style="color:var(--green)">25</div><div class="event-month" style="color:var(--green)">Jul</div></div><div class="event-info"><div class="event-name">IDEA Anniversary Celebration</div><div class="event-meta">17:00 · Rooftop · Semua karyawan</div></div></div>
+        </div>
+      </div>
+      <!-- Payslip -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">💳 Slip Gaji Terbaru</div><button class="card-action">Semua →</button></div>
+        <div class="card-body">
+          <div class="payslip-item"><div><div class="payslip-month">Juni 2025</div><div class="payslip-status">✓ Sudah dibayar</div></div><div class="payslip-right"><div class="payslip-amount">Rp 12,5jt</div><div class="dl-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3.5 5.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5v.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div></div></div>
+          <div class="payslip-item"><div><div class="payslip-month">Mei 2025</div><div class="payslip-status">✓ Sudah dibayar</div></div><div class="payslip-right"><div class="payslip-amount">Rp 12,5jt</div><div class="dl-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3.5 5.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5v.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div></div></div>
+          <div class="payslip-item"><div><div class="payslip-month">April 2025</div><div class="payslip-status">✓ Sudah dibayar</div></div><div class="payslip-right"><div class="payslip-amount">Rp 12,5jt</div><div class="dl-btn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3.5 5.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5v.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div></div></div>
+        </div>
+      </div>
+      <!-- Broadcast -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📢 Pengumuman</div><button class="card-action">Semua →</button></div>
+        <div class="card-body">
+          <div class="bcast-item"><div class="bcast-header"><span class="bcast-tag" style="background:var(--blue-light);color:var(--blue)">Global</span><span class="bcast-time">2 hari lalu</span></div><div class="bcast-title">Kebijakan WFH Juli 2025</div><div class="bcast-preview">Mulai 1 Juli 2025, kebijakan WFH berlaku 2 hari per minggu untuk semua departemen...</div></div>
+          <div class="bcast-item"><div class="bcast-header"><span class="bcast-tag" style="background:var(--purple-light);color:var(--purple)">Teknologi</span><span class="bcast-time">4 hari lalu</span></div><div class="bcast-title">Migration Stack ke FastAPI</div><div class="bcast-preview">Semua project baru wajib menggunakan FastAPI. Training dijadwalkan minggu depan...</div></div>
+          <div class="bcast-item"><div class="bcast-header"><span class="bcast-tag" style="background:var(--green-light);color:var(--green)">HR</span><span class="bcast-time">1 minggu lalu</span></div><div class="bcast-title">Deadline Penilaian Q2 — 10 Juli</div><div class="bcast-preview">Seluruh supervisor wajib menyelesaikan penilaian karyawan Q2 sebelum 10 Juli 2025...</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+window.addEventListener('load', () => {
+  const ring = document.getElementById('perfRing');
+  const circ = 289.03;
+  const score = 82;
+  const offset = circ - (score / 100) * circ;
+  ring.style.strokeDashoffset = circ;
+  ring.style.transition = 'none';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)';
+    ring.style.strokeDashoffset = offset;
+  }));
+});
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

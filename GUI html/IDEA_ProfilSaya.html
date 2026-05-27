@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Profil Saya</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bl);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid rgba(0,122,255,.2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}
+.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue);color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#0064CC}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-red{background:var(--red);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px;max-width:1200px;margin:0 auto;width:100%}
+
+/* HERO HEADER */
+.hero{background:linear-gradient(135deg,#007AFF 0%,#32D2F2 100%);border-radius:var(--r);padding:28px;color:#fff;display:flex;align-items:center;gap:20px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:rgba(255,255,255,.08);border-radius:50%}
+.hero::after{content:'';position:absolute;right:60px;bottom:-80px;width:150px;height:150px;background:rgba(255,255,255,.05);border-radius:50%}
+.hero-photo{width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;flex-shrink:0;position:relative;z-index:1}
+.hero-photo-edit{position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:var(--surface);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.hero-info{flex:1;position:relative;z-index:1}
+.hero-name{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-bottom:4px}
+.hero-pos{font-size:14px;opacity:.9;margin-bottom:10px}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap}
+.h-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px)}
+.hero-actions{position:relative;z-index:1;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.hero-stat{text-align:right}
+.hero-stat-val{font-size:22px;font-weight:800;font-family:var(--mono)}
+.hero-stat-lbl{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+
+/* QUICK ACTIONS */
+.qa-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.qa{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;color:var(--ink)}
+.qa:hover{border-color:rgba(0,122,255,.3);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.qa-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.qa-label{font-size:12px;font-weight:700}
+.qa-sub{font-size:10px;color:var(--ink3);margin-top:2px}
+
+/* MAIN GRID */
+.grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font)}
+.cb{padding:18px 20px}.cb.np{padding:0}
+
+/* INFO ROW */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px}
+.info-item{display:flex;flex-direction:column;gap:3px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.info-item:nth-last-child(-n+2){border-bottom:none}
+.info-label{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.info-val{font-size:13px;font-weight:600}
+.info-val.mono{font-family:var(--mono);font-size:12px}
+
+/* LEAVE BALANCE */
+.leave-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.leave-card{background:var(--bg);border-radius:var(--rs);padding:12px;text-align:center}
+.leave-type{font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.leave-val{font-size:22px;font-weight:800;letter-spacing:-.5px;font-family:var(--mono);margin-bottom:2px}
+.leave-total{font-size:11px;color:var(--ink3)}
+.leave-bar{height:4px;background:rgba(0,0,0,.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.leave-bar-fill{height:100%;border-radius:2px;background:var(--blue)}
+
+/* PAYROLL MINI */
+.pay-mini{display:flex;align-items:center;gap:14px;padding:14px;background:linear-gradient(135deg,var(--gl) 0%,var(--bl) 100%);border-radius:var(--rm);margin-bottom:10px}
+.pay-mini-info{flex:1}
+.pay-mini-label{font-size:11px;color:var(--ink2);font-weight:600;margin-bottom:2px}
+.pay-mini-val{font-size:22px;font-weight:800;font-family:var(--mono);color:var(--green);letter-spacing:-.5px}
+.pay-list-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.pay-list-row:last-child{border-bottom:none}
+.pay-list-row strong{font-family:var(--mono);font-weight:600}
+
+/* RATING MINI */
+.rating-mini{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.r-month{flex:1;padding:8px 6px;text-align:center;background:var(--bg);border-radius:var(--rs);font-size:11px}
+.r-month-name{color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:600}
+.r-month-val{font-size:16px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px}
+.r-month-val.green{color:var(--green)}
+.r-month-val.blue{color:var(--blue)}
+.r-month-val.orange{color:var(--orange)}
+.r-month-val.red{color:var(--red)}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+.danger-card{background:var(--rl);border:1px solid rgba(255,67,58,.2);border-radius:var(--rm);padding:14px;margin-top:14px}
+.danger-card .ch-title{color:var(--red)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni active"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📋</div>Project</div>
+    <div class="ni"><div class="ni-ic">💼</div>Cuti &amp; Reimburse</div>
+    <div class="ni"><div class="ni-ic">💰</div>Slip Gaji</div>
+    <div class="ni"><div class="ni-ic">📊</div>Penilaian Saya</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Profil Saya</strong></div>
+    <div>
+      <button class="btn btn-s">⚙️ Pengaturan Akun</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-photo">
+        AC
+        <div class="hero-photo-edit" title="Ganti foto">✎</div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-name">Ari Christian</div>
+        <div class="hero-pos">Manager · Teknologi · Level 4</div>
+        <div class="hero-tags">
+          <div class="h-tag">NIK: IDE-2022-005</div>
+          <div class="h-tag">📅 Bergabung 14 Mar 2022</div>
+          <div class="h-tag">🟢 Aktif</div>
+          <div class="h-tag">📄 PKWTT</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-stat">
+          <div class="hero-stat-val">4y 2m</div>
+          <div class="hero-stat-lbl">Masa Kerja</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="qa-grid">
+      <a class="qa" href="IDEA_CutiReimburse.html">
+        <div class="qa-icon" style="background:var(--bl);color:var(--blue)">📅</div>
+        <div class="qa-label">Ajukan Cuti</div>
+        <div class="qa-sub">5 hari tersisa</div>
+      </a>
+      <a class="qa" href="IDEA_CutiReimburse.html">
+        <div class="qa-icon" style="background:var(--gl);color:var(--green)">💸</div>
+        <div class="qa-label">Reimbursement</div>
+        <div class="qa-sub">Upload bukti</div>
+      </a>
+      <a class="qa" href="#">
+        <div class="qa-icon" style="background:var(--ol);color:var(--orange)">💰</div>
+        <div class="qa-label">Slip Gaji</div>
+        <div class="qa-sub">Mei 2026 siap</div>
+      </a>
+      <a class="qa" href="IDEA_OrgChart.html">
+        <div class="qa-icon" style="background:var(--pl);color:var(--purple)">🌳</div>
+        <div class="qa-label">Org Chart</div>
+        <div class="qa-sub">Struktur perusahaan</div>
+      </a>
+      <a class="qa" href="#">
+        <div class="qa-icon" style="background:var(--tl);color:var(--teal)">📚</div>
+        <div class="qa-label">Info Perusahaan</div>
+        <div class="qa-sub">SOP &amp; Handbook</div>
+      </a>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+      <!-- LEFT COLUMN -->
+      <div>
+        <!-- INFO PRIBADI -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">👤 Informasi Pribadi</div>
+            <button class="ch-action">✏️ Edit</button>
+          </div>
+          <div class="cb">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">NIK Karyawan</div>
+                <div class="info-val mono">IDE-2022-005</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Nama Lengkap</div>
+                <div class="info-val">Ari Christian</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Email Korporat</div>
+                <div class="info-val">arichrst@ide.asia</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Nomor HP</div>
+                <div class="info-val mono">+62 812-****-3456</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Tanggal Lahir</div>
+                <div class="info-val">15 Agustus 1991</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Jenis Kelamin</div>
+                <div class="info-val">Laki-laki</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Alamat Domisili</div>
+                <div class="info-val">Jl. Senopati No. 12, Jakarta Selatan</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Kontak Darurat</div>
+                <div class="info-val">Dewi Christian · 0812-****-7890</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFO KEPEGAWAIAN -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">💼 Informasi Kepegawaian</div>
+            <span class="tag tgr">Read-only (HR maintained)</span>
+          </div>
+          <div class="cb">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Departemen</div>
+                <div class="info-val">Teknologi</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Posisi / Jabatan</div>
+                <div class="info-val">Manager · Backend Engineering</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Level Hierarki</div>
+                <div class="info-val">Level 4 — Manager</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Atasan Langsung</div>
+                <div class="info-val">Indra Wijaya — CTO</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Tipe Karyawan</div>
+                <div class="info-val">Type A (Internal)</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Status Kontrak</div>
+                <div class="info-val"><span class="tag tg">PKWTT — Permanen</span></div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Tanggal Bergabung</div>
+                <div class="info-val">14 Maret 2022</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Masa Kerja</div>
+                <div class="info-val mono">4 tahun 2 bulan</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECT AKTIF -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">📋 Project Aktif Saya</div>
+            <button class="ch-action">Lihat semua →</button>
+          </div>
+          <div class="cb">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--rs)">
+                <div style="width:8px;height:36px;background:var(--blue);border-radius:2px"></div>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:13px">API Gateway Integration — PT Telkom</div>
+                  <div style="font-size:11px;color:var(--ink3)">PM: Rizky Hanafi · 40% allocation · hingga 15 Okt 2026</div>
+                </div>
+                <span class="tag tb">Active</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--rs)">
+                <div style="width:8px;height:36px;background:var(--green);border-radius:2px"></div>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:13px">Portal Internal IDEA</div>
+                  <div style="font-size:11px;color:var(--ink3)">PM: Bayu Aditya · 30% allocation · ongoing</div>
+                </div>
+                <span class="tag tg">On Track</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--rs)">
+                <div style="width:8px;height:36px;background:var(--purple);border-radius:2px"></div>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:13px">R&amp;D — AI Code Review</div>
+                  <div style="font-size:11px;color:var(--ink3)">PM: Ari Christian (saya) · 30% allocation · R&amp;D</div>
+                </div>
+                <span class="tag tp">R&amp;D</span>
+              </div>
+              <div style="margin-top:6px;padding:8px 12px;background:var(--gl);border-radius:var(--rs);font-size:11px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:6px">
+                ✓ Total alokasi: <strong style="font-family:var(--mono)">100%</strong> · sesuai
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DANGER ZONE -->
+        <div class="danger-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="ch-title">⚠️ Danger Zone</div>
+          </div>
+          <div style="font-size:12px;color:var(--ink2);margin-bottom:12px">Aksi berikut bersifat permanen dan/atau perlu approval khusus. Pikirkan dulu sebelum klik.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-s" style="border-color:rgba(255,67,58,.3);color:var(--red)">📝 Ajukan Resign (notice 30 hari)</button>
+            <button class="btn btn-s">🔑 Ubah Password</button>
+            <button class="btn btn-s">📥 Download Data Saya</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <!-- LEAVE BALANCE -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">📅 Saldo Cuti 2026</div>
+            <span class="tag tgr">Per 26 Mei</span>
+          </div>
+          <div class="cb">
+            <div class="leave-grid">
+              <div class="leave-card">
+                <div class="leave-type">Tahunan</div>
+                <div class="leave-val" style="color:var(--blue)">5</div>
+                <div class="leave-total">dari 12 hari</div>
+                <div class="leave-bar"><div class="leave-bar-fill" style="width:58%;background:var(--blue)"></div></div>
+              </div>
+              <div class="leave-card">
+                <div class="leave-type">Sakit</div>
+                <div class="leave-val" style="color:var(--green)">12</div>
+                <div class="leave-total">tidak terhitung</div>
+              </div>
+              <div class="leave-card">
+                <div class="leave-type">Khusus</div>
+                <div class="leave-val" style="color:var(--orange)">2</div>
+                <div class="leave-total">menikah/duka</div>
+              </div>
+              <div class="leave-card">
+                <div class="leave-type">Bersama</div>
+                <div class="leave-val" style="color:var(--purple)">3</div>
+                <div class="leave-total">cuti bersama</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYROLL SUMMARY -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">💰 Slip Gaji Terakhir</div>
+            <button class="ch-action">Semua slip →</button>
+          </div>
+          <div class="cb">
+            <div class="pay-mini">
+              <div style="width:42px;height:42px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px">💵</div>
+              <div class="pay-mini-info">
+                <div class="pay-mini-label">Take Home Pay — Mei 2026</div>
+                <div class="pay-mini-val">Rp 18.450.000</div>
+              </div>
+            </div>
+            <div class="pay-list-row">
+              <span style="color:var(--ink2)">Gaji Pokok</span>
+              <strong>Rp 16.000.000</strong>
+            </div>
+            <div class="pay-list-row">
+              <span style="color:var(--ink2)">Tunjangan Tetap</span>
+              <strong>Rp 3.000.000</strong>
+            </div>
+            <div class="pay-list-row">
+              <span style="color:var(--ink2)">Variabel (Bonus)</span>
+              <strong style="color:var(--green)">+ Rp 1.500.000</strong>
+            </div>
+            <div class="pay-list-row">
+              <span style="color:var(--ink2)">BPJS + PPh21</span>
+              <strong style="color:var(--red)">– Rp 2.050.000</strong>
+            </div>
+            <div class="pay-list-row" style="border-top:2px solid var(--ink);padding-top:12px;margin-top:6px">
+              <span style="font-weight:700">Total</span>
+              <strong style="font-size:14px;color:var(--green)">Rp 18.450.000</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- RATING HISTORY -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">📊 Rating Bulanan</div>
+            <button class="ch-action">Riwayat lengkap →</button>
+          </div>
+          <div class="cb">
+            <div class="rating-mini">
+              <div class="r-month">
+                <div class="r-month-name">Des '25</div>
+                <div class="r-month-val green">82</div>
+              </div>
+              <div class="r-month">
+                <div class="r-month-name">Jan</div>
+                <div class="r-month-val green">85</div>
+              </div>
+              <div class="r-month">
+                <div class="r-month-name">Feb</div>
+                <div class="r-month-val green">81</div>
+              </div>
+              <div class="r-month">
+                <div class="r-month-name">Mar</div>
+                <div class="r-month-val blue">78</div>
+              </div>
+              <div class="r-month">
+                <div class="r-month-name">Apr</div>
+                <div class="r-month-val green">84</div>
+              </div>
+              <div class="r-month" style="background:var(--bl);border:1px solid rgba(0,122,255,.2)">
+                <div class="r-month-name" style="color:var(--blue)">Mei (ini)</div>
+                <div class="r-month-val green">87</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--gl);border-radius:var(--rs);font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">✓</span>
+              <strong>Performa baik</strong> — 6 bulan berturut di atas threshold 60.
+            </div>
+          </div>
+        </div>
+
+        <!-- ORG CHART POSITION -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">🌳 Posisi di Org Chart</div>
+            <a class="ch-action" href="IDEA_OrgChart.html">Lihat full →</a>
+          </div>
+          <div class="cb">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px">
+              <div style="padding:8px 14px;background:var(--bg);border-radius:var(--rs);font-weight:600;color:var(--ink3)">Indra Wijaya — CTO</div>
+              <div style="width:1px;height:14px;background:var(--border)"></div>
+              <div style="padding:10px 18px;background:linear-gradient(135deg,var(--blue),var(--teal));color:#fff;border-radius:var(--rs);font-weight:700;box-shadow:0 2px 8px rgba(0,122,255,.3)">⭐ Ari Christian — Manager (saya)</div>
+              <div style="width:1px;height:14px;background:var(--border)"></div>
+              <div style="display:flex;gap:6px">
+                <div style="padding:6px 10px;background:var(--bg);border-radius:var(--rs);font-size:11px;color:var(--ink3)">Rizky H. (Lead)</div>
+                <div style="padding:6px 10px;background:var(--bg);border-radius:var(--rs);font-size:11px;color:var(--ink3)">2 staff</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>

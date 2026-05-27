@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Org Chart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white:      #FFFFFF;
+    --off-white:  #F5F5F7;
+    --light-gray: #E8E8ED;
+    --mid-gray:   #C7C7CC;
+    --text-main:  #1D1D1F;
+    --text-sub:   #6E6E73;
+    --text-muted: #86868B;
+    --blue:       #0071E3;
+    --blue-soft:  #EBF4FF;
+    --green:      #34C759;
+    --green-soft: #F0FBF3;
+    --orange:     #FF9500;
+    --purple:     #AF52DE;
+    --red:        #FF3B30;
+    --teal:       #32ADE6;
+    --sidebar-w:  240px;
+    --topbar-h:   56px;
+    --font:       'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --radius:     14px;
+    --radius-sm:  10px;
+    --radius-xs:  8px;
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.07);
+    --shadow-md:  0 8px 32px rgba(0,0,0,0.10);
+    --shadow-lg:  0 20px 60px rgba(0,0,0,0.15);
+  }
+
+  html, body { height:100%; font-family:var(--font); background:var(--off-white); color:var(--text-main); -webkit-font-smoothing:antialiased; overflow:hidden; }
+
+  .app { display:flex; height:100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width:var(--sidebar-w); height:100vh; background:var(--white); border-right:1px solid var(--light-gray); display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto; }
+  .sidebar-logo { padding:18px 20px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--light-gray); }
+  .sidebar-logo-mark { width:32px; height:32px; background:var(--text-main); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .sidebar-logo-mark svg { width:17px; height:17px; }
+  .sidebar-logo-name { font-size:16px; font-weight:700; letter-spacing:-0.4px; }
+  .sidebar-logo-env  { font-size:10px; color:var(--text-muted); }
+  .sidebar-user { margin:14px 12px; padding:10px 12px; background:var(--off-white); border-radius:var(--radius-xs); display:flex; align-items:center; gap:10px; }
+  .sidebar-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#0071E3,#34AADC); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:white; flex-shrink:0; }
+  .sidebar-user-name { font-size:13px; font-weight:600; }
+  .sidebar-user-role { font-size:11px; color:var(--text-muted); }
+  .sidebar-section-label { padding:14px 20px 6px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); }
+  .sidebar-nav { padding:0 8px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-xs); cursor:pointer; font-size:13px; font-weight:500; color:var(--text-sub); margin-bottom:1px; transition:background 0.12s; }
+  .nav-item:hover  { background:var(--off-white); color:var(--text-main); }
+  .nav-item.active { background:var(--blue-soft); color:var(--blue); }
+  .nav-icon { width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sidebar-divider { height:1px; background:var(--light-gray); margin:8px 12px; }
+
+  /* ── MAIN ── */
+  .main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  .topbar {
+    height:var(--topbar-h); background:rgba(255,255,255,0.92); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--light-gray); display:flex; align-items:center;
+    justify-content:space-between; padding:0 24px; flex-shrink:0; gap:16px;
+  }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .topbar-breadcrumb { font-size:14px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+  .topbar-breadcrumb span { color:var(--text-main); font-weight:500; }
+  .topbar-breadcrumb .sep { color:var(--mid-gray); }
+
+  /* Search */
+  .search-wrap { position:relative; }
+  .search-input {
+    height:34px; width:220px; padding:0 12px 0 34px;
+    border:1.5px solid var(--light-gray); border-radius:20px;
+    font-size:13px; font-family:var(--font); outline:none;
+    background:var(--off-white); color:var(--text-main); transition:all 0.2s;
+  }
+  .search-input:focus { border-color:var(--blue); background:var(--white); width:280px; box-shadow:0 0 0 3px rgba(0,113,227,0.08); }
+  .search-input::placeholder { color:var(--mid-gray); }
+  .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
+
+  .topbar-right { display:flex; align-items:center; gap:8px; }
+
+  /* View toggle */
+  .view-toggle { display:flex; background:var(--off-white); border:1px solid var(--light-gray); border-radius:var(--radius-xs); padding:3px; gap:2px; }
+  .view-btn {
+    padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500;
+    cursor:pointer; border:none; background:transparent; color:var(--text-muted);
+    font-family:var(--font); transition:all 0.15s; display:flex; align-items:center; gap:5px;
+  }
+  .view-btn.active { background:var(--white); color:var(--text-main); box-shadow:var(--shadow-sm); }
+
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--radius-xs); font-size:12px; font-weight:500; cursor:pointer; border:none; font-family:var(--font); transition:all 0.15s; }
+  .btn-secondary { background:var(--white); color:var(--text-main); border:1px solid var(--light-gray); }
+  .btn-secondary:hover { background:var(--off-white); }
+
+  /* ── DEPT FILTER BAR ── */
+  .dept-filter {
+    display:flex; align-items:center; gap:8px; padding:10px 24px;
+    border-bottom:1px solid var(--light-gray); background:var(--white);
+    flex-shrink:0; overflow-x:auto;
+  }
+  .dept-filter-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; flex-shrink:0; }
+  .dept-chip {
+    display:flex; align-items:center; gap:6px; padding:5px 12px;
+    border-radius:20px; font-size:12px; font-weight:500; cursor:pointer;
+    border:1.5px solid var(--light-gray); background:var(--white); color:var(--text-sub);
+    transition:all 0.15s; white-space:nowrap; flex-shrink:0;
+  }
+  .dept-chip:hover { border-color:var(--mid-gray); color:var(--text-main); }
+  .dept-chip.active { color:white; border-color:transparent; }
+  .dept-chip .chip-dot { width:8px; height:8px; border-radius:50%; }
+  .dept-chip .chip-count { font-size:10px; opacity:0.75; }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    flex:1; overflow:hidden; position:relative;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(0,113,227,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(175,82,222,0.03) 0%, transparent 50%),
+      var(--off-white);
+  }
+
+  /* Grid dots background */
+  .canvas-area::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(circle, var(--mid-gray) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.4;
+    pointer-events:none;
+  }
+
+  .canvas-scroll {
+    width:100%; height:100%; overflow:auto;
+    cursor:grab; user-select:none;
+  }
+  .canvas-scroll:active { cursor:grabbing; }
+  .canvas-scroll.panning { cursor:grabbing; }
+
+  .canvas-inner {
+    position:relative; min-width:2400px; min-height:1600px;
+    transform-origin:top left;
+    transition:transform 0.1s;
+  }
+
+  /* ── SVG CONNECTORS ── */
+  .connectors { position:absolute; inset:0; pointer-events:none; overflow:visible; }
+  .connector { fill:none; stroke:var(--light-gray); stroke-width:1.5; }
+  .connector.dept-line { stroke-width:2; }
+
+  /* ── NODE CARD ── */
+  .node {
+    position:absolute; cursor:pointer;
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .node:hover { z-index:10; }
+  .node:hover .node-card { box-shadow:var(--shadow-lg); transform:translateY(-3px); }
+
+  .node-card {
+    background:var(--white); border:1.5px solid var(--light-gray);
+    border-radius:var(--radius-sm); overflow:hidden;
+    box-shadow:var(--shadow-sm); transition:all 0.2s;
+    width:180px;
+  }
+  .node-card.root {
+    width:200px; border-width:2px;
+  }
+  .node-card.selected { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,113,227,0.15), var(--shadow-md); }
+
+  .node-dept-bar { height:4px; }
+
+  .node-body { padding:12px 14px; }
+  .node-avatar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .node-avatar {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:white; flex-shrink:0;
+    border:2px solid rgba(255,255,255,0.8);
+    box-shadow:0 1px 4px rgba(0,0,0,0.15);
+  }
+  .node-avatar.root { width:44px; height:44px; font-size:15px; }
+  .node-name { font-size:13px; font-weight:600; line-height:1.2; letter-spacing:-0.2px; }
+  .node-title { font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .node-dept-tag {
+    display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600;
+    padding:2px 7px; border-radius:20px; margin-top:6px;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .node-meta {
+    display:flex; align-items:center; gap:8px; margin-top:8px;
+    padding-top:8px; border-top:1px solid var(--light-gray);
+    font-size:10px; color:var(--text-muted);
+  }
+  .node-meta-item { display:flex; align-items:center; gap:3px; }
+
+  /* Expand button */
+  .node-expand {
+    position:absolute; bottom:-11px; left:50%; transform:translateX(-50%);
+    width:22px; height:22px; border-radius:50%; background:var(--white);
+    border:1.5px solid var(--light-gray); display:flex; align-items:center;
+    justify-content:center; cursor:pointer; font-size:11px; font-weight:700;
+    color:var(--text-muted); z-index:5; transition:all 0.15s;
+    box-shadow:var(--shadow-sm);
+  }
+  .node-expand:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-soft); }
+
+  /* ── ZOOM CONTROLS ── */
+  .zoom-controls {
+    position:absolute; bottom:24px; right:24px; z-index:20;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .zoom-btn {
+    width:36px; height:36px; background:var(--white); border:1px solid var(--light-gray);
+    border-radius:var(--radius-xs); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:16px; font-weight:600; color:var(--text-main);
+    box-shadow:var(--shadow-sm); transition:all 0.15s; user-select:none;
+  }
+  .zoom-btn:hover { background:var(--off-white); }
+  .zoom-level {
+    background:var(--white); border:1px solid var(--light-gray);
+    border-radius:var(--radius-xs); font-size:11px; font-weight:600;
+    color:var(--text-muted); text-align:center; padding:5px 0;
+    box-shadow:var(--shadow-sm);
+  }
+
+  /* ── MINI MAP ── */
+  .mini-map {
+    position:absolute; bottom:24px; left:24px; z-index:20;
+    width:160px; height:100px; background:rgba(255,255,255,0.95);
+    border:1px solid var(--light-gray); border-radius:var(--radius-xs);
+    box-shadow:var(--shadow-md); overflow:hidden;
+  }
+  .mini-map-label { position:absolute; top:6px; left:8px; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); }
+  .mini-map-viewport {
+    position:absolute; border:1.5px solid var(--blue); border-radius:2px;
+    background:rgba(0,113,227,0.08); pointer-events:none;
+    transition:all 0.1s;
+  }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    position:absolute; right:0; top:0; bottom:0; width:300px;
+    background:var(--white); border-left:1px solid var(--light-gray);
+    z-index:30; transform:translateX(100%); transition:transform 0.3s ease;
+    overflow-y:auto; display:flex; flex-direction:column;
+  }
+  .detail-panel.open { transform:translateX(0); }
+  .detail-header {
+    padding:18px 20px 16px; border-bottom:1px solid var(--light-gray);
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+  }
+  .detail-close { width:28px; height:28px; border-radius:6px; background:var(--off-white); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+  .detail-close:hover { background:var(--light-gray); }
+  .detail-hero { padding:20px; border-bottom:1px solid var(--light-gray); text-align:center; }
+  .detail-avatar { width:64px; height:64px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:white; }
+  .detail-name  { font-size:17px; font-weight:700; letter-spacing:-0.3px; margin-bottom:3px; }
+  .detail-title { font-size:13px; color:var(--text-sub); margin-bottom:8px; }
+  .detail-section { padding:16px 20px; border-bottom:1px solid var(--light-gray); }
+  .detail-section-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
+  .detail-row { display:flex; justify-content:space-between; align-items:flex-start; padding:5px 0; font-size:13px; }
+  .detail-row-label { color:var(--text-muted); }
+  .detail-row-val   { font-weight:500; text-align:right; max-width:160px; }
+  .detail-subordinates { padding:16px 20px; }
+  .sub-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--light-gray); cursor:pointer; transition:all 0.12s; }
+  .sub-item:last-child { border-bottom:none; }
+  .sub-item:hover { opacity:0.7; }
+  .sub-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; flex-shrink:0; }
+  .sub-name  { font-size:13px; font-weight:500; }
+  .sub-title { font-size:11px; color:var(--text-muted); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    display:flex; gap:12px; z-index:20;
+  }
+  .stat-pill {
+    background:rgba(255,255,255,0.92); backdrop-filter:blur(12px);
+    border:1px solid var(--light-gray); border-radius:20px;
+    padding:6px 14px; font-size:12px; font-weight:500; color:var(--text-sub);
+    display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm);
+    white-space:nowrap;
+  }
+  .stat-pill strong { color:var(--text-main); }
+  .stat-pill .dot { width:8px; height:8px; border-radius:50%; }
+
+  /* ── LIST VIEW ── */
+  .list-view { display:none; flex:1; overflow-y:auto; padding:24px; }
+  .list-view.show { display:block; }
+  .list-dept-group { margin-bottom:24px; }
+  .list-dept-header {
+    display:flex; align-items:center; gap:10px; margin-bottom:12px;
+    padding-bottom:10px; border-bottom:2px solid var(--light-gray);
+  }
+  .list-dept-name { font-size:15px; font-weight:700; }
+  .list-dept-count { font-size:12px; color:var(--text-muted); background:var(--off-white); padding:2px 8px; border-radius:20px; }
+  .list-table { width:100%; border-collapse:collapse; }
+  .list-table th { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); padding:8px 12px; text-align:left; background:var(--off-white); border-radius:6px; }
+  .list-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--light-gray); }
+  .list-table tr:last-child td { border-bottom:none; }
+  .list-table tr:hover td { background:var(--off-white); }
+  .list-name-cell { display:flex; align-items:center; gap:10px; }
+  .list-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; flex-shrink:0; }
+
+  /* ── TAG ── */
+  .tag { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; }
+  .tag.green  { background:var(--green-soft); color:var(--green); }
+  .tag.blue   { background:var(--blue-soft);  color:var(--blue); }
+  .tag.orange { background:#FFF8EC; color:var(--orange); }
+  .tag.red    { background:#FFF2F1; color:var(--red); }
+  .tag.gray   { background:var(--off-white);  color:var(--text-muted); }
+
+  ::-webkit-scrollbar { width:5px; height:5px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--light-gray); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.8"/></svg>
+      </div>
+      <div><div class="sidebar-logo-name">IDEA</div><div class="sidebar-logo-env">Employee Portal</div></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">RH</div>
+      <div><div class="sidebar-user-name">Rizky Hanafi</div><div class="sidebar-user-role">Lead · Dept. Teknologi</div></div>
+    </div>
+    <div class="sidebar-section-label">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">👤</span> Profil Saya</div>
+      <div class="nav-item"><span class="nav-icon">🗓️</span> Cuti & Absensi</div>
+      <div class="nav-item"><span class="nav-icon">💰</span> Slip Gaji</div>
+    </nav>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Perusahaan</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active"><span class="nav-icon">⊞</span> Org Chart</div>
+      <div class="nav-item"><span class="nav-icon">📢</span> Pengumuman</div>
+      <div class="nav-item"><span class="nav-icon">🏢</span> Info Perusahaan</div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-breadcrumb">
+          Perusahaan <span class="sep">/</span> <span>Org Chart</span>
+        </div>
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#86868B" stroke-width="1.3"/><path d="M9.5 9.5l2.5 2.5" stroke="#86868B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <input class="search-input" type="text" placeholder="Cari nama, jabatan, departemen..." id="searchInput" oninput="handleSearch(this.value)">
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="view-toggle">
+          <button class="view-btn active" id="btnTree" onclick="switchView('tree')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="4" y="1" width="5" height="3" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="4" height="3" rx="1" fill="currentColor"/><rect x="8" y="9" width="4" height="3" rx="1" fill="currentColor"/><path d="M6.5 4v2M6.5 6H3v3M6.5 6H10v3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Tree
+          </button>
+          <button class="view-btn" id="btnList" onclick="switchView('list')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 3h11M1 6.5h11M1 10h11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            List
+          </button>
+        </div>
+        <button class="btn btn-secondary" onclick="resetView()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5a5 5 0 1 1 1.2 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 9.5V6.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reset View
+        </button>
+        <button class="btn btn-secondary" onclick="window.print()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2h7v2M1 4h11v6H3V8H1V4zM3 8h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Dept Filter -->
+    <div class="dept-filter">
+      <span class="dept-filter-label">Filter</span>
+      <div class="dept-chip active" style="background:#1D1D1F; border-color:#1D1D1F;" onclick="filterDept(this,'all')">
+        <div class="chip-dot" style="background:rgba(255,255,255,0.5)"></div> Semua
+        <span class="chip-count">· 25</span>
+      </div>
+      <div class="dept-chip" onclick="filterDept(this,'teknologi')">
+        <div class="chip-dot" style="background:#0071E3"></div> Teknologi
+        <span class="chip-count">· 8</span>
+      </div>
+      <div class="dept-chip" onclick="filterDept(this,'operation')">
+        <div class="chip-dot" style="background:#34C759"></div> Operation
+        <span class="chip-count">· 5</span>
+      </div>
+      <div class="dept-chip" onclick="filterDept(this,'sales')">
+        <div class="chip-dot" style="background:#FF9500"></div> Sales & Marketing
+        <span class="chip-count">· 6</span>
+      </div>
+      <div class="dept-chip" onclick="filterDept(this,'finance')">
+        <div class="chip-dot" style="background:#AF52DE"></div> Finance & Tax
+        <span class="chip-count">· 3</span>
+      </div>
+      <div class="dept-chip" onclick="filterDept(this,'outsource')">
+        <div class="chip-dot" style="background:#32ADE6"></div> Outsource
+        <span class="chip-count">· 2</span>
+      </div>
+    </div>
+
+    <!-- Canvas (Tree View) -->
+    <div class="canvas-area" id="canvasArea">
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat-pill"><div class="dot" style="background:#1D1D1F"></div> Total Karyawan: <strong>25</strong></div>
+        <div class="stat-pill"><div class="dot" style="background:#0071E3"></div> Teknologi: <strong>8</strong></div>
+        <div class="stat-pill"><div class="dot" style="background:#34C759"></div> Operation: <strong>5</strong></div>
+        <div class="stat-pill"><div class="dot" style="background:#FF9500"></div> Sales: <strong>6</strong></div>
+        <div class="stat-pill"><div class="dot" style="background:#AF52DE"></div> Finance: <strong>3</strong></div>
+      </div>
+
+      <div class="canvas-scroll" id="canvasScroll">
+        <div class="canvas-inner" id="canvasInner">
+          <svg class="connectors" id="connectorSvg"></svg>
+          <!-- Nodes rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="zoom-controls">
+        <div class="zoom-btn" onclick="zoom(0.1)">+</div>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <div class="zoom-btn" onclick="zoom(-0.1)">−</div>
+        <div class="zoom-btn" onclick="resetView()" title="Fit to screen" style="font-size:13px;">⊡</div>
+      </div>
+
+      <!-- Mini Map -->
+      <div class="mini-map" id="miniMap">
+        <div class="mini-map-label">Mini Map</div>
+        <div class="mini-map-viewport" id="miniViewport" style="left:10px;top:20px;width:40px;height:30px;"></div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div class="list-view" id="listView">
+      <!-- Generated by JS -->
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div style="font-size:14px; font-weight:600;">Detail Karyawan</div>
+        <button class="detail-close" onclick="closeDetail()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 9M11 2l-9 9" stroke="#1D1D1F" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="detailContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── ORG DATA ──────────────────────────────────────────────────────
+const DEPT_COLORS = {
+  all:        { bg:'#1D1D1F', soft:'#F5F5F7', text:'#FFFFFF' },
+  teknologi:  { bg:'#0071E3', soft:'#EBF4FF', text:'#FFFFFF' },
+  operation:  { bg:'#34C759', soft:'#F0FBF3', text:'#FFFFFF' },
+  sales:      { bg:'#FF9500', soft:'#FFF8EC', text:'#FFFFFF' },
+  finance:    { bg:'#AF52DE', soft:'#F5EEFA', text:'#FFFFFF' },
+  outsource:  { bg:'#32ADE6', soft:'#EAF6FD', text:'#FFFFFF' },
+};
+
+const LEVEL_NAMES = { 1:'Direktur / Wakil Direktur', 2:'C-Level', 3:'General Manager', 4:'Manager', 5:'Lead', 6:'Staff' };
+
+// Node: { id, name, title, dept, level, avatar, parentId, subordinates:[], joinDate, email, projects? }
+const orgData = [
+  // Root
+  { id:'dir', name:'Hendro Kusuma', title:'Direktur Utama', dept:'all', level:1, avatar:'HK', parentId:null,
+    email:'hendro@ide.asia', joinDate:'15 Jan 2018', note:'Founder & CEO IDE Asia' },
+  { id:'wdir', name:'Sandra Puspita', title:'Wakil Direktur Utama', dept:'all', level:1, avatar:'SP', parentId:null,
+    email:'sandra@ide.asia', joinDate:'1 Mar 2019', note:'Memiliki kewenangan setara Direktur Utama. Dapat menyetujui seluruh request, menutup deal, dan mengakses Executive Portal.' },
+
+  // C-Level
+  { id:'cto', name:'Diana Sari',     title:'Chief Technology Officer', dept:'teknologi', level:2, avatar:'DS', parentId:'dir',
+    email:'diana@ide.asia', joinDate:'3 Mar 2019', note:'Memimpin seluruh divisi teknologi' },
+  { id:'coo', name:'Budi Hartono',   title:'Chief Operating Officer',  dept:'operation', level:2, avatar:'BH', parentId:'dir',
+    email:'budi.h@ide.asia', joinDate:'1 Jun 2019', note:'Mengawasi HR & operasional' },
+  { id:'cmo', name:'Fani Lestari',   title:'Chief Marketing Officer',  dept:'sales',     level:2, avatar:'FL', parentId:'dir',
+    email:'fani@ide.asia', joinDate:'10 Sep 2019', note:'Memimpin Sales & Marketing' },
+  { id:'cfo', name:'Arman Yusuf',    title:'Chief Financial Officer',  dept:'finance',   level:2, avatar:'AY', parentId:'dir',
+    email:'arman@ide.asia', joinDate:'1 Jan 2020', note:'Mengawasi keuangan & pajak' },
+
+  // GM Teknologi
+  { id:'gm_tek', name:'Andi Wibowo', title:'General Manager Teknologi', dept:'teknologi', level:3, avatar:'AW', parentId:'cto',
+    email:'andi.w@ide.asia', joinDate:'5 Apr 2020' },
+
+  // Manager Teknologi
+  { id:'mgr_tek', name:'Rizky Hanafi', title:'Manager Development', dept:'teknologi', level:4, avatar:'RH', parentId:'gm_tek',
+    email:'rizky@ide.asia', joinDate:'12 Mar 2021', note:'Mengelola tim frontend & backend' },
+
+  // Lead & Staff Teknologi
+  { id:'lead_tek1', name:'Siti Rahayu',  title:'Lead Backend Dev', dept:'teknologi', level:5, avatar:'SR', parentId:'mgr_tek', email:'siti@ide.asia', joinDate:'1 Jul 2021' },
+  { id:'lead_tek2', name:'Ahmad Fauzi',  title:'Lead Frontend Dev',dept:'teknologi', level:5, avatar:'AF', parentId:'mgr_tek', email:'ahmad@ide.asia', joinDate:'15 Aug 2021' },
+  { id:'stf_tek1',  name:'Budi Santoso', title:'Senior Backend Dev',dept:'teknologi', level:6, avatar:'BS', parentId:'lead_tek1',email:'budi.s@ide.asia', joinDate:'3 Jan 2022' },
+  { id:'stf_tek2',  name:'Citra Dewi',   title:'Backend Developer', dept:'teknologi', level:6, avatar:'CD', parentId:'lead_tek1',email:'citra@ide.asia',  joinDate:'15 Mar 2022' },
+  { id:'stf_tek3',  name:'Dito Prakoso', title:'Frontend Developer',dept:'teknologi', level:6, avatar:'DP', parentId:'lead_tek2',email:'dito@ide.asia',   joinDate:'1 May 2022' },
+
+  // Operation
+  { id:'gm_ops', name:'Reni Wahyuni', title:'GM Operation',          dept:'operation', level:3, avatar:'RW', parentId:'coo', email:'reni@ide.asia', joinDate:'1 Feb 2020' },
+  { id:'hr_mgr', name:'Toni Saputra', title:'HR Manager',            dept:'operation', level:4, avatar:'TS', parentId:'gm_ops', email:'toni@ide.asia', joinDate:'10 May 2021' },
+  { id:'hr_stf', name:'Lina Marlina', title:'HR Specialist',         dept:'operation', level:6, avatar:'LM', parentId:'hr_mgr', email:'lina@ide.asia', joinDate:'1 Sep 2022' },
+  { id:'rec_stf', name:'Deni Gunawan','title':'Recruiter',            dept:'operation', level:6, avatar:'DG', parentId:'hr_mgr', email:'deni@ide.asia', joinDate:'1 Nov 2022' },
+
+  // Sales
+  { id:'gm_sal', name:'Kevin Pratama', title:'GM Sales & Marketing', dept:'sales', level:3, avatar:'KP', parentId:'cmo', email:'kevin@ide.asia', joinDate:'15 Jan 2020' },
+  { id:'mgr_sal', name:'Maya Sari',    title:'Sales Manager',        dept:'sales', level:4, avatar:'MS', parentId:'gm_sal', email:'maya@ide.asia', joinDate:'1 Jun 2021' },
+  { id:'ae1', name:'Fajar Nugraha',    title:'Account Executive',    dept:'sales', level:5, avatar:'FN', parentId:'mgr_sal', email:'fajar@ide.asia', joinDate:'1 Mar 2022' },
+  { id:'ae2', name:'Gita Kusuma',      title:'Business Development', dept:'sales', level:5, avatar:'GK', parentId:'mgr_sal', email:'gita@ide.asia', joinDate:'15 Apr 2022' },
+  { id:'ae3', name:'Hendra Saputra',   title:'Account Executive',    dept:'sales', level:6, avatar:'HS', parentId:'ae1', email:'hendra@ide.asia', joinDate:'1 Aug 2022' },
+
+  // Finance
+  { id:'fin_mgr', name:'Intan Permata', title:'Finance Manager',     dept:'finance', level:4, avatar:'IP', parentId:'cfo', email:'intan@ide.asia', joinDate:'1 Mar 2021' },
+  { id:'fin_stf', name:'Joko Susilo',   title:'Finance Staff',       dept:'finance', level:6, avatar:'JS', parentId:'fin_mgr', email:'joko@ide.asia', joinDate:'1 Jan 2023' },
+  { id:'tax_stf', name:'Kartini Dewi',  title:'Tax Specialist',      dept:'finance', level:6, avatar:'KD', parentId:'fin_mgr', email:'kartini@ide.asia', joinDate:'1 Feb 2023' },
+
+  // Outsource (special)
+  { id:'out1', name:'Leon Kusuma',   title:'Outsource · PT Bank Maju', dept:'outsource', level:6, avatar:'LK', parentId:'gm_ops', email:'leon@ide.asia', joinDate:'1 Jan 2023' },
+  { id:'out2', name:'Mira Anggraini','title':'Outsource · PT Telkom',  dept:'outsource', level:6, avatar:'MA', parentId:'gm_ops', email:'mira@ide.asia',  joinDate:'1 Mar 2023' },
+];
+
+// Build subordinate map
+const subMap = {};
+orgData.forEach(n => { subMap[n.id] = []; });
+orgData.forEach(n => { if (n.parentId) subMap[n.parentId].push(n.id); });
+
+// ── LAYOUT ENGINE ─────────────────────────────────────────────────
+const NODE_W = 184, NODE_H = 100, H_GAP = 28, V_GAP = 70;
+const nodePositions = {};
+
+function calcLayout() {
+  // BFS width calculation
+  function getSubtreeWidth(id) {
+    const children = subMap[id] || [];
+    if (!children.length) return NODE_W;
+    const childWidths = children.map(getSubtreeWidth);
+    const totalChildren = childWidths.reduce((s,w) => s + w + H_GAP, 0) - H_GAP;
+    return Math.max(NODE_W, totalChildren);
+  }
+
+  function place(id, x, y) {
+    const children = subMap[id] || [];
+    const subtreeW = getSubtreeWidth(id);
+    nodePositions[id] = { x: x + subtreeW/2 - NODE_W/2, y };
+
+    if (!children.length) return;
+    let cx = x;
+    children.forEach(cid => {
+      const cw = getSubtreeWidth(cid);
+      place(cid, cx, y + NODE_H + V_GAP);
+      cx += cw + H_GAP;
+    });
+  }
+
+  // Place Direktur Utama first, then Wakil Direktur beside it
+  place('dir', 80, 60);
+
+  // Wakil Direktur: placed to the right of Direktur, same Y level
+  const dirW = getSubtreeWidth('dir');
+  const wdirX = 80 + dirW + H_GAP * 2;
+  nodePositions['wdir'] = { x: wdirX, y: 60 };
+
+  // No subtree for wdir (parentId:null, no children assigned)
+}
+
+// ── RENDER NODES ──────────────────────────────────────────────────
+let scale = 1;
+let selectedNode = null;
+let activeFilter = 'all';
+
+function renderTree() {
+  const container = document.getElementById('canvasInner');
+  // Remove old nodes
+  container.querySelectorAll('.node').forEach(n => n.remove());
+
+  const svg = document.getElementById('connectorSvg');
+  svg.innerHTML = '';
+
+  orgData.forEach(node => {
+    const pos = nodePositions[node.id];
+    if (!pos) return;
+
+    // Check filter
+    const visible = activeFilter === 'all' || node.dept === activeFilter;
+
+    const el = document.createElement('div');
+    el.className = 'node';
+    el.id = 'node_' + node.id;
+    el.style.left = pos.x + 'px';
+    el.style.top  = pos.y + 'px';
+    el.style.opacity = visible ? '1' : '0.15';
+    el.style.transition = 'opacity 0.3s';
+
+    const dc = DEPT_COLORS[node.dept] || DEPT_COLORS.all;
+    const subs = subMap[node.id] || [];
+    const isRoot = node.level === 1;
+
+    el.innerHTML = `
+      <div class="node-card ${isRoot ? 'root' : ''}" id="card_${node.id}">
+        <div class="node-dept-bar" style="background:${dc.bg}"></div>
+        <div class="node-body">
+          <div class="node-avatar-row">
+            <div class="node-avatar ${isRoot?'root':''}" style="background:${dc.bg}">${node.avatar}</div>
+            <div>
+              <div class="node-name">${node.name}</div>
+              <div class="node-title">${node.title}</div>
+            </div>
+          </div>
+          <div class="node-dept-tag" style="background:${dc.soft}; color:${dc.bg};">
+            <span style="width:6px;height:6px;border-radius:50%;background:${dc.bg};display:inline-block;flex-shrink:0;"></span>
+            ${node.dept === 'all' ? 'Direktur' : node.dept.charAt(0).toUpperCase()+node.dept.slice(1)}
+          </div>
+          <div class="node-meta">
+            <div class="node-meta-item">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#C7C7CC" stroke-width="1.1"/><path d="M5 3v2l1.5 1" stroke="#C7C7CC" stroke-width="1.1" stroke-linecap="round"/></svg>
+              ${LEVEL_NAMES[node.level]}
+            </div>
+            ${subs.length ? `<div class="node-meta-item" style="margin-left:auto;">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="3.5" r="2" stroke="#C7C7CC" stroke-width="1.1"/><path d="M1.5 9c0-2 1.6-3 3.5-3s3.5 1 3.5 3" stroke="#C7C7CC" stroke-width="1.1" stroke-linecap="round"/></svg>
+              ${subs.length} bawahan
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    el.addEventListener('click', () => openDetail(node.id));
+    container.appendChild(el);
+
+    // Connector to parent
+    if (node.parentId) {
+      const parentPos = nodePositions[node.parentId];
+      if (parentPos) {
+        const px = parentPos.x + NODE_W/2;
+        const py = parentPos.y + NODE_H;
+        const cx = pos.x + NODE_W/2;
+        const cy = pos.y;
+        const midY = py + (cy - py) * 0.5;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        const dc2 = DEPT_COLORS[node.dept] || DEPT_COLORS.all;
+        path.setAttribute('d', `M${px},${py} C${px},${midY} ${cx},${midY} ${cx},${cy}`);
+        path.setAttribute('class', 'connector');
+        path.setAttribute('stroke', visible ? dc2.bg : '#E8E8ED');
+        path.setAttribute('opacity', visible ? '0.35' : '0.1');
+        path.setAttribute('stroke-width', node.level <= 2 ? '2' : '1.5');
+        svg.appendChild(path);
+      }
+    }
+
+    // Special: draw horizontal dashed line between dir and wdir (equal authority)
+    if (node.id === 'wdir') {
+      const dirPos = nodePositions['dir'];
+      if (dirPos) {
+        const x1 = dirPos.x + NODE_W;
+        const y1 = dirPos.y + NODE_H/2;
+        const x2 = pos.x;
+        const y2 = pos.y + NODE_H/2;
+
+        // Horizontal dashed connector
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        line.setAttribute('stroke', '#1D1D1F');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-dasharray', '6 4');
+        line.setAttribute('opacity', '0.25');
+        svg.appendChild(line);
+
+        // "=" badge in the middle
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const fo = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
+        fo.setAttribute('x', midX - 20); fo.setAttribute('y', midY - 11);
+        fo.setAttribute('width', '40'); fo.setAttribute('height', '22');
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:#1D1D1F; color:white; border-radius:20px; font-size:9px; font-weight:700; text-align:center; line-height:22px; font-family:Inter,sans-serif; letter-spacing:0.5px; box-shadow:0 1px 4px rgba(0,0,0,0.2);">SETARA</div>`;
+        svg.appendChild(fo);
+      }
+    }
+  });
+
+  // Update canvas size
+  const maxX = Math.max(...Object.values(nodePositions).map(p => p.x)) + NODE_W + 80;
+  const maxY = Math.max(...Object.values(nodePositions).map(p => p.y)) + NODE_H + 80;
+  document.getElementById('canvasInner').style.minWidth  = maxX + 'px';
+  document.getElementById('canvasInner').style.minHeight = maxY + 'px';
+}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────────
+function openDetail(id) {
+  const node = orgData.find(n => n.id === id);
+  if (!node) return;
+
+  // Deselect previous
+  if (selectedNode) document.getElementById('card_' + selectedNode)?.classList.remove('selected');
+  selectedNode = id;
+  document.getElementById('card_' + id)?.classList.add('selected');
+
+  const dc = DEPT_COLORS[node.dept] || DEPT_COLORS.all;
+  const subs = (subMap[id] || []).map(sid => orgData.find(n => n.id === sid)).filter(Boolean);
+  const parent = node.parentId ? orgData.find(n => n.id === node.parentId) : null;
+
+  const levelLabel = node.id === 'dir' ? 'Direktur Utama' : node.id === 'wdir' ? 'Wakil Direktur Utama' : LEVEL_NAMES[node.level];
+  const accessLabel = (node.id === 'dir' || node.id === 'wdir') ? '<span class="tag green" style="font-size:10px;">✓ Akses Executive Portal</span>' : '';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-hero">
+      <div class="detail-avatar" style="background:${dc.bg}">${node.avatar}</div>
+      <div class="detail-name">${node.name}</div>
+      <div class="detail-title">${node.title}</div>
+      <div style="margin-top:8px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+        <span class="tag" style="background:${dc.soft}; color:${dc.bg};">${levelLabel}</span>
+        <span class="tag gray">${node.dept.charAt(0).toUpperCase()+node.dept.slice(1)}</span>
+        ${accessLabel}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Informasi</div>
+      <div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-val" style="color:var(--blue)">${node.email}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Bergabung</span><span class="detail-row-val">${node.joinDate}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Jabatan</span><span class="detail-row-val">${levelLabel}</span></div>
+      ${parent ? `<div class="detail-row"><span class="detail-row-label">Atasan Langsung</span><span class="detail-row-val" style="cursor:pointer; color:var(--blue);" onclick="openDetail('${parent.id}')">${parent.name}</span></div>` : ''}
+      ${node.note ? `<div class="detail-row"><span class="detail-row-label">Catatan</span><span class="detail-row-val" style="color:var(--text-sub); font-style:italic;">${node.note}</span></div>` : ''}
+    </div>
+    ${(node.id === 'dir' || node.id === 'wdir') ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Kewenangan</div>
+      <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-sub);">
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Akses penuh ke Executive Portal</div>
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Approve seluruh request dari semua departemen</div>
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Menutup deal Sales (Direktur-driven)</div>
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Approve & menutup project secara langsung</div>
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Approve SP dan Layoff final</div>
+        <div style="display:flex; gap:7px; align-items:flex-start;"><span style="color:var(--green); font-weight:700; flex-shrink:0;">✓</span> Approve project internal</div>
+      </div>
+    </div>` : ''}
+
+    ${subs.length ? `
+    <div class="detail-subordinates">
+      <div class="detail-section-title">Bawahan Langsung (${subs.length})</div>
+      ${subs.map(s => {
+        const sc = DEPT_COLORS[s.dept] || DEPT_COLORS.all;
+        return `
+        <div class="sub-item" onclick="openDetail('${s.id}')">
+          <div class="sub-avatar" style="background:${sc.bg}">${s.avatar}</div>
+          <div>
+            <div class="sub-name">${s.name}</div>
+            <div class="sub-title">${s.title}</div>
+          </div>
+          <svg style="margin-left:auto; color:var(--mid-gray)" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  if (selectedNode) document.getElementById('card_' + selectedNode)?.classList.remove('selected');
+  selectedNode = null;
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────
+function handleSearch(query) {
+  query = query.toLowerCase().trim();
+  orgData.forEach(node => {
+    const el = document.getElementById('node_' + node.id);
+    if (!el) return;
+    const match = !query ||
+      node.name.toLowerCase().includes(query) ||
+      node.title.toLowerCase().includes(query) ||
+      node.dept.toLowerCase().includes(query);
+    el.style.opacity = match ? '1' : '0.1';
+    el.style.zIndex  = match && query ? '5' : '';
+    if (match) el.querySelector('.node-card')?.classList.remove('search-dim');
+  });
+}
+
+// ── FILTER DEPT ───────────────────────────────────────────────────
+function filterDept(el, dept) {
+  document.querySelectorAll('.dept-chip').forEach(c => {
+    c.classList.remove('active');
+    c.style.background = '';
+    c.style.borderColor = '';
+    c.style.color = '';
+  });
+  el.classList.add('active');
+  const dc = DEPT_COLORS[dept] || DEPT_COLORS.all;
+  el.style.background = dc.bg;
+  el.style.borderColor = dc.bg;
+  el.style.color = 'white';
+  activeFilter = dept;
+  renderTree();
+}
+
+// ── ZOOM ──────────────────────────────────────────────────────────
+function zoom(delta) {
+  scale = Math.min(1.5, Math.max(0.3, scale + delta));
+  applyZoom();
+}
+function applyZoom() {
+  document.getElementById('canvasInner').style.transform = `scale(${scale})`;
+  document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+}
+function resetView() {
+  scale = 0.7;
+  applyZoom();
+  const scroll = document.getElementById('canvasScroll');
+  scroll.scrollLeft = 0;
+  scroll.scrollTop  = 0;
+}
+
+// ── VIEW SWITCH ───────────────────────────────────────────────────
+function switchView(v) {
+  const treeArea = document.getElementById('canvasArea');
+  const listArea = document.getElementById('listView');
+  document.getElementById('btnTree').classList.toggle('active', v==='tree');
+  document.getElementById('btnList').classList.toggle('active', v==='list');
+  if (v === 'tree') {
+    treeArea.style.display = ''; listArea.classList.remove('show');
+  } else {
+    treeArea.style.display = 'none'; listArea.classList.add('show');
+    renderListView();
+  }
+}
+
+// ── LIST VIEW ─────────────────────────────────────────────────────
+function renderListView() {
+  const container = document.getElementById('listView');
+  const depts = ['teknologi','operation','sales','finance','outsource'];
+  container.innerHTML = depts.map(dept => {
+    const dc = DEPT_COLORS[dept];
+    const members = orgData.filter(n => n.dept === dept).sort((a,b) => a.level - b.level);
+    if (!members.length) return '';
+    return `
+      <div class="list-dept-group">
+        <div class="list-dept-header">
+          <div style="width:14px; height:14px; border-radius:4px; background:${dc.bg}; flex-shrink:0;"></div>
+          <div class="list-dept-name">${dept.charAt(0).toUpperCase()+dept.slice(1)}</div>
+          <div class="list-dept-count">${members.length} orang</div>
+        </div>
+        <table class="list-table">
+          <tr>
+            <th>Nama</th><th>Jabatan</th><th>Level</th><th>Atasan</th><th>Bergabung</th>
+          </tr>
+          ${members.map(m => {
+            const parent = m.parentId ? orgData.find(n=>n.id===m.parentId) : null;
+            return `<tr onclick="switchView('tree'); setTimeout(()=>openDetail('${m.id}'),100);" style="cursor:pointer;">
+              <td>
+                <div class="list-name-cell">
+                  <div class="list-avatar" style="background:${dc.bg}">${m.avatar}</div>
+                  <div>
+                    <div style="font-weight:500">${m.name}</div>
+                    <div style="font-size:11px; color:var(--text-muted)">${m.email}</div>
+                  </div>
+                </div>
+              </td>
+              <td>${m.title}</td>
+              <td><span class="tag" style="background:${dc.soft}; color:${dc.bg}; font-size:10px;">${LEVEL_NAMES[m.level]}</span></td>
+              <td style="color:var(--text-sub)">${parent ? parent.name : '—'}</td>
+              <td style="color:var(--text-muted)">${m.joinDate}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── PAN (drag to scroll) ──────────────────────────────────────────
+const scroll = document.getElementById('canvasScroll');
+let isPanning = false, panStart = {x:0, y:0}, scrollStart = {x:0, y:0};
+scroll.addEventListener('mousedown', e => {
+  if (e.target.closest('.node')) return;
+  isPanning = true;
+  panStart = {x:e.clientX, y:e.clientY};
+  scrollStart = {x:scroll.scrollLeft, y:scroll.scrollTop};
+  scroll.classList.add('panning');
+});
+window.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  scroll.scrollLeft = scrollStart.x - (e.clientX - panStart.x);
+  scroll.scrollTop  = scrollStart.y - (e.clientY - panStart.y);
+});
+window.addEventListener('mouseup', () => { isPanning = false; scroll.classList.remove('panning'); });
+
+// Wheel zoom
+scroll.addEventListener('wheel', e => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    zoom(e.deltaY > 0 ? -0.05 : 0.05);
+  }
+}, { passive:false });
+
+// ── INIT ──────────────────────────────────────────────────────────
+calcLayout();
+renderTree();
+resetView();
+
+// Center on Direktur after short delay
+setTimeout(() => {
+  const dir = nodePositions['dir'];
+  if (dir) {
+    scroll.scrollLeft = (dir.x * scale) - scroll.clientWidth/2 + NODE_W*scale/2;
+    scroll.scrollTop  = 0;
+  }
+}, 100);
+</script>
+</body>
+</html>

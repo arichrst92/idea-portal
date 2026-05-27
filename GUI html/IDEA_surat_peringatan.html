@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Surat Peringatan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#30D158,#00C7BE);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--ol);color:var(--orange)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--orange);font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(255,159,10,.3)}.btn-p:hover{background:#E08B00}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#E03028}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.kpi-val{font-size:28px;font-weight:800;letter-spacing:-.8px;margin-bottom:3px}
+.kpi-lbl{font-size:12px;color:var(--ink3);font-weight:500}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:1fr 360px;gap:16px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.cb{padding:18px 20px}.cb.np{padding:0}
+
+/* SP ITEM */
+.sp-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.sp-row:last-child{border-bottom:none}.sp-row:hover{background:var(--bg)}.sp-row.selected{background:#FFF8F0}
+.sp-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sp-body{flex:1;min-width:0}
+.sp-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.sp-meta{font-size:11px;color:var(--ink3);font-weight:500}
+.sp-level{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+
+/* FLAG PILLS */
+.flag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.flag-yellow{background:#FFFAEB;color:#B45309;border:1px solid #FDE68A}
+.flag-orange{background:#FFF7ED;color:#C2410C;border:1px solid #FDBA74}
+.flag-red{background:var(--rl);color:var(--red);border:1px solid rgba(255,67,58,.2)}
+
+/* SCORE MINI BARS */
+.score-mini{display:flex;align-items:center;gap:6px}
+.score-bar-track{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px}
+
+/* SP DETAIL */
+.dp-sec{padding:14px 18px;border-bottom:1px solid var(--border2)}
+.dp-sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:10px}
+.dp-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.dp-row:last-child{border-bottom:none}
+.dp-label{color:var(--ink3)}.dp-val{font-weight:600}
+
+/* AI DRAFT */
+.ai-draft{background:#0A0A0F;border-radius:var(--rm);padding:16px;font-size:12px;line-height:1.7;color:#D1D5DB;font-family:'Georgia',serif;position:relative}
+.ai-draft-badge{position:absolute;top:-10px;right:12px;background:var(--purple);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;font-family:var(--font);display:flex;align-items:center;gap:4px}
+.ai-draft strong{color:#fff}
+
+/* TABS */
+.ptabs{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px;margin-bottom:16px}
+.pt{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink3);font-family:var(--font);transition:all .15s}
+.pt.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">RW</div><div><div class="sb-uname">Reni Wahyuni</div><div class="sb-urole">GM · Operation</div></div></div>
+  <div class="sb-sec">Dept. Operation</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">👥</div>Hiring</div>
+    <div class="ni"><div class="ni-ic">🚪</div>Layoff &amp; Resign</div>
+    <div class="ni active"><div class="ni-ic">⚠️</div>Surat Peringatan</div>
+    <div class="ni"><div class="ni-ic">🔗</div>Outsource</div>
+    <div class="ni"><div class="ni-ic">💰</div>Payroll</div>
+    <div class="ni"><div class="ni-ic">✅</div>Onboarding</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Operation <span style="color:var(--border)">/</span> <strong>Surat Peringatan (SP)</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s" onclick="alert('Buat SP manual')">+ SP Manual</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ALERT BANNER -->
+    <div style="background:var(--rl);border:1px solid rgba(255,67,58,.2);border-radius:var(--rm);padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:16px">🤖</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--red)">1 SP otomatis menunggu approval</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:2px">Denny Maulana — skor &lt;60 selama 3 bulan berturut. Draft SP1 telah digenerate oleh AI.</div>
+      </div>
+      <button class="btn btn-red" onclick="scrollToSP()">Review Sekarang →</button>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">1</div><div class="kpi-lbl">SP Pending Approval</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">3</div><div class="kpi-lbl">SP Aktif (diterbitkan)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">2</div><div class="kpi-lbl">Flag Merah (bulan ke-2)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">4</div><div class="kpi-lbl">Flag Kuning (bulan ke-1)</div></div>
+    </div>
+
+    <div class="layout">
+      <div>
+        <!-- AI Generated SP -->
+        <div class="card" id="spAutoCard">
+          <div class="ch">
+            <div class="ch-title">🤖 SP Otomatis — Menunggu Approval</div>
+            <span class="tag tr">Butuh Tindakan</span>
+          </div>
+          <div class="cb np">
+            <div class="sp-row selected">
+              <div class="sp-av" style="background:linear-gradient(135deg,#FF453A,#C0392B)">DM</div>
+              <div class="sp-body">
+                <div class="sp-name">Denny Maulana</div>
+                <div class="sp-meta">Staff Developer · Teknologi · Skor: 52, 48, 55 (3 bln)</div>
+              </div>
+              <div class="sp-level" style="background:var(--rl);color:var(--red)">SP1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active SPs -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">⚠️ SP Aktif (Internal)</div><span class="tag to">3 karyawan</span></div>
+          <div class="cb np">
+            <div class="sp-row" onclick="selectSP(this)">
+              <div class="sp-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">HR</div>
+              <div class="sp-body">
+                <div class="sp-name">Hendra Rahman</div>
+                <div class="sp-meta">Finance Staff · Diterbitkan 1 Jun 2025</div>
+              </div>
+              <div class="sp-level" style="background:var(--ol);color:var(--orange)">SP1</div>
+            </div>
+            <div class="sp-row" onclick="selectSP(this)">
+              <div class="sp-av" style="background:linear-gradient(135deg,#FF453A,#C0392B)">IP</div>
+              <div class="sp-body">
+                <div class="sp-name">Indra Pratama</div>
+                <div class="sp-meta">Sales Staff · SP2 diterbitkan 15 Jun 2025</div>
+              </div>
+              <div class="sp-level" style="background:var(--rl);color:var(--red)">SP2</div>
+            </div>
+            <div class="sp-row" onclick="selectSP(this)">
+              <div class="sp-av" style="background:linear-gradient(135deg,#007AFF,#32D2F2)">YR</div>
+              <div class="sp-body">
+                <div class="sp-name">Yuda Rakasiwi</div>
+                <div class="sp-meta">Backend Dev · SP1 diterbitkan 5 Jul 2025</div>
+              </div>
+              <div class="sp-level" style="background:var(--ol);color:var(--orange)">SP1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SP-O Outsource -->
+        <div class="card" style="border-color:rgba(191,90,242,.3)">
+          <div class="ch" style="background:linear-gradient(90deg,var(--pl) 0%,transparent 100%)">
+            <div class="ch-title">🏢 SP-O Aktif (Outsource)
+              <span style="font-size:10px;padding:2px 7px;background:var(--purple);color:#fff;border-radius:20px;margin-left:4px;font-weight:700">NEW</span>
+            </div>
+            <span class="tag" style="background:var(--pl);color:var(--purple)">2 karyawan</span>
+          </div>
+          <div style="padding:10px 20px 6px;font-size:11px;color:var(--ink3);background:rgba(191,90,242,.04);border-bottom:1px solid var(--border2)">
+            SP-O dipicu oleh complaint client (Sales PIC log → notif Operation), bukan score penilaian internal. Sequence: SP-O1 → SP-O2 → SP-O3 (replacement).
+          </div>
+          <div class="cb np">
+            <div class="sp-row" onclick="selectSP(this)">
+              <div class="sp-av" style="background:linear-gradient(135deg,#BF5AF2,#7C3AED)">RT</div>
+              <div class="sp-body">
+                <div class="sp-name">Ricky Tanuwijaya</div>
+                <div class="sp-meta">Outsource @ PT Telkom · Complaint: kehadiran <span style="color:var(--orange)">·</span> SP-O1 diterbitkan 20 Jun</div>
+              </div>
+              <div class="sp-level" style="background:var(--pl);color:var(--purple)">SP-O1</div>
+            </div>
+            <div class="sp-row" onclick="selectSP(this)">
+              <div class="sp-av" style="background:linear-gradient(135deg,#FF453A,#BF5AF2)">FH</div>
+              <div class="sp-body">
+                <div class="sp-name">Farhan Hadi</div>
+                <div class="sp-meta">Outsource @ PT Bank Nusantara · 3 complaint <span style="color:var(--orange)">·</span> SP-O2 — evaluasi 2 minggu</div>
+              </div>
+              <div class="sp-level" style="background:var(--rl);color:var(--purple)">SP-O2</div>
+            </div>
+          </div>
+          <div style="padding:10px 20px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:10px;background:var(--bg)">
+            <div style="flex:1;display:flex;gap:14px;font-size:11px">
+              <div><strong style="color:var(--purple)">SP-O1</strong> Warning + coaching</div>
+              <div><strong style="color:#FF6B00">SP-O2</strong> Final warning + 2-week eval</div>
+              <div><strong style="color:var(--red)">SP-O3</strong> Replacement recommendation</div>
+            </div>
+            <button class="btn btn-s" style="font-size:11px">+ Issue SP-O</button>
+          </div>
+        </div>
+
+        <!-- Flag Monitor -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">🚩 Monitor Flag</div><button class="ch-action">Lihat semua →</button></div>
+          <div class="cb np">
+            <div style="padding:8px 16px;background:rgba(255,67,58,.05);border-bottom:1px solid var(--border2)">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--red);margin-bottom:6px">Flag Merah — Bulan Ke-2 (2 karyawan)</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF453A,#C0392B);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">SR</div>
+                  <span style="font-weight:600;flex:1">Siti Ramadhani</span>
+                  <div class="score-mini" style="gap:6px">
+                    <span style="font-size:11px;color:var(--ink3)">Bulan ini:</span>
+                    <span style="font-size:13px;font-weight:800;color:var(--red)">56</span>
+                  </div>
+                  <span class="flag flag-red">● Bulan 2</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF9F0A,#FF6B00);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">AK</div>
+                  <span style="font-weight:600;flex:1">Andi Kurniawan</span>
+                  <div class="score-mini" style="gap:6px">
+                    <span style="font-size:11px;color:var(--ink3)">Bulan ini:</span>
+                    <span style="font-size:13px;font-weight:800;color:var(--red)">58</span>
+                  </div>
+                  <span class="flag flag-red">● Bulan 2</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:8px 16px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--orange);margin-bottom:6px">Flag Kuning — Bulan Ke-1 (4 karyawan)</div>
+              <div style="font-size:12px;color:var(--ink3)">4 karyawan dengan skor &lt;70 bulan pertama. Dipantau bulan depan.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL PANEL -->
+      <div style="display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#FF453A,#C0392B);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">DM</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;letter-spacing:-.3px;margin-bottom:2px">Denny Maulana</div>
+            <div style="font-size:12px;color:var(--ink3)">Staff Developer · Dept. Teknologi</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+            <span class="tag tr">SP1 Otomatis</span>
+          </div>
+        </div>
+
+        <div class="dp-sec">
+          <div class="dp-sec-title">Data Skor 3 Bulan Terakhir</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <span style="color:var(--ink3)">Mei 2025</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="score-bar-track" style="width:80px"><div class="score-bar-fill" style="width:52%;background:var(--red)"></div></div>
+                <span style="font-weight:800;color:var(--red);font-size:14px">52</span>
+                <span class="flag flag-yellow">● Bulan 1</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <span style="color:var(--ink3)">Jun 2025</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="score-bar-track" style="width:80px"><div class="score-bar-fill" style="width:48%;background:var(--red)"></div></div>
+                <span style="font-weight:800;color:var(--red);font-size:14px">48</span>
+                <span class="flag flag-orange">● Bulan 2</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <span style="color:var(--ink3)">Jul 2025</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="score-bar-track" style="width:80px"><div class="score-bar-fill" style="width:55%;background:var(--red)"></div></div>
+                <span style="font-weight:800;color:var(--red);font-size:14px">55</span>
+                <span class="flag flag-red">● Bulan 3 → SP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dp-sec" style="flex:1">
+          <div class="dp-sec-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Draft SP1 — digenerate AI</span>
+            <span class="tag tp">🤖 AI Draft</span>
+          </div>
+          <div class="ai-draft" style="margin-bottom:12px">
+            <div class="ai-draft-badge">✦ Claude AI</div>
+            <strong>SURAT PERINGATAN KE-1</strong><br><br>
+            Kepada Yth.<br>
+            <strong>Denny Maulana</strong><br>
+            Staff Developer — Dept. Teknologi<br><br>
+            Dengan hormat,<br><br>
+            Berdasarkan hasil evaluasi kinerja bulanan, saudara <strong>Denny Maulana</strong> telah memperoleh skor di bawah threshold selama 3 (tiga) bulan berturut-turut:<br><br>
+            • Mei 2025 : <strong>52/100</strong><br>
+            • Juni 2025 : <strong>48/100</strong><br>
+            • Juli 2025 : <strong>55/100</strong><br><br>
+            Sesuai kebijakan perusahaan, skor di bawah 60 selama 3 bulan berturut-turut mengakibatkan diterbitkannya Surat Peringatan Pertama (SP-1)...<br><br>
+            <span style="opacity:.5">— Isi lengkap SP tersedia setelah approval —</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-p" style="flex:1;justify-content:center" onclick="alert('SP di-approve, dikirim ke karyawan')">✓ Approve &amp; Terbitkan SP</button>
+            <button class="btn btn-s" onclick="alert('Edit draft SP')">✏️ Edit Draft</button>
+          </div>
+          <button class="btn btn-s" style="width:100%;margin-top:8px;justify-content:center;color:var(--red);border-color:rgba(255,67,58,.3)" onclick="alert('Tolak SP otomatis')">✕ Tolak SP Ini</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function selectSP(el){document.querySelectorAll('.sp-row').forEach(i=>i.classList.remove('selected'));el.classList.add('selected')}
+function scrollToSP(){document.getElementById('spAutoCard').scrollIntoView({behavior:'smooth'})}
+</script>
+</body>
+</html>

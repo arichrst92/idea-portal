@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Dokumentasi Teknis per Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#34AADC);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
+.btn-p{background:var(--blue);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow:hidden;display:flex}
+
+/* LEFT FOLDER TREE */
+.tree-pane{width:280px;flex-shrink:0;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto}
+.tp-head{padding:14px 18px;border-bottom:1px solid var(--border2)}
+.tp-project{display:flex;align-items:center;gap:10px;padding:8px;background:var(--bl);border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;color:var(--blue)}
+.tp-project select{flex:1;border:none;background:transparent;font-family:var(--font);font-weight:700;color:var(--blue);outline:none;font-size:12px}
+.tp-meta{font-size:10px;color:var(--ink3);margin-top:6px;display:flex;justify-content:space-between}
+.tree{padding:8px 12px}
+.tree-node{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--rs);cursor:pointer;font-size:12px;color:var(--ink);transition:background .12s}
+.tree-node:hover{background:var(--bg)}
+.tree-node.active{background:var(--bl);color:var(--blue);font-weight:700}
+.tree-node.folder{font-weight:600}
+.tree-children{padding-left:14px}
+.tree-ic{width:16px;text-align:center}
+
+/* MIDDLE: FILE LIST */
+.file-pane{flex:1;overflow-y:auto;padding:24px;max-width:920px}
+.file-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.fh-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.fh-breadcrumb{font-size:11px;color:var(--ink3);margin-top:3px;font-family:var(--mono)}
+
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.file-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:14px;cursor:pointer;transition:all .15s;position:relative}
+.file-card:hover{border-color:rgba(0,122,255,.3);box-shadow:0 4px 12px rgba(0,0,0,.05);transform:translateY(-2px)}
+.fc-icon{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;margin-bottom:10px}
+.fc-icon.md{background:linear-gradient(135deg,#86868B,#5C5C61)}
+.fc-icon.code{background:linear-gradient(135deg,#0A0A0F,#3C3C43)}
+.fc-icon.diagram{background:linear-gradient(135deg,#BF5AF2,#7C3AED)}
+.fc-icon.api{background:linear-gradient(135deg,#30D158,#00C7BE)}
+.fc-icon.pdf{background:linear-gradient(135deg,#FF453A,#C0392B)}
+.fc-icon.notebook{background:linear-gradient(135deg,#FF9F0A,#FF6B00)}
+.fc-name{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:4px}
+.fc-desc{font-size:11px;color:var(--ink2);line-height:1.4;margin-bottom:10px}
+.fc-footer{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border2);font-size:10px;color:var(--ink3)}
+.fc-author{display:flex;align-items:center;gap:4px}
+.fc-mini-av{width:18px;height:18px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.fc-version{font-family:var(--mono);font-weight:700;color:var(--blue);font-size:10px;padding:1px 5px;background:var(--bl);border-radius:3px}
+
+/* PROJECT META */
+.proj-meta{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;gap:18px}
+.pm-icon{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#007AFF,#34AADC);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pm-info{flex:1}
+.pm-name{font-size:16px;font-weight:800;margin-bottom:3px}
+.pm-desc{font-size:12px;color:var(--ink3)}
+.pm-stats{display:flex;gap:18px;font-size:11px;text-align:right}
+.pm-stat{}
+.pm-stat-val{font-size:16px;font-weight:800;font-family:var(--mono);color:var(--blue)}
+.pm-stat-lbl{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px}
+
+/* ACCESS BANNER */
+.access-banner{padding:10px 14px;background:var(--gl);border:1px solid rgba(48,209,88,.2);border-radius:var(--rs);font-size:11px;color:var(--green);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+
+/* SECTION TITLE */
+.sec-title{font-size:13px;font-weight:800;margin:18px 0 10px;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
+
+/* VERSION CHIP */
+.v-chip{position:absolute;top:10px;right:10px;font-size:9px;padding:2px 6px;border-radius:3px;font-family:var(--mono);font-weight:700}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Tech Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">RH</div><div><div class="sb-uname">Rizky Hanafi</div><div class="sb-urole">Lead · Teknologi</div></div></div>
+  <div class="sb-sec">Dept. Teknologi</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📋</div>Project Management</div>
+    <div class="ni"><div class="ni-ic">👥</div>Employee Management</div>
+    <div class="ni"><div class="ni-ic">📝</div>Penilaian</div>
+    <div class="ni active"><div class="ni-ic">📚</div>Dokumentasi Teknis</div>
+    <div class="ni"><div class="ni-ic">📊</div>Report</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Teknologi <span style="color:var(--border)">/</span> <strong>Dokumentasi Teknis</strong></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-s">📜 Version History</button>
+      <button class="btn btn-p">+ Upload Doc</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- TREE -->
+    <aside class="tree-pane">
+      <div class="tp-head">
+        <div class="tp-project">
+          <span>📂</span>
+          <select>
+            <option>API Gateway Integration</option>
+            <option>Portal Internal IDEA</option>
+            <option>HRIS Bank Nusantara</option>
+            <option>Web Portal Indofood</option>
+            <option>R&amp;D AI Code Review</option>
+          </select>
+        </div>
+        <div class="tp-meta">
+          <span>👥 6 members</span>
+          <span>📄 42 docs</span>
+        </div>
+      </div>
+
+      <div class="tree">
+        <div class="tree-node folder">
+          <span class="tree-ic">▼</span><span class="tree-ic">📁</span>
+          <span>00. Overview</span>
+        </div>
+        <div class="tree-children">
+          <div class="tree-node active">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>README.md</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>CHANGELOG.md</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>roadmap.md</span>
+          </div>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▼</span><span class="tree-ic">📁</span>
+          <span>01. Architecture</span>
+        </div>
+        <div class="tree-children">
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">🎨</span>
+            <span>system-design.md</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">🎨</span>
+            <span>data-flow-diagram.png</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">🎨</span>
+            <span>sequence-diagrams/</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>ADR-001-choose-postgres.md</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>ADR-002-async-celery.md</span>
+          </div>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▼</span><span class="tree-ic">📁</span>
+          <span>02. API Reference</span>
+        </div>
+        <div class="tree-children">
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">🔌</span>
+            <span>openapi.yaml</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>auth-endpoints.md</span>
+          </div>
+          <div class="tree-node">
+            <span class="tree-ic"></span><span class="tree-ic">📝</span>
+            <span>data-endpoints.md</span>
+          </div>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▶</span><span class="tree-ic">📁</span>
+          <span>03. Database</span>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▶</span><span class="tree-ic">📁</span>
+          <span>04. Deployment</span>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▶</span><span class="tree-ic">📁</span>
+          <span>05. Testing</span>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▶</span><span class="tree-ic">📁</span>
+          <span>06. Runbook</span>
+        </div>
+
+        <div class="tree-node folder">
+          <span class="tree-ic">▶</span><span class="tree-ic">📁</span>
+          <span>07. Client Deliverables</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN FILES -->
+    <main class="file-pane">
+      <!-- PROJECT META -->
+      <div class="proj-meta">
+        <div class="pm-icon">🔌</div>
+        <div class="pm-info">
+          <div class="pm-name">API Gateway Integration <span class="tag tb" style="margin-left:6px">Active</span></div>
+          <div class="pm-desc">Client: PT Telkom · PM: Rizky Hanafi · 6 members · Apr–Okt 2026</div>
+        </div>
+        <div class="pm-stats">
+          <div class="pm-stat">
+            <div class="pm-stat-val">42</div>
+            <div class="pm-stat-lbl">Total Docs</div>
+          </div>
+          <div class="pm-stat">
+            <div class="pm-stat-val">7</div>
+            <div class="pm-stat-lbl">Updated 7d</div>
+          </div>
+          <div class="pm-stat">
+            <div class="pm-stat-val" style="color:var(--green)">v2.3</div>
+            <div class="pm-stat-lbl">Current Ver</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCESS BANNER -->
+      <div class="access-banner">
+        <span>🔒</span>
+        <span><strong>Access:</strong> Anda adalah <strong>PM</strong> dengan full edit access. Project member only — staff lain di luar tim tidak bisa lihat.</span>
+      </div>
+
+      <!-- BREADCRUMB -->
+      <div class="file-header">
+        <div>
+          <div class="fh-title">📁 00. Overview</div>
+          <div class="fh-breadcrumb">project/api-gateway/00-overview/</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <input type="text" placeholder="🔍 Cari di project..." style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:var(--font);outline:none;width:200px">
+          <button class="btn btn-s">📋 List</button>
+        </div>
+      </div>
+
+      <!-- RECENT -->
+      <div class="sec-title">
+        <span>🕐 Baru Diupdate</span>
+      </div>
+      <div class="file-grid">
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v2.3</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">README.md</div>
+          <div class="fc-desc">Project overview, getting started, contributing guide.</div>
+          <div class="fc-footer">
+            <div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>Rizky H. · 2 jam lalu</div>
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v1.7</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">system-design.md</div>
+          <div class="fc-desc">High-level architecture, components, integration points.</div>
+          <div class="fc-footer">
+            <div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>Budi S. · 1 hari lalu</div>
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v3.2</div>
+          <div class="fc-icon api">🔌</div>
+          <div class="fc-name">openapi.yaml</div>
+          <div class="fc-desc">OpenAPI 3.0 spec — 47 endpoints, auth schemes, models.</div>
+          <div class="fc-footer">
+            <div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>Budi S. · 2 hari lalu</div>
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v1.1</div>
+          <div class="fc-icon diagram">🎨</div>
+          <div class="fc-name">data-flow-diagram.png</div>
+          <div class="fc-desc">End-to-end data flow visualisasi (Excalidraw export).</div>
+          <div class="fc-footer">
+            <div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED)">AF</div>Ahmad F. · 3 hari lalu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARCHITECTURE -->
+      <div class="sec-title">
+        <span>🏗️ Architecture</span>
+        <span style="font-size:10px;color:var(--ink3)">5 dokumen</span>
+      </div>
+      <div class="file-grid">
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v1.7</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">system-design.md</div>
+          <div class="fc-desc">High-level architecture.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>1 hari</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v1.0</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">ADR-001 — Pilihan PostgreSQL</div>
+          <div class="fc-desc">Architecture Decision Record: kenapa PostgreSQL vs MongoDB.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>2 minggu</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v1.0</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">ADR-002 — Async Celery</div>
+          <div class="fc-desc">Decision: pakai Celery+Redis untuk background job.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>3 minggu</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v1.1</div>
+          <div class="fc-icon diagram">🎨</div>
+          <div class="fc-name">data-flow-diagram.png</div>
+          <div class="fc-desc">Visualisasi data flow.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED)">AF</div>3 hari</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v2.0</div>
+          <div class="fc-icon diagram">🎨</div>
+          <div class="fc-name">sequence-diagrams/</div>
+          <div class="fc-desc">7 sequence diagrams untuk critical flows.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">SR</div>5 hari</div></div>
+        </div>
+      </div>
+
+      <!-- DEPLOYMENT -->
+      <div class="sec-title">
+        <span>🚀 Deployment &amp; Operations</span>
+        <span style="font-size:10px;color:var(--ink3)">8 dokumen</span>
+      </div>
+      <div class="file-grid">
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v3.1</div>
+          <div class="fc-icon code">💻</div>
+          <div class="fc-name">docker-compose.yml</div>
+          <div class="fc-desc">Local + staging environment definition.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>4 hari</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--bl);color:var(--blue)">v2.5</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">deployment-guide.md</div>
+          <div class="fc-desc">Step-by-step deploy ke production (Docker, Nginx, SSL).</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>1 minggu</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--ol);color:var(--orange)">DRAFT</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">disaster-recovery-plan.md</div>
+          <div class="fc-desc">Backup strategy, restoration, RPO/RTO.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>Draft</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v1.2</div>
+          <div class="fc-icon md">📝</div>
+          <div class="fc-name">runbook-oncall.md</div>
+          <div class="fc-desc">Common incidents + step-by-step resolution.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>2 minggu</div></div>
+        </div>
+      </div>
+
+      <!-- CLIENT DELIVERABLES -->
+      <div class="sec-title">
+        <span>📤 Client Deliverables</span>
+        <span class="tag tp" style="font-size:9px">External</span>
+      </div>
+      <div class="file-grid">
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v1.0</div>
+          <div class="fc-icon pdf">📕</div>
+          <div class="fc-name">Telkom_API_Documentation.pdf</div>
+          <div class="fc-desc">Versi clean untuk client, di-share via secure link.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>10 hari</div></div>
+        </div>
+        <div class="file-card">
+          <div class="v-chip" style="background:var(--gl);color:var(--green)">v1.0</div>
+          <div class="fc-icon pdf">📕</div>
+          <div class="fc-name">SLA_Telkom.pdf</div>
+          <div class="fc-desc">Signed SLA dengan Telkom.</div>
+          <div class="fc-footer"><div class="fc-author"><div class="fc-mini-av" style="background:linear-gradient(135deg,#30D158,#00C7BE)">RW</div>2 bulan</div></div>
+        </div>
+      </div>
+
+      <!-- ACCESS NOTE -->
+      <div style="margin-top:18px;padding:14px;background:var(--bl);border-radius:var(--rm);font-size:12px;color:var(--ink2);display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px">🔒</span>
+        <div>
+          <strong>Access control:</strong> Dokumentasi ini hanya bisa diakses 6 member project. Setiap edit/upload ter-version dan tercatat di audit log. Untuk approval external deliverable, gunakan flow approval PM → C-Level.
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</div>
+</body>
+</html>

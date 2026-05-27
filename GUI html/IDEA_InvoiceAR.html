@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Invoice & AR Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#30D158,#00C7BE);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--gl);color:var(--green)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--green);color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--green);color:#fff}.btn-p:hover{background:#28b549}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-red{background:var(--red);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* AR HEADLINE */
+.ar-hero{background:linear-gradient(135deg,var(--green) 0%,#00C7BE 100%);border-radius:var(--r);padding:24px 28px;color:#fff;margin-bottom:18px;display:flex;align-items:center;gap:30px;position:relative;overflow:hidden}
+.ar-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:rgba(255,255,255,.08);border-radius:50%}
+.ar-hero-item{position:relative;z-index:1}
+.ar-hero-lbl{font-size:11px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.ar-hero-val{font-size:32px;font-weight:800;font-family:var(--mono);letter-spacing:-.8px}
+.ar-hero-sub{font-size:11px;opacity:.85;margin-top:3px}
+.ar-divider{width:1px;height:54px;background:rgba(255,255,255,.2);position:relative;z-index:1}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:flex-start;gap:10px}
+.kpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.kpi-info{flex:1}
+.kpi-val{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px;margin-bottom:2px}
+.kpi-lbl{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* AGING BUCKETS */
+.aging-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:18px}
+.aging-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.aging-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.aging-bucket{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:14px;text-align:center;position:relative;overflow:hidden}
+.aging-bucket.overdue{border-color:rgba(255,67,58,.3);background:linear-gradient(135deg,var(--rl),#FFEFEE)}
+.aging-bucket.h7{border-color:rgba(255,159,10,.3);background:linear-gradient(135deg,var(--ol),#FFF8F0)}
+.aging-range{font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.aging-amount{font-size:18px;font-weight:800;font-family:var(--mono);letter-spacing:-.4px}
+.aging-count{font-size:11px;color:var(--ink3);margin-top:3px;font-weight:600}
+
+/* INVOICE TABLE */
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.inv-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.inv-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.inv-tabs{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px}
+.inv-tab{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink3);font-family:var(--font)}
+.inv-tab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+.inv-grid-head{display:grid;grid-template-columns:0.9fr 1.4fr 1.6fr 0.8fr 1fr 1fr 0.9fr 0.7fr;gap:10px;padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px}
+.inv-row{display:grid;grid-template-columns:0.9fr 1.4fr 1.6fr 0.8fr 1fr 1fr 0.9fr 0.7fr;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border2);font-size:12px;align-items:center;cursor:pointer;transition:background .12s}
+.inv-row:last-child{border-bottom:none}
+.inv-row:hover{background:var(--bg)}
+.inv-row.urgent{background:linear-gradient(90deg,#FFEFEE 0%,transparent 100%)}
+.inv-row.urgent::before{display:none}
+.inv-no{font-family:var(--mono);font-weight:700;font-size:11px;color:var(--blue)}
+.inv-client{font-weight:700}.inv-client-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.inv-amt{font-family:var(--mono);font-weight:700;text-align:right;font-size:13px}
+.inv-paid{font-family:var(--mono);text-align:right;color:var(--green);font-size:12px;font-weight:600}
+.inv-aging{font-size:11px;font-weight:700;text-align:center}
+.inv-aging.red{color:var(--red)}
+.inv-aging.orange{color:var(--orange)}
+.inv-aging.green{color:var(--green)}
+
+/* PROGRESS PILL */
+.pay-pill{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:3px}
+.pay-pill-fill{height:100%;background:var(--green);border-radius:3px}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:24px;margin-top:6px}
+.timeline::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.tl-item{position:relative;padding:6px 0 10px;font-size:11px}
+.tl-dot{position:absolute;left:-20px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border)}
+.tl-dot.blue{background:var(--blue)}.tl-dot.orange{background:var(--orange)}.tl-dot.red{background:var(--red)}
+.tl-date{font-size:9px;color:var(--ink3);font-weight:600}
+.tl-title{font-weight:700;font-size:12px}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Finance Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">DR</div><div><div class="sb-uname">Dewi Ratnasari</div><div class="sb-urole">GM · Finance</div></div></div>
+  <div class="sb-sec">Dept. Finance &amp; Tax</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">💵</div>Transaksi &amp; CoA</div>
+    <div class="ni"><div class="ni-ic">📑</div>Laporan Keuangan</div>
+    <div class="ni active"><div class="ni-ic">🧾</div>Invoice &amp; AR</div>
+    <div class="ni"><div class="ni-ic">🛒</div>Pengadaan</div>
+    <div class="ni"><div class="ni-ic">💰</div>Payroll Verify</div>
+    <div class="ni"><div class="ni-ic">↩️</div>Reimbursement</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Finance <span style="color:var(--border)">/</span> <strong>Invoice &amp; AR Tracking</strong></div>
+    <div>
+      <button class="btn btn-s">📊 Export CSV</button>
+      <button class="btn btn-p">+ Invoice Baru</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- AR HERO -->
+    <div class="ar-hero">
+      <div class="ar-hero-item">
+        <div class="ar-hero-lbl">Total AR (Outstanding)</div>
+        <div class="ar-hero-val">Rp 3,84 M</div>
+        <div class="ar-hero-sub">18 invoice belum lunas</div>
+      </div>
+      <div class="ar-divider"></div>
+      <div class="ar-hero-item">
+        <div class="ar-hero-lbl">Paid Bulan Ini</div>
+        <div class="ar-hero-val">Rp 2,15 M</div>
+        <div class="ar-hero-sub">9 invoice · target Rp 2,5M</div>
+      </div>
+      <div class="ar-divider"></div>
+      <div class="ar-hero-item">
+        <div class="ar-hero-lbl">Overdue</div>
+        <div class="ar-hero-val">Rp 850 jt</div>
+        <div class="ar-hero-sub">4 invoice · perlu follow-up</div>
+      </div>
+      <div class="ar-divider"></div>
+      <div class="ar-hero-item">
+        <div class="ar-hero-lbl">DSO Average</div>
+        <div class="ar-hero-val">38 hari</div>
+        <div class="ar-hero-sub">Target ≤30 hari</div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--bl);color:var(--blue)">📤</div>
+        <div class="kpi-info">
+          <div class="kpi-val">14</div>
+          <div class="kpi-lbl">Sent — menunggu pembayaran</div>
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--ol);color:var(--orange)">⏳</div>
+        <div class="kpi-info">
+          <div class="kpi-val">7</div>
+          <div class="kpi-lbl">Partial — sebagian dibayar</div>
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--rl);color:var(--red)">🚨</div>
+        <div class="kpi-info">
+          <div class="kpi-val">4</div>
+          <div class="kpi-lbl">Overdue — follow-up urgent</div>
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--gl);color:var(--green)">✓</div>
+        <div class="kpi-info">
+          <div class="kpi-val">42</div>
+          <div class="kpi-lbl">Paid — bulan ini</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGING -->
+    <div class="aging-card">
+      <div class="aging-title">
+        <span>📅 Aging Analysis</span>
+        <select style="padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:var(--font);outline:none">
+          <option>Semua tipe</option>
+          <option>Project Client</option>
+          <option>Outsource</option>
+        </select>
+      </div>
+      <div class="aging-grid">
+        <div class="aging-bucket">
+          <div class="aging-range">Current (0–7 hari)</div>
+          <div class="aging-amount" style="color:var(--green)">Rp 1,2 M</div>
+          <div class="aging-count">6 invoice</div>
+        </div>
+        <div class="aging-bucket">
+          <div class="aging-range">8–30 hari</div>
+          <div class="aging-amount" style="color:var(--blue)">Rp 980 jt</div>
+          <div class="aging-count">5 invoice</div>
+        </div>
+        <div class="aging-bucket h7">
+          <div class="aging-range">31–60 hari</div>
+          <div class="aging-amount" style="color:#C2410C">Rp 810 jt</div>
+          <div class="aging-count">3 invoice</div>
+        </div>
+        <div class="aging-bucket overdue">
+          <div class="aging-range">61–90 hari</div>
+          <div class="aging-amount" style="color:var(--red)">Rp 600 jt</div>
+          <div class="aging-count">3 invoice · alert H+30</div>
+        </div>
+        <div class="aging-bucket overdue">
+          <div class="aging-range">&gt; 90 hari</div>
+          <div class="aging-amount" style="color:var(--red)">Rp 250 jt</div>
+          <div class="aging-count">1 invoice · escalate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICE TABLE -->
+    <div class="inv-card">
+      <div class="inv-head">
+        <div class="inv-title">🧾 Daftar Invoice</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="inv-tabs">
+            <button class="inv-tab active">Semua (25)</button>
+            <button class="inv-tab">Project (16)</button>
+            <button class="inv-tab">Outsource (9)</button>
+          </div>
+          <div class="inv-tabs">
+            <button class="inv-tab">All Status</button>
+            <button class="inv-tab active">Belum Lunas (18)</button>
+            <button class="inv-tab">Paid (42)</button>
+          </div>
+          <input type="text" placeholder="🔍 Cari invoice / client..." style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:var(--font);outline:none;width:200px">
+        </div>
+      </div>
+
+      <div class="inv-grid-head">
+        <div>No. Invoice</div>
+        <div>Client</div>
+        <div>Project / Outsource</div>
+        <div>Nilai</div>
+        <div>Status</div>
+        <div>Progress Bayar</div>
+        <div>Aging</div>
+        <div style="text-align:right">Aksi</div>
+      </div>
+
+      <!-- OVERDUE: H+45 -->
+      <div class="inv-row urgent" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-038</div>
+        <div>
+          <div class="inv-client">PT Sinar Mas Land</div>
+          <div class="inv-client-sub">PIC: Bp. Hartono</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">HRIS Implementation</div>
+          <div style="font-size:10px;color:var(--ink3)">Termin 2 of 3 · Project Client</div>
+        </div>
+        <div class="inv-amt">Rp 320 jt</div>
+        <div><span class="tag tr">🚨 Overdue</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">0% · Rp 0</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:0%;background:var(--red)"></div></div>
+        </div>
+        <div class="inv-aging red">H+45</div>
+        <div style="text-align:right;display:flex;justify-content:flex-end;gap:4px">
+          <button class="btn btn-red" style="font-size:10px;padding:4px 8px">Follow-up</button>
+        </div>
+      </div>
+
+      <!-- OVERDUE: H+30 -->
+      <div class="inv-row urgent" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-031</div>
+        <div>
+          <div class="inv-client">PT Bank Nusantara</div>
+          <div class="inv-client-sub">PIC: Bu. Ratih</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">Outsource — 12 orang Mei</div>
+          <div style="font-size:10px;color:var(--ink3);display:flex;align-items:center;gap:4px">📅 BA signed 12 Mei · <span class="tag tp" style="font-size:9px;padding:1px 5px">Outsource</span></div>
+        </div>
+        <div class="inv-amt">Rp 240 jt</div>
+        <div><span class="tag tr">🚨 Overdue</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--orange)">42% · Rp 100 jt</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:42%;background:var(--orange)"></div></div>
+        </div>
+        <div class="inv-aging red">H+32</div>
+        <div style="text-align:right"><button class="btn btn-red" style="font-size:10px;padding:4px 8px">Follow-up</button></div>
+      </div>
+
+      <!-- OVERDUE: H+14 -->
+      <div class="inv-row" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-029</div>
+        <div>
+          <div class="inv-client">PT Indofood Sukses Makmur</div>
+          <div class="inv-client-sub">PIC: Bp. Wijayanto</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">Web Portal Redesign</div>
+          <div style="font-size:10px;color:var(--ink3)">Termin 1 of 2 · Project Client</div>
+        </div>
+        <div class="inv-amt">Rp 180 jt</div>
+        <div><span class="tag to">⚠️ Late</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">0% · Rp 0</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:0%;background:var(--red)"></div></div>
+        </div>
+        <div class="inv-aging orange">H+14</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">Reminder</button></div>
+      </div>
+
+      <!-- SENT, on-time -->
+      <div class="inv-row" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-040</div>
+        <div>
+          <div class="inv-client">PT Telkom Indonesia</div>
+          <div class="inv-client-sub">PIC: Bp. Hendri Santoso</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">API Gateway Integration</div>
+          <div style="font-size:10px;color:var(--ink3)">Termin 2 of 3 · auto-trigger MS-2 ✓</div>
+        </div>
+        <div class="inv-amt">Rp 312 jt</div>
+        <div><span class="tag tb">📤 Sent</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">0% · Rp 0</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:0%;background:var(--green)"></div></div>
+        </div>
+        <div class="inv-aging green">H+7</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">Track</button></div>
+      </div>
+
+      <!-- PARTIAL -->
+      <div class="inv-row" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-035</div>
+        <div>
+          <div class="inv-client">PT Astra International</div>
+          <div class="inv-client-sub">PIC: Bp. Soegiarto</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">IT Consulting Q2</div>
+          <div style="font-size:10px;color:var(--ink3)">Direktur-driven deal · Termin 1 of 2</div>
+        </div>
+        <div class="inv-amt">Rp 600 jt</div>
+        <div><span class="tag to">⏳ Partial</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--orange)">50% · Rp 300 jt</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:50%;background:var(--orange)"></div></div>
+        </div>
+        <div class="inv-aging green">H+5</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">View</button></div>
+      </div>
+
+      <!-- SENT to PT Pertamina -->
+      <div class="inv-row" onclick="openDetail(this)">
+        <div class="inv-no">INV-2026-039</div>
+        <div>
+          <div class="inv-client">PT Pertamina (Persero)</div>
+          <div class="inv-client-sub">PIC: Bu. Anita Kusuma</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">Outsource — 8 orang Mei</div>
+          <div style="font-size:10px;color:var(--ink3)">📅 BA signed 14 Mei · <span class="tag tp" style="font-size:9px;padding:1px 5px">Outsource</span></div>
+        </div>
+        <div class="inv-amt">Rp 192 jt</div>
+        <div><span class="tag tb">📤 Sent</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">0% · Rp 0</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:0%;background:var(--green)"></div></div>
+        </div>
+        <div class="inv-aging green">H+3</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">Track</button></div>
+      </div>
+
+      <!-- PAID -->
+      <div class="inv-row" onclick="openDetail(this)" style="opacity:.7">
+        <div class="inv-no">INV-2026-037</div>
+        <div>
+          <div class="inv-client">PT Telkom Indonesia</div>
+          <div class="inv-client-sub">PIC: Bp. Hendri Santoso</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">API Gateway Integration</div>
+          <div style="font-size:10px;color:var(--ink3)">Termin 1 of 3 · Kick-off</div>
+        </div>
+        <div class="inv-amt">Rp 234 jt</div>
+        <div><span class="tag tg">✓ Paid</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--green)">100% · Rp 234 jt</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:100%"></div></div>
+        </div>
+        <div class="inv-aging">—</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">📥</button></div>
+      </div>
+
+      <!-- PAID -->
+      <div class="inv-row" onclick="openDetail(this)" style="opacity:.7">
+        <div class="inv-no">INV-2026-036</div>
+        <div>
+          <div class="inv-client">PT Bank Nusantara</div>
+          <div class="inv-client-sub">PIC: Bu. Ratih</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:12px">Outsource — 12 orang April</div>
+          <div style="font-size:10px;color:var(--ink3)"><span class="tag tp" style="font-size:9px;padding:1px 5px">Outsource</span></div>
+        </div>
+        <div class="inv-amt">Rp 240 jt</div>
+        <div><span class="tag tg">✓ Paid</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--green)">100% · Rp 240 jt</div>
+          <div class="pay-pill"><div class="pay-pill-fill" style="width:100%"></div></div>
+        </div>
+        <div class="inv-aging">—</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">📥</button></div>
+      </div>
+
+    </div>
+
+    <!-- ALERTS PANEL -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+          🔔 Alert Schedule
+        </div>
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:14px">Auto-notif Finance saat invoice lewat due date:</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--ol);border-radius:var(--rs)">
+            <span style="font-size:14px;color:var(--orange);font-weight:700;font-family:var(--mono);min-width:40px;text-align:center">H+7</span>
+            <div style="flex:1;font-size:12px">Reminder lembut ke Finance PIC + Sales PIC</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--ol);border-radius:var(--rs)">
+            <span style="font-size:14px;color:#C2410C;font-weight:700;font-family:var(--mono);min-width:40px;text-align:center">H+14</span>
+            <div style="flex:1;font-size:12px">Email formal ke client + escalate ke GM Sales</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--rl);border-radius:var(--rs)">
+            <span style="font-size:14px;color:var(--red);font-weight:700;font-family:var(--mono);min-width:40px;text-align:center">H+30</span>
+            <div style="flex:1;font-size:12px">Auto-display di Executive Dashboard + alert ke Direktur Utama</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+          📈 Top 3 Client by AR
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:var(--rs)">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF453A,#C0392B);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">SM</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:12px">PT Sinar Mas Land</div>
+              <div style="font-size:10px;color:var(--red)">1 invoice overdue 45 hari</div>
+            </div>
+            <div style="font-family:var(--mono);font-weight:800;font-size:14px">Rp 320jt</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:var(--rs)">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#34AADC);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">TI</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:12px">PT Telkom Indonesia</div>
+              <div style="font-size:10px;color:var(--ink3)">2 invoice sent, on-time</div>
+            </div>
+            <div style="font-family:var(--mono);font-weight:800;font-size:14px">Rp 312jt</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:var(--rs)">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF9F0A,#FF6B00);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">BN</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:12px">PT Bank Nusantara</div>
+              <div style="font-size:10px;color:var(--orange)">1 partial · 1 overdue</div>
+            </div>
+            <div style="font-family:var(--mono);font-weight:800;font-size:14px">Rp 240jt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+function openDetail(el){
+  document.querySelectorAll('.inv-row').forEach(r=>r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

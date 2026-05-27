@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Pengumuman & Broadcast</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#BF5AF2,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--pl);color:var(--purple)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--purple);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--purple);color:#fff}.btn-p:hover{background:#9933CC}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow:hidden;display:flex}
+.feed{flex:1;overflow-y:auto;padding:24px;max-width:780px;margin:0 auto;width:100%}
+.composer{width:360px;flex-shrink:0;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;padding:20px}
+.feed-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.feed-h-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.feed-filter{display:flex;gap:6px}
+.fbtn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2)}
+.fbtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;cursor:pointer;transition:all .15s}
+.bc:hover{border-color:rgba(191,90,242,.3);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.bc.pinned{background:linear-gradient(135deg,#FFFBEB 0%,#FFFFFF 50%);border-color:rgba(255,159,10,.3)}
+.bc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.bc-author{display:flex;align-items:center;gap:10px}
+.bc-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.bc-author-info{display:flex;flex-direction:column}
+.bc-name{font-size:13px;font-weight:700}.bc-meta{font-size:11px;color:var(--ink3)}
+.bc-time{font-size:11px;color:var(--ink3);font-weight:500}
+.bc-title{font-size:16px;font-weight:800;letter-spacing:-.3px;margin-bottom:6px}
+.bc-body{font-size:13px;color:var(--ink2);line-height:1.65;margin-bottom:12px}
+.bc-body strong{color:var(--ink);font-weight:700}
+.bc-attach{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.bc-file{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--rs);font-size:11px;color:var(--ink2);cursor:pointer}
+.bc-footer{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border2)}
+.bc-audience{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--ink3)}
+.bc-stats{display:flex;gap:12px;font-size:11px;color:var(--ink3);font-weight:600}
+.bc-stat{display:flex;align-items:center;gap:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+/* COMPOSER */
+.comp-title{font-size:15px;font-weight:800;margin-bottom:14px}
+.comp-field{margin-bottom:14px}
+.comp-label{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
+.comp-input,.comp-select,.comp-textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);font-size:13px;outline:none;background:var(--surface)}
+.comp-textarea{resize:vertical;min-height:90px}
+.target-chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2)}
+.chip.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+.toolbar-rich{display:flex;gap:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:var(--rs) var(--rs) 0 0}
+.t-btn{padding:4px 9px;border-radius:5px;font-size:12px;cursor:pointer;background:transparent;border:none;color:var(--ink2);font-family:var(--font);font-weight:700}
+.t-btn:hover{background:var(--surface);color:var(--ink)}
+.preview-card{background:var(--bg);border:1px dashed var(--border);border-radius:var(--rs);padding:14px;margin-top:14px}
+.preview-label{font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni active"><div class="ni-ic">📢</div>Pengumuman</div>
+    <div class="ni"><div class="ni-ic">🎉</div>Event</div>
+    <div class="ni"><div class="ni-ic">📚</div>Info Perusahaan</div>
+    <div class="ni"><div class="ni-ic">💼</div>Cuti &amp; Reimburse</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Pengumuman &amp; Broadcast</strong></div>
+    <div><button class="btn btn-p">+ Buat Broadcast</button></div>
+  </div>
+  <div class="content">
+    <main class="feed">
+      <div class="feed-header">
+        <div class="feed-h-title">Pengumuman</div>
+        <div class="feed-filter">
+          <button class="fbtn active">Semua</button>
+          <button class="fbtn">📌 Pinned</button>
+          <button class="fbtn">Untuk Saya</button>
+          <button class="fbtn">Dept Saya</button>
+        </div>
+      </div>
+
+      <!-- PINNED -->
+      <div class="bc pinned">
+        <div class="bc-head">
+          <div class="bc-author">
+            <div class="bc-av" style="background:linear-gradient(135deg,#0A0A0F,#3C3C43)">RA</div>
+            <div class="bc-author-info">
+              <div class="bc-name">Rudi Atmadja <span class="tag tp" style="margin-left:4px">👑 Direktur Utama</span></div>
+              <div class="bc-meta">📌 Pinned · 5 hari lalu</div>
+            </div>
+          </div>
+          <div class="bc-time">22 Mei 2026</div>
+        </div>
+        <div class="bc-title">🎉 IDEA Mencapai Target Q1 2026 — Apresiasi untuk Seluruh Tim</div>
+        <div class="bc-body">
+          Selamat untuk seluruh tim IDEA! Quarter 1 2026 berhasil mencapai <strong>105% dari target revenue</strong>. Pencapaian ini hasil kerja keras setiap orang di setiap departemen. Sebagai bentuk apresiasi, akan ada <strong>bonus performa khusus Q1</strong> yang akan dimasukkan ke payroll Juni 2026. Detail lebih lanjut akan dikomunikasikan via Operation.
+        </div>
+        <div class="bc-attach">
+          <div class="bc-file">📄 Q1_2026_Performance_Report.pdf · 2,4 MB</div>
+          <div class="bc-file">🖼️ team_celebration.jpg · 1,1 MB</div>
+        </div>
+        <div class="bc-footer">
+          <div class="bc-audience"><span class="tag tgr">🌐 Global</span> · semua 156 karyawan</div>
+          <div class="bc-stats">
+            <span class="bc-stat">👁 142 dibaca</span>
+            <span class="bc-stat">❤️ 89</span>
+            <span class="bc-stat">💬 23 komentar</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RSVP REQUIRED -->
+      <div class="bc">
+        <div class="bc-head">
+          <div class="bc-author">
+            <div class="bc-av" style="background:linear-gradient(135deg,#30D158,#00C7BE)">RW</div>
+            <div class="bc-author-info">
+              <div class="bc-name">Reni Wahyuni <span class="tag tgr" style="margin-left:4px">GM Operation</span></div>
+              <div class="bc-meta">2 hari lalu · RSVP diperlukan</div>
+            </div>
+          </div>
+          <div class="bc-time">24 Mei 2026</div>
+        </div>
+        <div class="bc-title">All-Hands Meeting Q2 — 30 Mei 2026</div>
+        <div class="bc-body">
+          Mohon clear schedule untuk <strong>All-Hands Meeting Q2 2026</strong> yang akan dilaksanakan: <br>
+          📅 <strong>Tanggal:</strong> Sabtu, 30 Mei 2026 · 10:00–12:00 WIB<br>
+          📍 <strong>Lokasi:</strong> Auditorium Lt.5 + Zoom hybrid<br>
+          Agenda: review pencapaian Q1, target Q2, dan announcement strategic initiative dari Direksi.<br>
+          Mohon konfirmasi kehadiran (RSVP) sebelum 28 Mei 2026.
+        </div>
+        <div class="bc-footer">
+          <div class="bc-audience"><span class="tag tgr">🌐 Global</span> · RSVP required</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Hadir Hybrid</button>
+            <button class="btn btn-p" style="font-size:11px;padding:4px 10px">✓ Hadir On-site</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPT BROADCAST -->
+      <div class="bc">
+        <div class="bc-head">
+          <div class="bc-author">
+            <div class="bc-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">IW</div>
+            <div class="bc-author-info">
+              <div class="bc-name">Indra Wijaya <span class="tag tb" style="margin-left:4px">CTO</span></div>
+              <div class="bc-meta">3 hari lalu</div>
+            </div>
+          </div>
+          <div class="bc-time">23 Mei 2026</div>
+        </div>
+        <div class="bc-title">Tech Talk Internal — "AI in Production" oleh Tim R&amp;D</div>
+        <div class="bc-body">
+          Tim R&amp;D AI Code Review akan sharing learning mereka dalam <strong>internal tech talk</strong>:<br>
+          🗓️ Kamis, 28 Mei 2026 · 14:00–15:30 WIB · Ruang Kolaborasi Lt.3<br>
+          Topik: deployment ML model, prompt engineering best practice, evaluasi LLM untuk code review. Open Q&amp;A. Snacks disediakan.
+        </div>
+        <div class="bc-footer">
+          <div class="bc-audience"><span class="tag tb">🔵 Teknologi</span> · 38 orang</div>
+          <div class="bc-stats">
+            <span class="bc-stat">👁 35 dibaca</span>
+            <span class="bc-stat">✓ 28 RSVP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- POLICY UPDATE -->
+      <div class="bc">
+        <div class="bc-head">
+          <div class="bc-author">
+            <div class="bc-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">RW</div>
+            <div class="bc-author-info">
+              <div class="bc-name">Reni Wahyuni <span class="tag tgr" style="margin-left:4px">GM Operation</span></div>
+              <div class="bc-meta">1 minggu lalu</div>
+            </div>
+          </div>
+          <div class="bc-time">18 Mei 2026</div>
+        </div>
+        <div class="bc-title">📋 Update Kebijakan Cuti — Efektif 1 Juni 2026</div>
+        <div class="bc-body">
+          Sehubungan dengan review tahunan, ada beberapa update kebijakan cuti efektif 1 Juni 2026:<br>
+          • Cuti tahunan tetap 12 hari/tahun, kini bisa di-carry forward maksimal 4 hari ke tahun berikutnya (sebelumnya: hangus)<br>
+          • Cuti melahirkan ditambahkan opsi <strong>cuti ayah 3 hari</strong> (sebelumnya tidak ada)<br>
+          • Cuti khusus pernikahan dari 3 menjadi 5 hari<br>
+          Detail lengkap di handbook (Info Perusahaan).
+        </div>
+        <div class="bc-attach">
+          <div class="bc-file">📄 Update_Kebijakan_Cuti_2026.pdf · 480 KB</div>
+        </div>
+        <div class="bc-footer">
+          <div class="bc-audience"><span class="tag tgr">🌐 Global</span></div>
+          <div class="bc-stats">
+            <span class="bc-stat">👁 148 dibaca</span>
+            <span class="bc-stat">❤️ 67</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CELEBRATION -->
+      <div class="bc">
+        <div class="bc-head">
+          <div class="bc-author">
+            <div class="bc-av" style="background:linear-gradient(135deg,#BF5AF2,#FF453A)">SH</div>
+            <div class="bc-author-info">
+              <div class="bc-name">Siti Hartono <span class="tag tp" style="margin-left:4px">🎭 Wakil Direktur</span></div>
+              <div class="bc-meta">1 minggu lalu</div>
+            </div>
+          </div>
+          <div class="bc-time">19 Mei 2026</div>
+        </div>
+        <div class="bc-title">🎂 Karyawan Bulan Ini — Mei 2026</div>
+        <div class="bc-body">
+          Selamat untuk <strong>Budi Santoso</strong> (Senior Developer · Teknologi) terpilih sebagai <strong>Karyawan Bulan Mei 2026</strong>! Kontribusi luar biasa pada project API Gateway dan mentoring 3 junior developer. Penghargaan + bonus akan diberikan saat All-Hands Meeting Q2.
+        </div>
+        <div class="bc-footer">
+          <div class="bc-audience"><span class="tag tgr">🌐 Global</span></div>
+          <div class="bc-stats">
+            <span class="bc-stat">👁 120 dibaca</span>
+            <span class="bc-stat">❤️ 95</span>
+            <span class="bc-stat">🎉 42</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- COMPOSER -->
+    <aside class="composer">
+      <div class="comp-title">📢 Buat Broadcast</div>
+      <div class="comp-field">
+        <label class="comp-label">Judul</label>
+        <input type="text" class="comp-input" placeholder="Tulis judul yang clear &amp; specific...">
+      </div>
+      <div class="comp-field">
+        <label class="comp-label">Target Audience</label>
+        <div class="target-chips">
+          <button class="chip active">🌐 Global (156)</button>
+          <button class="chip">🔵 Teknologi (38)</button>
+          <button class="chip">🟠 Operation (28)</button>
+          <button class="chip">🟢 Finance (22)</button>
+          <button class="chip">🔴 Sales (26)</button>
+          <button class="chip">L1–L3 (Mgmt only)</button>
+          <button class="chip">L6 (Staff only)</button>
+        </div>
+      </div>
+      <div class="comp-field">
+        <label class="comp-label">Konten</label>
+        <div class="toolbar-rich">
+          <button class="t-btn"><strong>B</strong></button>
+          <button class="t-btn"><em>I</em></button>
+          <button class="t-btn">📎</button>
+          <button class="t-btn">🖼️</button>
+          <button class="t-btn">😊</button>
+          <button class="t-btn">@</button>
+        </div>
+        <textarea class="comp-textarea" style="border-top:none;border-radius:0 0 var(--rs) var(--rs)" placeholder="Tulis pesan dengan jelas...&#10;&#10;Tip: gunakan **bold** untuk penekanan, dan paragraf pendek untuk readability."></textarea>
+      </div>
+      <div class="comp-field">
+        <label class="comp-label">Opsi</label>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox"> 📌 Pin di atas (14 hari)</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox"> ✓ Wajib RSVP</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox"> 🔔 Push notifikasi</label>
+        </div>
+      </div>
+      <div class="comp-field">
+        <label class="comp-label">Jadwal Kirim</label>
+        <select class="comp-select">
+          <option>Kirim sekarang</option>
+          <option>Jadwalkan...</option>
+          <option>Simpan sebagai draft</option>
+        </select>
+      </div>
+      <div class="preview-card">
+        <div class="preview-label">Preview</div>
+        <div style="font-size:13px;color:var(--ink3)">Mulai mengetik untuk melihat preview...</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn btn-s">Draft</button>
+        <button class="btn btn-p">📤 Kirim</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</div>
+</body>
+</html>

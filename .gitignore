@@ -1,0 +1,151 @@
+# ─────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ─────────────────────────────────────────────
+# IDE / Editor
+# ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+.windsurf/
+.aider*
+*.code-workspace
+
+# ─────────────────────────────────────────────
+# Python (backend)
+# ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.env
+.env.local
+.env.*.local
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+celerybeat-schedule
+celerybeat.pid
+
+# ─────────────────────────────────────────────
+# Node.js (frontend)
+# ─────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn-integrity
+.pnp.*
+.pnp.js
+.yarn/
+.next/
+out/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
+
+# Build output
+build/
+dist/
+*.tsbuildinfo
+
+# ─────────────────────────────────────────────
+# Database
+# ─────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+postgres-data/
+pg_data/
+*.dump
+
+# ─────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────
+logs/
+*.log
+log/
+
+# ─────────────────────────────────────────────
+# Docker / Infra
+# ─────────────────────────────────────────────
+docker-compose.override.yml
+.docker/
+*.local.yml
+
+# ─────────────────────────────────────────────
+# Storage / Uploads (test data)
+# ─────────────────────────────────────────────
+uploads/
+storage/
+minio-data/
+test-data/local/
+
+# ─────────────────────────────────────────────
+# Secrets & Config
+# ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/
+
+# ─────────────────────────────────────────────
+# Backup files
+# ─────────────────────────────────────────────
+*.backup
+*.bak
+*.tmp
+*.temp
+IDEA_Negative_Cases.docx.backup
+
+# ─────────────────────────────────────────────
+# OS / System
+# ─────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─────────────────────────────────────────────
+# Office temporary files
+# ─────────────────────────────────────────────
+~$*.docx
+~$*.xlsx
+~$*.pptx
+.~lock.*

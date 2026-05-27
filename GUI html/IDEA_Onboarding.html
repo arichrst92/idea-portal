@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Complete Your Profile</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white:       #FFFFFF;
+    --off-white:   #F5F5F7;
+    --light-gray:  #E8E8ED;
+    --mid-gray:    #C7C7CC;
+    --text-muted:  #86868B;
+    --text-main:   #1D1D1F;
+    --text-sub:    #6E6E73;
+    --blue:        #0071E3;
+    --blue-hover:  #0077ED;
+    --blue-soft:   #EBF4FF;
+    --green:       #34C759;
+    --green-soft:  #F0FBF3;
+    --red:         #FF3B30;
+    --red-soft:    #FFF2F1;
+    --orange:      #FF9500;
+    --orange-soft: #FFF8EC;
+    --shadow-sm:   0 1px 3px rgba(0,0,0,0.07);
+    --shadow-md:   0 4px 20px rgba(0,0,0,0.07);
+    --shadow-lg:   0 20px 60px rgba(0,0,0,0.10);
+    --radius:      14px;
+    --radius-sm:   10px;
+    --radius-xs:   8px;
+    --font:        'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html, body {
+    min-height: 100%;
+    font-family: var(--font);
+    background: var(--off-white);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── TOP BAR ─────────────────────────────────────────────────── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-logo-mark {
+    width: 30px; height: 30px;
+    background: var(--text-main);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar-logo-mark svg { width: 16px; height: 16px; }
+  .topbar-logo-name { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #0071E3, #34AADC);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: white;
+  }
+  .topbar-name { font-size: 13px; font-weight: 500; color: var(--text-main); }
+  .topbar-nik  { font-size: 11px; color: var(--text-muted); }
+
+  .topbar-logout {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--light-gray);
+    border-radius: var(--radius-xs);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .topbar-logout:hover { color: var(--red); border-color: var(--red); }
+
+  /* ── MAIN LAYOUT ─────────────────────────────────────────────── */
+  .main {
+    min-height: 100vh;
+    padding: 80px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── GATE BANNER ─────────────────────────────────────────────── */
+  .gate-banner {
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(135deg, #0A0A0A 0%, #1a2744 100%);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gate-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 100% at 100% 50%, rgba(0,113,227,0.15), transparent);
+    pointer-events: none;
+  }
+  .gate-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,149,0,0.15);
+    border: 1px solid rgba(255,149,0,0.3);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    position: relative; z-index: 1;
+  }
+  .gate-text { position: relative; z-index: 1; }
+  .gate-title { font-size: 16px; font-weight: 600; color: white; margin-bottom: 4px; }
+  .gate-desc  { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+  /* ── PROGRESS STEPPER ────────────────────────────────────────── */
+  .stepper-wrap {
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 24px;
+  }
+
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: var(--radius);
+    padding: 18px 28px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(100% - 140px);
+    left: 140px;
+    height: 1px;
+    background: var(--light-gray);
+    z-index: 0;
+  }
+
+  .step.completed:not(:last-child)::after { background: var(--green); }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    position: relative; z-index: 1;
+  }
+
+  .step.pending   .step-num { background: var(--off-white); border: 1.5px solid var(--mid-gray); color: var(--text-muted); }
+  .step.active    .step-num { background: var(--blue); color: white; border: none; box-shadow: 0 0 0 4px rgba(0,113,227,0.15); }
+  .step.completed .step-num { background: var(--green); color: white; border: none; }
+
+  .step-info { z-index: 1; }
+  .step-label { font-size: 12px; font-weight: 500; color: var(--text-main); line-height: 1.3; }
+  .step-sublabel { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .step.pending .step-label { color: var(--text-muted); }
+
+  /* ── FORM CARD ───────────────────────────────────────────────── */
+  .form-card {
+    width: 100%;
+    max-width: 720px;
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .form-card-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--light-gray);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .card-header-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .card-header-text {}
+  .card-header-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 3px; }
+  .card-header-sub   { font-size: 13px; color: var(--text-sub); }
+
+  .form-card-body { padding: 28px 32px; }
+
+  /* ── SECTION DIVIDER ─────────────────────────────────────────── */
+  .section-divider {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin: 28px 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--light-gray);
+  }
+  .section-divider:first-child { margin-top: 0; }
+
+  /* ── FIELD GRID ──────────────────────────────────────────────── */
+  .field-grid { display: grid; gap: 18px; }
+  .field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* ── FIELD ───────────────────────────────────────────────────── */
+  .field-group { display: flex; flex-direction: column; }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .field-required {
+    color: var(--red);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .field-optional {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    background: var(--off-white);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .field-wrapper { position: relative; }
+
+  .field-input, .field-select, .field-textarea {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-family: var(--font);
+    font-weight: 400;
+    color: var(--text-main);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .field-input.has-prefix  { padding-left: 44px; }
+  .field-input.has-suffix  { padding-right: 44px; }
+  .field-input.has-both    { padding-left: 44px; padding-right: 44px; }
+
+  .field-textarea {
+    height: auto;
+    min-height: 88px;
+    padding: 12px 14px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .field-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2386868B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .field-input::placeholder, .field-textarea::placeholder { color: var(--mid-gray); }
+
+  .field-input:hover, .field-select:hover, .field-textarea:hover { border-color: var(--mid-gray); }
+
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0,113,227,0.10);
+  }
+
+  .field-input.valid   { border-color: var(--green); }
+  .field-input.invalid { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,59,48,0.08); }
+  .field-input.checking { border-color: var(--orange); }
+
+  /* Prefix / Suffix */
+  .field-prefix, .field-suffix {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    font-size: 13px; font-weight: 400;
+    pointer-events: none;
+    transition: color 0.15s;
+  }
+  .field-prefix { left: 14px; color: var(--text-muted); }
+  .field-suffix { right: 14px; }
+
+  .field-status-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .field-status-icon.valid    { display: flex; background: var(--green); }
+  .field-status-icon.invalid  { display: flex; background: var(--red); }
+  .field-status-icon.checking { display: flex; background: var(--orange); }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .field-hint.success { color: var(--green); }
+  .field-hint.error   { color: var(--red); }
+  .field-hint.warning { color: var(--orange); }
+  .field-hint.checking { color: var(--orange); }
+
+  /* ── PHOTO UPLOAD ────────────────────────────────────────────── */
+  .photo-upload-area {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .photo-preview {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0071E3, #34AADC);
+    border: 3px solid var(--white);
+    box-shadow: 0 0 0 1.5px var(--light-gray);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: white;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .photo-preview img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .photo-upload-info {}
+  .photo-upload-title { font-size: 14px; font-weight: 500; margin-bottom: 5px; }
+  .photo-upload-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+
+  .btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--blue);
+    background: var(--blue-soft);
+    border: none;
+    border-radius: var(--radius-xs);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .btn-upload:hover { background: #D9EBFC; }
+
+  /* ── LINKEDIN FIELD SPECIAL ──────────────────────────────────── */
+  .linkedin-validator {
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: var(--off-white);
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--light-gray);
+    display: none;
+  }
+  .linkedin-validator.visible { display: block; }
+
+  .linkedin-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .linkedin-avatar {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: #0A66C2;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .linkedin-info {}
+  .linkedin-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .linkedin-handle { font-size: 12px; color: var(--text-muted); }
+
+  .linkedin-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--light-gray);
+  }
+  .linkedin-status.valid   { color: var(--green); }
+  .linkedin-status.invalid { color: var(--red); }
+  .linkedin-status.checking { color: var(--orange); }
+
+  /* ── FORM NAV ─────────────────────────────────────────────────── */
+  .form-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px 24px;
+    border-top: 1px solid var(--light-gray);
+    background: var(--off-white);
+  }
+
+  .progress-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .progress-bar-wrap {
+    width: 120px;
+    height: 4px;
+    background: var(--light-gray);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 33%;
+  }
+
+  .nav-buttons { display: flex; gap: 10px; align-items: center; }
+
+  .btn-prev {
+    height: 40px;
+    padding: 0 18px;
+    background: var(--white);
+    border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-prev:hover { border-color: var(--mid-gray); }
+
+  .btn-next {
+    height: 40px;
+    padding: 0 22px;
+    background: var(--blue);
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,113,227,0.25);
+  }
+  .btn-next:hover { background: var(--blue-hover); transform: translateY(-1px); }
+  .btn-next:disabled { opacity: 0.5; pointer-events: none; }
+
+  .btn-submit-final {
+    height: 40px;
+    padding: 0 24px;
+    background: var(--green);
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    display: none; align-items: center; gap: 8px;
+    box-shadow: 0 2px 8px rgba(52,199,89,0.3);
+  }
+  .btn-submit-final:hover { background: #2DB94E; transform: translateY(-1px); }
+  .btn-submit-final.show { display: flex; }
+
+  /* ── SECTION PANELS ──────────────────────────────────────────── */
+  .section-panel { display: none; }
+  .section-panel.active { display: block; }
+
+  /* ── GENDER RADIO ────────────────────────────────────────────── */
+  .radio-group { display: flex; gap: 10px; }
+  .radio-option {
+    flex: 1;
+    border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 10px;
+    user-select: none;
+  }
+  .radio-option:hover { border-color: var(--mid-gray); }
+  .radio-option.selected { border-color: var(--blue); background: var(--blue-soft); }
+  .radio-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--mid-gray);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .radio-option.selected .radio-dot { border-color: var(--blue); background: var(--blue); }
+  .radio-dot-inner { width: 7px; height: 7px; border-radius: 50%; background: white; display: none; }
+  .radio-option.selected .radio-dot-inner { display: block; }
+  .radio-label { font-size: 14px; font-weight: 500; }
+  .radio-emoji { font-size: 16px; }
+
+  /* ── COMPLETION SUCCESS ──────────────────────────────────────── */
+  .success-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px;
+    text-align: center;
+  }
+  .success-screen.show { display: flex; }
+
+  .success-icon {
+    width: 72px; height: 72px;
+    background: var(--green-soft);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin-bottom: 24px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .success-title { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; }
+  .success-desc  { font-size: 15px; color: var(--text-sub); max-width: 380px; line-height: 1.6; margin-bottom: 28px; }
+
+  .btn-enter-portal {
+    height: 48px;
+    padding: 0 32px;
+    background: var(--blue);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 2px 12px rgba(0,113,227,0.3);
+  }
+  .btn-enter-portal:hover { background: var(--blue-hover); transform: translateY(-1px); }
+
+  /* ── FIELD ANIMATIONS ────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .section-panel.active .field-group {
+    animation: fadeUp 0.35s ease both;
+  }
+  .section-panel.active .field-group:nth-child(1) { animation-delay: 0.05s; }
+  .section-panel.active .field-group:nth-child(2) { animation-delay: 0.10s; }
+  .section-panel.active .field-group:nth-child(3) { animation-delay: 0.15s; }
+  .section-panel.active .field-group:nth-child(4) { animation-delay: 0.20s; }
+  .section-panel.active .field-group:nth-child(5) { animation-delay: 0.25s; }
+
+  /* ── SPINNER ─────────────────────────────────────────────────── */
+  .spinner-sm {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,149,0,0.3);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── COMPLETE BADGE ──────────────────────────────────────────── */
+  .complete-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .complete-badge.done { background: var(--green-soft); color: var(--green); }
+  .complete-badge.pending { background: var(--orange-soft); color: var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ──────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.8"/>
+      </svg>
+    </div>
+    <span class="topbar-logo-name">IDEA</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="topbar-avatar">RH</div>
+      <div>
+        <div class="topbar-name">Rizky Hanafi</div>
+        <div class="topbar-nik">EMP-047 · Dept. Teknologi</div>
+      </div>
+    </div>
+    <button class="topbar-logout">Keluar</button>
+  </div>
+</div>
+
+<!-- ── MAIN ────────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Gate Banner -->
+  <div class="gate-banner">
+    <div class="gate-icon">⚠️</div>
+    <div class="gate-text">
+      <div class="gate-title">Lengkapi profil Anda sebelum menggunakan portal</div>
+      <div class="gate-desc">Akses ke semua fitur IDEA portal akan dibuka setelah seluruh data pribadi Anda terisi dengan lengkap dan terverifikasi.</div>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper-wrap">
+    <div class="stepper">
+
+      <div class="step active" id="step1" onclick="goToStep(1)">
+        <div class="step-num" id="stepNum1">1</div>
+        <div class="step-info">
+          <div class="step-label">Data Pribadi</div>
+          <div class="step-sublabel">Identitas & kontak</div>
+        </div>
+      </div>
+
+      <div class="step pending" id="step2" onclick="goToStep(2)">
+        <div class="step-num" id="stepNum2">2</div>
+        <div class="step-info">
+          <div class="step-label">Data Pekerjaan</div>
+          <div class="step-sublabel">Bank & perpajakan</div>
+        </div>
+      </div>
+
+      <div class="step pending" id="step3" onclick="goToStep(3)">
+        <div class="step-num" id="stepNum3">3</div>
+        <div class="step-info">
+          <div class="step-label">Profil & LinkedIn</div>
+          <div class="step-sublabel">Foto & verifikasi</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="form-card" id="formCard">
+
+    <!-- ── STEP 1: DATA PRIBADI ───────────────────────────────────── -->
+    <div id="panel1" class="section-panel active">
+
+      <div class="form-card-header">
+        <div class="card-header-icon" style="background:#EBF4FF;">👤</div>
+        <div class="card-header-text">
+          <div class="card-header-title">Data Pribadi</div>
+          <div class="card-header-sub">Informasi identitas dan kontak Anda</div>
+        </div>
+      </div>
+
+      <div class="form-card-body">
+
+        <!-- Photo -->
+        <div class="section-divider">Foto Profil</div>
+        <div class="field-group">
+          <div class="photo-upload-area">
+            <div class="photo-preview" id="photoPreview">
+              RH
+              <img id="photoImg" src="" alt="">
+            </div>
+            <div class="photo-upload-info">
+              <div class="photo-upload-title">Foto Profil <span class="complete-badge pending" id="photoBadge">⚠ Belum diupload</span></div>
+              <div class="photo-upload-desc">Upload foto resmi Anda. Format JPG/PNG, ukuran maksimal 5MB.<br>Foto akan digunakan di org chart dan profil portal.</div>
+              <button class="btn-upload" onclick="triggerUpload()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 4l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Upload Foto
+              </button>
+              <input type="file" id="photoFile" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Identity -->
+        <div class="section-divider">Identitas</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">Nama Lengkap <span class="field-required">*</span></label>
+            <div class="field-wrapper">
+              <input type="text" class="field-input" value="Rizky Hanafi" readonly style="background:var(--off-white); color:var(--text-muted);">
+            </div>
+            <div class="field-hint">Data dari sistem, tidak dapat diubah</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">NIK Karyawan <span class="field-required">*</span></label>
+            <div class="field-wrapper">
+              <input type="text" class="field-input" value="EMP-047" readonly style="background:var(--off-white); color:var(--text-muted);">
+            </div>
+            <div class="field-hint">Data dari sistem, tidak dapat diubah</div>
+          </div>
+        </div>
+
+        <div class="field-grid cols-2" style="margin-top:18px">
+          <div class="field-group">
+            <label class="field-label">Nomor KTP <span class="field-required">*</span></label>
+            <div class="field-wrapper">
+              <input type="text" id="ktp" class="field-input" placeholder="16 digit nomor KTP" maxlength="16" inputmode="numeric" oninput="validateKTP(this)">
+              <div class="field-status-icon" id="ktpStatus"></div>
+            </div>
+            <div class="field-hint" id="ktpHint">Masukkan 16 digit NIK KTP Anda</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Tempat Lahir <span class="field-required">*</span></label>
+            <input type="text" class="field-input" placeholder="Jakarta">
+          </div>
+        </div>
+
+        <div class="field-grid cols-2" style="margin-top:18px">
+          <div class="field-group">
+            <label class="field-label">Tanggal Lahir <span class="field-required">*</span></label>
+            <input type="date" class="field-input" max="2006-01-01">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Jenis Kelamin <span class="field-required">*</span></label>
+            <div class="radio-group">
+              <div class="radio-option" onclick="selectGender(this, 'L')">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <span class="radio-emoji">👨</span>
+                <span class="radio-label">Laki-laki</span>
+              </div>
+              <div class="radio-option" onclick="selectGender(this, 'P')">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <span class="radio-emoji">👩</span>
+                <span class="radio-label">Perempuan</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="section-divider">Kontak</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">Nomor HP <span class="field-required">*</span></label>
+            <div class="field-wrapper">
+              <span class="field-prefix">+62</span>
+              <input type="text" class="field-input has-prefix" placeholder="812-3456-7890" inputmode="tel">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Email Pribadi <span class="field-optional">opsional</span></label>
+            <input type="email" class="field-input" placeholder="nama@gmail.com">
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="field-grid" style="margin-top:18px">
+          <div class="field-group">
+            <label class="field-label">Alamat Domisili <span class="field-required">*</span></label>
+            <textarea class="field-textarea" placeholder="Jl. Sudirman No. 123, RT 01/RW 02, Kel. Senayan, Kec. Kebayoran Baru, Jakarta Selatan"></textarea>
+          </div>
+        </div>
+
+        <!-- Emergency -->
+        <div class="section-divider">Kontak Darurat</div>
+        <div class="field-grid cols-3">
+          <div class="field-group">
+            <label class="field-label">Nama <span class="field-required">*</span></label>
+            <input type="text" class="field-input" placeholder="Nama kontak darurat">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Hubungan <span class="field-required">*</span></label>
+            <select class="field-select">
+              <option value="">Pilih hubungan</option>
+              <option>Orang Tua</option>
+              <option>Pasangan</option>
+              <option>Saudara</option>
+              <option>Teman</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Nomor HP <span class="field-required">*</span></label>
+            <input type="text" class="field-input" placeholder="081234567890" inputmode="tel">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="form-nav">
+        <div class="progress-info">
+          <span>Langkah 1 dari 3</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:33%"></div></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-next" onclick="goToStep(2)">
+            Lanjut
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: DATA PEKERJAAN ─────────────────────────────────── -->
+    <div id="panel2" class="section-panel">
+
+      <div class="form-card-header">
+        <div class="card-header-icon" style="background:#F0FBF3;">💳</div>
+        <div class="card-header-text">
+          <div class="card-header-title">Data Pekerjaan & Keuangan</div>
+          <div class="card-header-sub">Informasi bank, BPJS, dan perpajakan</div>
+        </div>
+      </div>
+
+      <div class="form-card-body">
+
+        <!-- Bank -->
+        <div class="section-divider">Rekening Bank</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">Nama Bank <span class="field-required">*</span></label>
+            <select class="field-select">
+              <option value="">Pilih bank</option>
+              <option>BCA</option>
+              <option>BNI</option>
+              <option>BRI</option>
+              <option>Mandiri</option>
+              <option>CIMB Niaga</option>
+              <option>Danamon</option>
+              <option>Permata</option>
+              <option>BTN</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Nomor Rekening <span class="field-required">*</span></label>
+            <input type="text" class="field-input" placeholder="1234567890" inputmode="numeric" maxlength="20">
+          </div>
+        </div>
+
+        <div class="field-grid" style="margin-top:18px">
+          <div class="field-group">
+            <label class="field-label">Nama Pemilik Rekening <span class="field-required">*</span></label>
+            <input type="text" class="field-input" placeholder="Sesuai buku tabungan" value="RIZKY HANAFI">
+            <div class="field-hint">Pastikan nama sesuai dengan buku tabungan untuk keperluan transfer gaji</div>
+          </div>
+        </div>
+
+        <!-- Tax -->
+        <div class="section-divider">Data Perpajakan</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">NPWP <span class="field-optional">opsional</span></label>
+            <div class="field-wrapper">
+              <input type="text" id="npwp" class="field-input" placeholder="00.000.000.0-000.000" maxlength="20" oninput="formatNPWP(this)">
+            </div>
+            <div class="field-hint">Jika belum memiliki NPWP, dapat dikosongkan</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Status PTKP <span class="field-required">*</span></label>
+            <select class="field-select">
+              <option value="">Pilih status</option>
+              <option>TK/0 — Tidak kawin, 0 tanggungan</option>
+              <option>TK/1 — Tidak kawin, 1 tanggungan</option>
+              <option>K/0 — Kawin, 0 tanggungan</option>
+              <option>K/1 — Kawin, 1 tanggungan</option>
+              <option>K/2 — Kawin, 2 tanggungan</option>
+              <option>K/3 — Kawin, 3 tanggungan</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- BPJS -->
+        <div class="section-divider">Data BPJS</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">No. BPJS Kesehatan <span class="field-optional">opsional</span></label>
+            <input type="text" class="field-input" placeholder="0001234567890" inputmode="numeric" maxlength="13">
+            <div class="field-hint">Kosongkan jika akan didaftarkan baru oleh perusahaan</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">No. BPJS Ketenagakerjaan <span class="field-optional">opsional</span></label>
+            <input type="text" class="field-input" placeholder="1234567890" inputmode="numeric">
+            <div class="field-hint">Kosongkan jika akan didaftarkan baru oleh perusahaan</div>
+          </div>
+        </div>
+
+        <!-- Document Upload -->
+        <div class="section-divider">Upload Dokumen</div>
+        <div class="field-grid cols-2">
+          <div class="field-group">
+            <label class="field-label">Foto KTP <span class="field-required">*</span></label>
+            <div style="border: 1.5px dashed var(--mid-gray); border-radius: var(--radius-xs); padding: 20px; text-align:center; cursor:pointer; transition:all 0.15s;" onmouseenter="this.style.borderColor='#0071E3'" onmouseleave="this.style.borderColor='var(--mid-gray)'" onclick="document.getElementById('ktpFile').click()">
+              <div style="font-size:24px; margin-bottom:6px">🪪</div>
+              <div style="font-size:13px; font-weight:500; color:var(--text-main); margin-bottom:3px">Upload foto KTP</div>
+              <div style="font-size:11px; color:var(--text-muted)">JPG/PNG, maks 5MB</div>
+              <input type="file" id="ktpFile" accept="image/*" style="display:none">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Foto Kartu BPJS <span class="field-optional">jika ada</span></label>
+            <div style="border: 1.5px dashed var(--mid-gray); border-radius: var(--radius-xs); padding: 20px; text-align:center; cursor:pointer; transition:all 0.15s;" onmouseenter="this.style.borderColor='#0071E3'" onmouseleave="this.style.borderColor='var(--mid-gray)'" onclick="document.getElementById('bpjsFile').click()">
+              <div style="font-size:24px; margin-bottom:6px">🏥</div>
+              <div style="font-size:13px; font-weight:500; color:var(--text-main); margin-bottom:3px">Upload kartu BPJS</div>
+              <div style="font-size:11px; color:var(--text-muted)">JPG/PNG, maks 5MB</div>
+              <input type="file" id="bpjsFile" accept="image/*" style="display:none">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="form-nav">
+        <div class="progress-info">
+          <span>Langkah 2 dari 3</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:66%"></div></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-prev" onclick="goToStep(1)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Kembali
+          </button>
+          <button class="btn-next" onclick="goToStep(3)">
+            Lanjut
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: PROFIL & LINKEDIN ──────────────────────────────── -->
+    <div id="panel3" class="section-panel">
+
+      <div class="form-card-header">
+        <div class="card-header-icon" style="background:#F0F0FF;">🔗</div>
+        <div class="card-header-text">
+          <div class="card-header-title">Profil Profesional & LinkedIn</div>
+          <div class="card-header-sub">Bio singkat dan verifikasi akun LinkedIn Anda</div>
+        </div>
+      </div>
+
+      <div class="form-card-body">
+
+        <!-- Bio -->
+        <div class="section-divider">Bio Profesional</div>
+        <div class="field-group">
+          <label class="field-label">Bio Singkat <span class="field-optional">opsional</span></label>
+          <textarea class="field-textarea" placeholder="Ceritakan sedikit tentang diri Anda, keahlian, dan pengalaman..." maxlength="300"></textarea>
+          <div class="field-hint">Maksimal 300 karakter. Akan tampil di profil Anda di org chart.</div>
+        </div>
+
+        <div class="field-grid cols-2" style="margin-top:18px">
+          <div class="field-group">
+            <label class="field-label">Pendidikan Terakhir <span class="field-optional">opsional</span></label>
+            <select class="field-select">
+              <option value="">Pilih pendidikan</option>
+              <option>SMA/SMK</option>
+              <option>D3</option>
+              <option>S1</option>
+              <option>S2</option>
+              <option>S3</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Jurusan / Program Studi <span class="field-optional">opsional</span></label>
+            <input type="text" class="field-input" placeholder="Teknik Informatika">
+          </div>
+        </div>
+
+        <!-- LinkedIn -->
+        <div class="section-divider">Verifikasi LinkedIn</div>
+
+        <div class="field-group">
+          <label class="field-label">
+            URL Profil LinkedIn
+            <span class="field-required">*</span>
+          </label>
+          <div class="field-wrapper">
+            <span class="field-prefix" style="font-size:11px; white-space:nowrap; left:12px;">linkedin.com/in/</span>
+            <input
+              type="text"
+              id="linkedinInput"
+              class="field-input"
+              style="padding-left: 130px; padding-right: 44px;"
+              placeholder="username-anda"
+              oninput="onLinkedinInput(this)"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <div class="field-status-icon" id="linkedinStatusIcon"></div>
+          </div>
+          <div class="field-hint" id="linkedinHint">
+            Masukkan username LinkedIn Anda. Contoh: jika URL Anda adalah
+            <strong>linkedin.com/in/rizky-hanafi</strong>, masukkan <strong>rizky-hanafi</strong>
+          </div>
+        </div>
+
+        <!-- LinkedIn Validator Card -->
+        <div class="linkedin-validator" id="linkedinValidator">
+          <div class="linkedin-preview">
+            <div class="linkedin-avatar">in</div>
+            <div class="linkedin-info">
+              <div class="linkedin-name" id="linkedinName">—</div>
+              <div class="linkedin-handle" id="linkedinHandle">linkedin.com/in/—</div>
+            </div>
+          </div>
+          <div class="linkedin-status" id="linkedinStatus">
+            <span class="spinner-sm" id="linkedinSpinner" style="display:none"></span>
+            <span id="linkedinStatusText">Memvalidasi...</span>
+          </div>
+        </div>
+
+        <!-- LinkedIn rules -->
+        <div style="margin-top:16px; padding:14px 16px; background:var(--off-white); border-radius:var(--radius-xs); border:1px solid var(--light-gray);">
+          <div style="font-size:12px; font-weight:600; color:var(--text-main); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span>ℹ️</span> Ketentuan validasi LinkedIn
+          </div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--text-sub);">
+              <span style="color:var(--green); font-weight:600; flex-shrink:0;">✓</span>
+              URL harus mengikuti format <code style="background:var(--light-gray); padding:1px 5px; border-radius:4px; font-size:11px;">linkedin.com/in/username</code>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--text-sub);">
+              <span style="color:var(--green); font-weight:600; flex-shrink:0;">✓</span>
+              Profil harus dapat diakses publik (bukan private)
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--text-sub);">
+              <span style="color:var(--green); font-weight:600; flex-shrink:0;">✓</span>
+              Username minimal 3 karakter, hanya huruf, angka, dan tanda hubung (-)
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--text-sub);">
+              <span style="color:var(--red); font-weight:600; flex-shrink:0;">✗</span>
+              URL asal atau tidak valid akan ditolak oleh sistem
+            </div>
+          </div>
+        </div>
+
+        <!-- PHK WARNING BANNER -->
+        <div style="margin-top:16px; border-radius:var(--radius-xs); overflow:hidden; border:1.5px solid #C0392B; box-shadow:0 4px 20px rgba(192,57,43,0.15);">
+          <div style="background:linear-gradient(135deg,#922B21,#C0392B); padding:12px 16px; display:flex; align-items:center; gap:10px;">
+            <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#9888;&#65039;</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:white;letter-spacing:-0.2px;">Peringatan Keras &mdash; Konsekuensi Pemutusan Hubungan Kerja</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.70);margin-top:2px;">Berlaku bagi seluruh karyawan IDEA &middot; Dasar hukum: Perjanjian Kerja Pasal 7</div>
+            </div>
+          </div>
+          <div style="background:#FEF9F9;padding:16px 18px;border-top:1px solid rgba(192,57,43,0.15);">
+            <div style="font-size:13px;color:#6B1A14;line-height:1.7;padding:12px 14px;background:white;border-left:3px solid #C0392B;border-radius:0 6px 6px 0;margin-bottom:14px;">
+              Setiap karyawan IDEA <strong style="color:#922B21">wajib mencantumkan pengalaman kerja di IDEA</strong> pada profil LinkedIn yang didaftarkan.
+              Kegagalan memenuhi kewajiban ini &mdash; baik saat onboarding maupun selama masa kerja &mdash;
+              akan diklasifikasikan sebagai <strong style="color:#922B21">pelanggaran perjanjian kerja</strong> dan dapat mengakibatkan
+              <strong style="color:#922B21">Pemutusan Hubungan Kerja (PHK)</strong> sesuai ketentuan yang berlaku.
+            </div>
+            <div style="font-size:12px;font-weight:600;color:#922B21;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Yang wajib ada di profil LinkedIn Anda</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:white;border-radius:6px;border:1px solid rgba(192,57,43,0.12);">
+                <span style="color:#C0392B;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;">&#9312;</span>
+                <div style="font-size:12px;color:#444;line-height:1.5;"><strong style="color:#1D1D1F;">Nama perusahaan</strong> tercantum sebagai <code style="background:#F5E6E6;color:#922B21;padding:1px 5px;border-radius:3px;font-size:11px;">IDE Asia (PT. Solusi Inovasi Bangsa)</code> atau nama resmi perusahaan pada bagian <em>Experience</em></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:white;border-radius:6px;border:1px solid rgba(192,57,43,0.12);">
+                <span style="color:#C0392B;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;">&#9313;</span>
+                <div style="font-size:12px;color:#444;line-height:1.5;"><strong style="color:#1D1D1F;">Jabatan / posisi</strong> yang sesuai dengan jabatan aktif Anda di IDEA</div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:white;border-radius:6px;border:1px solid rgba(192,57,43,0.12);">
+                <span style="color:#C0392B;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;">&#9314;</span>
+                <div style="font-size:12px;color:#444;line-height:1.5;"><strong style="color:#1D1D1F;">Tanggal mulai kerja</strong> yang sesuai dengan tanggal bergabung Anda di IDEA</div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:white;border-radius:6px;border:1px solid rgba(192,57,43,0.12);">
+                <span style="color:#C0392B;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;">&#9315;</span>
+                <div style="font-size:12px;color:#444;line-height:1.5;">Profil LinkedIn <strong style="color:#1D1D1F;">tidak boleh dihapus atau diprivatkan</strong> selama masih berstatus karyawan aktif IDEA</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(192,57,43,0.06);border-radius:6px;border:1px solid rgba(192,57,43,0.15);margin-bottom:12px;">
+              <span style="font-size:16px;flex-shrink:0;">&#128336;</span>
+              <div style="font-size:12px;color:#7B1A14;line-height:1.6;"><strong>Batas waktu:</strong> Pengalaman kerja di IDEA wajib dicantumkan di LinkedIn paling lambat <strong>7 hari kalender</strong> setelah tanggal bergabung. Tim HR akan melakukan verifikasi berkala. Ketidakpatuhan akan ditindaklanjuti sesuai prosedur disipliner perusahaan.</div>
+            </div>
+            <div style="height:1px;background:rgba(192,57,43,0.12);margin:12px 0;"></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#999;">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#999" stroke-width="1.2"/><path d="M6.5 5.5v3" stroke="#999" stroke-width="1.2" stroke-linecap="round"/><circle cx="6.5" cy="4.2" r="0.6" fill="#999"/></svg>
+              Ketentuan ini merupakan bagian dari Perjanjian Kerja yang telah Anda tandatangani. Jika ada pertanyaan, hubungi Dept. Operation &mdash; <strong style="color:#666"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c0a8b280a9a4a5eea1b3a9a1">[email&#160;protected]</a></strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consent -->
+        <div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,#EBF4FF,#F5F5F7);border-radius:var(--radius-xs);border:1px solid #D0E7FB;">
+          <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;user-select:none;">
+            <div id="consentBox" onclick="toggleConsent()" style="width:18px;height:18px;border:1.5px solid var(--mid-gray);border-radius:5px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;cursor:pointer;"></div>
+            <span style="font-size:13px;color:var(--text-sub);line-height:1.5;">
+              Saya menyatakan bahwa seluruh data yang saya masukkan adalah <strong style="color:var(--text-main)">benar dan akurat</strong>,
+              dan saya telah <strong style="color:var(--text-main)">memahami kewajiban mencantumkan pengalaman kerja IDEA di LinkedIn</strong>
+              beserta konsekuensinya. Data palsu atau ketidakpatuhan terhadap ketentuan ini dapat mengakibatkan
+              tindakan disipliner hingga <strong style="color:var(--red)">Pemutusan Hubungan Kerja</strong>.
+            </span>
+          </label>
+        </div>
+
+      </div>
+
+      <div class="form-nav">
+        <div class="progress-info">
+          <span>Langkah 3 dari 3</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-prev" onclick="goToStep(2)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Kembali
+          </button>
+          <button class="btn-submit-final" id="submitFinal" onclick="submitForm()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Selesai & Masuk Portal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUCCESS SCREEN ─────────────────────────────────────────── -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Profil Berhasil Dilengkapi!</div>
+      <div class="success-desc">
+        Data Anda sedang diverifikasi oleh tim HR. Akses penuh ke portal IDEA sudah aktif. Selamat bergabung di tim IDEA!
+      </div>
+      <button class="btn-enter-portal" onclick="enterPortal()">
+        Masuk ke Portal
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  // ── STEP NAVIGATION ──────────────────────────────────────────────
+  let currentStep = 1;
+  const completedSteps = new Set();
+
+  function goToStep(n) {
+    // Hide current panel
+    document.getElementById(`panel${currentStep}`).classList.remove('active');
+    // Mark previous as completed
+    if (n > currentStep) completedSteps.add(currentStep);
+
+    currentStep = n;
+
+    // Update panels
+    document.getElementById(`panel${n}`).classList.add('active');
+
+    // Update stepper UI
+    [1,2,3].forEach(i => {
+      const stepEl  = document.getElementById(`step${i}`);
+      const numEl   = document.getElementById(`stepNum${i}`);
+      stepEl.className = 'step';
+      if (completedSteps.has(i)) {
+        stepEl.classList.add('completed');
+        numEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-7" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      } else if (i === currentStep) {
+        stepEl.classList.add('active');
+        numEl.textContent = i;
+      } else {
+        stepEl.classList.add('pending');
+        numEl.textContent = i;
+      }
+    });
+
+    // Scroll to top of card
+    document.querySelector('.stepper-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── PHOTO UPLOAD ─────────────────────────────────────────────────
+  function triggerUpload() {
+    document.getElementById('photoFile').click();
+  }
+
+  function handlePhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('photoImg');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      document.getElementById('photoBadge').className = 'complete-badge done';
+      document.getElementById('photoBadge').textContent = '✓ Foto diupload';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ── GENDER RADIO ─────────────────────────────────────────────────
+  function selectGender(el, val) {
+    document.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // ── KTP VALIDATION ────────────────────────────────────────────────
+  function validateKTP(input) {
+    input.value = input.value.replace(/\D/g, '');
+    const status = document.getElementById('ktpStatus');
+    const hint   = document.getElementById('ktpHint');
+    const len = input.value.length;
+
+    status.className = 'field-status-icon';
+    input.className  = 'field-input';
+
+    if (len === 0) {
+      hint.textContent = 'Masukkan 16 digit NIK KTP Anda';
+      hint.className = 'field-hint';
+    } else if (len < 16) {
+      hint.textContent = `${len}/16 digit — masih kurang ${16 - len} digit`;
+      hint.className = 'field-hint warning';
+      input.classList.add('checking');
+      status.classList.add('checking');
+      status.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2v3l2 2" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>`;
+    } else if (len === 16) {
+      hint.textContent = '✓ Format NIK valid';
+      hint.className = 'field-hint success';
+      input.classList.add('valid');
+      status.classList.add('valid');
+      status.innerHTML = `<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+  }
+
+  // ── NPWP FORMAT ───────────────────────────────────────────────────
+  function formatNPWP(input) {
+    let v = input.value.replace(/\D/g, '').slice(0,15);
+    let f = '';
+    if (v.length > 0)  f += v.slice(0,2);
+    if (v.length > 2)  f += '.' + v.slice(2,5);
+    if (v.length > 5)  f += '.' + v.slice(5,8);
+    if (v.length > 8)  f += '.' + v.slice(8,9);
+    if (v.length > 9)  f += '-' + v.slice(9,12);
+    if (v.length > 12) f += '.' + v.slice(12,15);
+    input.value = f;
+  }
+
+  // ── LINKEDIN VALIDATION ───────────────────────────────────────────
+  let linkedinTimer = null;
+  let consentGiven  = false;
+
+  function onLinkedinInput(input) {
+    clearTimeout(linkedinTimer);
+    const val = input.value.trim();
+    const validator  = document.getElementById('linkedinValidator');
+    const statusIcon = document.getElementById('linkedinStatusIcon');
+    const hint       = document.getElementById('linkedinHint');
+    const submitBtn  = document.getElementById('submitFinal');
+
+    // Reset
+    input.className  = 'field-input';
+    statusIcon.className = 'field-status-icon';
+    submitBtn.classList.remove('show');
+
+    if (!val) {
+      validator.classList.remove('visible');
+      hint.textContent = 'Masukkan username LinkedIn Anda.';
+      hint.className = 'field-hint';
+      return;
+    }
+
+    // Format check: only letters, numbers, hyphens, min 3 chars
+    const validFormat = /^[a-zA-Z0-9][a-zA-Z0-9\-]{2,}$/.test(val);
+
+    if (!validFormat) {
+      input.classList.add('invalid');
+      statusIcon.classList.add('invalid');
+      statusIcon.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+      hint.textContent = 'Username tidak valid. Hanya boleh huruf, angka, dan tanda hubung (-). Minimal 3 karakter.';
+      hint.className = 'field-hint error';
+      validator.classList.remove('visible');
+      return;
+    }
+
+    // Show checking state
+    input.classList.add('checking');
+    statusIcon.classList.add('checking');
+    statusIcon.innerHTML = `<div class="spinner-sm" style="border-color:rgba(255,255,255,0.3); border-top-color:white;"></div>`;
+    hint.innerHTML = `<span class="spinner-sm"></span> Memvalidasi profil LinkedIn...`;
+    hint.className = 'field-hint checking';
+
+    // Show validator card
+    validator.classList.add('visible');
+    document.getElementById('linkedinName').textContent = val;
+    document.getElementById('linkedinHandle').textContent = `linkedin.com/in/${val}`;
+    document.getElementById('linkedinSpinner').style.display = 'inline-block';
+    document.getElementById('linkedinStatusText').textContent = 'Memeriksa keberadaan profil...';
+    document.getElementById('linkedinStatus').className = 'linkedin-status checking';
+
+    // Simulate API check after 1.5s
+    linkedinTimer = setTimeout(() => {
+      simulateLinkedInCheck(val, input, statusIcon, hint);
+    }, 1800);
+  }
+
+  function simulateLinkedInCheck(username, input, statusIcon, hint) {
+    // Simulate: usernames containing 'test', 'asal', 'dummy', 'xxx', 'abc', single chars → invalid
+    const invalidPatterns = ['test', 'asal', 'dummy', 'xxx', 'asdf', 'qwerty', '123'];
+    const isInvalid = invalidPatterns.some(p => username.toLowerCase().includes(p)) || username.length < 5;
+
+    const spinner    = document.getElementById('linkedinSpinner');
+    const statusText = document.getElementById('linkedinStatusText');
+    const statusEl   = document.getElementById('linkedinStatus');
+    const submitBtn  = document.getElementById('submitFinal');
+
+    spinner.style.display = 'none';
+    input.className  = 'field-input';
+    statusIcon.className = 'field-status-icon';
+
+    if (isInvalid) {
+      // Profile not found / invalid
+      input.classList.add('invalid');
+      statusIcon.classList.add('invalid');
+      statusIcon.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+      hint.textContent = 'Profil LinkedIn tidak ditemukan atau tidak dapat diakses. Pastikan profil Anda publik dan URL benar.';
+      hint.className = 'field-hint error';
+      statusText.textContent = '✗ Profil tidak ditemukan atau bersifat private';
+      statusEl.className = 'linkedin-status invalid';
+
+      // Show name as not found
+      document.getElementById('linkedinName').textContent = 'Profil tidak ditemukan';
+    } else {
+      // Valid profile found
+      input.classList.add('valid');
+      statusIcon.classList.add('valid');
+      statusIcon.innerHTML = `<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      hint.textContent = `✓ Profil LinkedIn ditemukan dan dapat diakses`;
+      hint.className = 'field-hint success';
+      statusText.textContent = '✓ Profil valid dan dapat diakses publik';
+      statusEl.className = 'linkedin-status valid';
+
+      // Simulate found profile data
+      const names = {
+        'rizky-hanafi': 'Rizky Hanafi', 'budi-santoso': 'Budi Santoso',
+        'siti-rahayu': 'Siti Rahayu', 'ahmad-fauzi': 'Ahmad Fauzi',
+      };
+      const displayName = names[username.toLowerCase()] || username.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      document.getElementById('linkedinName').textContent = displayName;
+
+      checkSubmitReady();
+    }
+  }
+
+  // ── CONSENT ───────────────────────────────────────────────────────
+  function toggleConsent() {
+    consentGiven = !consentGiven;
+    const box = document.getElementById('consentBox');
+    if (consentGiven) {
+      box.style.background = 'var(--blue)';
+      box.style.borderColor = 'var(--blue)';
+      box.innerHTML = `<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    } else {
+      box.style.background = '';
+      box.style.borderColor = 'var(--mid-gray)';
+      box.innerHTML = '';
+    }
+    checkSubmitReady();
+  }
+
+  function checkSubmitReady() {
+    const input     = document.getElementById('linkedinInput');
+    const submitBtn = document.getElementById('submitFinal');
+    const isLinkedinValid = input.classList.contains('valid');
+    if (isLinkedinValid && consentGiven) {
+      submitBtn.classList.add('show');
+    } else {
+      submitBtn.classList.remove('show');
+    }
+  }
+
+  // ── SUBMIT ────────────────────────────────────────────────────────
+  function submitForm() {
+    const submitBtn = document.getElementById('submitFinal');
+    submitBtn.innerHTML = `<div class="spinner-sm" style="border-color:rgba(255,255,255,0.3); border-top-color:white;"></div> Menyimpan data...`;
+    submitBtn.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+      // Show success
+      document.getElementById('panel3').style.display = 'none';
+      document.getElementById('successScreen').classList.add('show');
+
+      // Mark all steps completed
+      [1,2,3].forEach(i => {
+        const stepEl = document.getElementById(`step${i}`);
+        const numEl  = document.getElementById(`stepNum${i}`);
+        stepEl.className = 'step completed';
+        numEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-7" stroke="white" stroke-width="1.8" st

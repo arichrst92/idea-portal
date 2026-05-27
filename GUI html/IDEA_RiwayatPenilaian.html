@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Riwayat Penilaian Saya</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--ol);color:var(--orange)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--orange);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--orange);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px;max-width:1100px;margin:0 auto;width:100%}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#FF9F0A,#FF6B00);border-radius:var(--r);padding:24px 28px;color:#fff;margin-bottom:18px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:rgba(255,255,255,.08);border-radius:50%}
+.hero-score-circle{width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.15);border:4px solid rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1}
+.hsc-val{font-size:42px;font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1}
+.hsc-lbl{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.hero-info{position:relative;z-index:1}
+.hero-name{font-size:14px;opacity:.9;margin-bottom:3px}
+.hero-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.hero-tags{display:flex;gap:6px;flex-wrap:wrap}
+.h-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.2);backdrop-filter:blur(8px)}
+.hero-stats{position:relative;z-index:1;text-align:right;font-family:var(--mono)}
+.hs-val{font-size:24px;font-weight:800}
+.hs-lbl{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}
+.grid-2-eq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.cb{padding:18px 20px}
+
+/* TREND CHART (12 month line) */
+.trend-chart-wrap{padding:18px 20px;position:relative}
+.trend-svg{width:100%;height:200px;display:block}
+.trend-legend{display:flex;gap:14px;font-size:11px;color:var(--ink3);justify-content:center;padding-bottom:8px;border-top:1px solid var(--border2);padding-top:12px}
+.tl-item{display:flex;align-items:center;gap:6px}
+.tl-dot{width:10px;height:3px;border-radius:2px}
+
+/* MONTH HISTORY */
+.month-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border2)}
+.month-row:last-child{border-bottom:none}
+.m-date{width:80px;font-size:12px;font-weight:700}
+.m-score-circle{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;flex-shrink:0}
+.m-bar-wrap{flex:1;background:var(--bg);height:8px;border-radius:4px;overflow:hidden;position:relative}
+.m-bar-fill{height:100%;border-radius:4px}
+.m-notes{font-size:11px;color:var(--ink3);font-weight:500;width:200px;flex-shrink:0;text-align:right}
+
+/* OKR PROGRESS */
+.okr-card{padding:12px 14px;background:var(--bg);border-radius:var(--rs);margin-bottom:8px}
+.okr-card:last-child{margin-bottom:0}
+.okr-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.okr-name{font-size:13px;font-weight:700;flex:1}
+.okr-pct{font-family:var(--mono);font-weight:800;font-size:14px}
+.okr-bar{height:6px;background:var(--surface);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.okr-bar-fill{height:100%;border-radius:3px}
+.okr-kr{font-size:11px;color:var(--ink3);margin-top:6px;display:flex;justify-content:space-between}
+
+/* SCORE BREAKDOWN */
+.breakdown-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.breakdown-row:last-child{border-bottom:none;border-top:2px solid var(--ink);padding-top:12px;font-weight:800}
+.bd-label{flex:1;font-weight:600}
+.bd-weight{font-family:var(--mono);font-weight:600;color:var(--ink3);width:60px;text-align:right}
+.bd-score{font-family:var(--mono);font-weight:700;width:50px;text-align:right}
+.bd-contrib{font-family:var(--mono);font-weight:800;width:60px;text-align:right;color:var(--green)}
+
+/* PEER COMPARE */
+.peer-wrap{display:flex;gap:14px;align-items:flex-end;padding:8px 0;height:140px}
+.peer-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
+.pb-val{font-family:var(--mono);font-weight:800;font-size:14px}
+.pb-rect{width:100%;border-radius:5px 5px 0 0;transition:filter .15s}
+.pb-rect:hover{filter:brightness(1.1)}
+.pb-lbl{font-size:10px;color:var(--ink3);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📋</div>Project</div>
+    <div class="ni"><div class="ni-ic">💼</div>Cuti &amp; Reimburse</div>
+    <div class="ni"><div class="ni-ic">💰</div>Slip Gaji</div>
+    <div class="ni active"><div class="ni-ic">📊</div>Penilaian Saya</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Riwayat Penilaian</strong></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s">📅 Filter periode</button>
+      <button class="btn btn-p">📥 Export PDF</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-score-circle">
+        <div class="hsc-val">87</div>
+        <div class="hsc-lbl">Mei 2026</div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-name">Skor Penilaian Anda</div>
+        <div class="hero-title">Performa Excellent — Top 25% perusahaan</div>
+        <div class="hero-tags">
+          <div class="h-tag">📈 ↑ 3 dari April</div>
+          <div class="h-tag">⭐ 6 bulan ≥80</div>
+          <div class="h-tag">🎯 OKR Q2 on-track</div>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hs-val">79.4</div>
+        <div class="hs-lbl">Avg perusahaan</div>
+      </div>
+    </div>
+
+    <!-- ROW 1: TREND + BREAKDOWN -->
+    <div class="grid-2">
+      <!-- TREND -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">📈 Trend Rating 12 Bulan</div>
+          <span class="tag tg">Konsisten ≥75</span>
+        </div>
+        <div class="trend-chart-wrap">
+          <svg class="trend-svg" viewBox="0 0 600 200" preserveAspectRatio="none">
+            <!-- Threshold line -->
+            <line x1="0" y1="100" x2="600" y2="100" stroke="#FF453A" stroke-width="1" stroke-dasharray="4 4" opacity=".4"/>
+            <text x="595" y="98" text-anchor="end" font-size="9" fill="#FF453A" font-weight="700" font-family="Plus Jakarta Sans">SP threshold 60</text>
+            <!-- Grid lines -->
+            <line x1="0" y1="40" x2="600" y2="40" stroke="#E5E5EA" stroke-width="1"/>
+            <line x1="0" y1="160" x2="600" y2="160" stroke="#E5E5EA" stroke-width="1"/>
+            <!-- Y-axis labels -->
+            <text x="0" y="38" font-size="9" fill="#86868B" font-family="JetBrains Mono">100</text>
+            <text x="0" y="158" font-size="9" fill="#86868B" font-family="JetBrains Mono">0</text>
+            <!-- Score area (OKR only) -->
+            <polyline fill="none" stroke="#007AFF" stroke-width="2" points="30,75 80,72 130,78 180,80 230,68 280,65 330,60 380,55 430,52 480,58 530,52 575,48"/>
+            <!-- Weighted area -->
+            <polyline fill="none" stroke="#30D158" stroke-width="2" points="30,70 80,65 130,72 180,75 230,62 280,58 330,52 380,48 430,45 480,50 530,42 575,38"/>
+            <!-- Final score (thicker) -->
+            <polyline fill="none" stroke="#FF9F0A" stroke-width="3" points="30,72 80,68 130,74 180,77 230,64 280,60 330,55 380,50 430,47 480,52 530,46 575,42"/>
+            <!-- Data dots on final -->
+            <circle cx="30" cy="72" r="3" fill="#FF9F0A"/>
+            <circle cx="80" cy="68" r="3" fill="#FF9F0A"/>
+            <circle cx="130" cy="74" r="3" fill="#FF9F0A"/>
+            <circle cx="180" cy="77" r="3" fill="#FF9F0A"/>
+            <circle cx="230" cy="64" r="3" fill="#FF9F0A"/>
+            <circle cx="280" cy="60" r="3" fill="#FF9F0A"/>
+            <circle cx="330" cy="55" r="3" fill="#FF9F0A"/>
+            <circle cx="380" cy="50" r="3" fill="#FF9F0A"/>
+            <circle cx="430" cy="47" r="3" fill="#FF9F0A"/>
+            <circle cx="480" cy="52" r="3" fill="#FF9F0A"/>
+            <circle cx="530" cy="46" r="3" fill="#FF9F0A"/>
+            <circle cx="575" cy="42" r="5" fill="#FF9F0A" stroke="#FFF" stroke-width="2"/>
+            <!-- Month labels -->
+            <text x="30" y="190" font-size="9" fill="#86868B" text-anchor="middle">Jun</text>
+            <text x="80" y="190" font-size="9" fill="#86868B" text-anchor="middle">Jul</text>
+            <text x="130" y="190" font-size="9" fill="#86868B" text-anchor="middle">Agt</text>
+            <text x="180" y="190" font-size="9" fill="#86868B" text-anchor="middle">Sep</text>
+            <text x="230" y="190" font-size="9" fill="#86868B" text-anchor="middle">Okt</text>
+            <text x="280" y="190" font-size="9" fill="#86868B" text-anchor="middle">Nov</text>
+            <text x="330" y="190" font-size="9" fill="#86868B" text-anchor="middle">Des</text>
+            <text x="380" y="190" font-size="9" fill="#86868B" text-anchor="middle">Jan</text>
+            <text x="430" y="190" font-size="9" fill="#86868B" text-anchor="middle">Feb</text>
+            <text x="480" y="190" font-size="9" fill="#86868B" text-anchor="middle">Mar</text>
+            <text x="530" y="190" font-size="9" fill="#86868B" text-anchor="middle">Apr</text>
+            <text x="575" y="190" font-size="9" fill="#0A0A0F" text-anchor="middle" font-weight="700">Mei</text>
+          </svg>
+          <div class="trend-legend">
+            <div class="tl-item"><div class="tl-dot" style="background:var(--orange);height:3px"></div>Final Score</div>
+            <div class="tl-item"><div class="tl-dot" style="background:var(--blue)"></div>OKR Score</div>
+            <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div>Weighted Score</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BREAKDOWN MEI -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">🔍 Breakdown Mei 2026</div>
+        </div>
+        <div class="cb">
+          <div class="breakdown-row">
+            <div class="bd-label">OKR Pencapaian</div>
+            <div class="bd-weight">60%</div>
+            <div class="bd-score">85</div>
+            <div class="bd-contrib">51.0</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="bd-label" style="padding-left:14px;color:var(--ink3);font-weight:500;font-size:11px">Attitude</div>
+            <div class="bd-weight"></div>
+            <div class="bd-score">90</div>
+            <div class="bd-contrib" style="color:var(--ink3)"></div>
+          </div>
+          <div class="breakdown-row">
+            <div class="bd-label" style="padding-left:14px;color:var(--ink3);font-weight:500;font-size:11px">Kehadiran</div>
+            <div class="bd-weight"></div>
+            <div class="bd-score">95</div>
+            <div class="bd-contrib" style="color:var(--ink3)"></div>
+          </div>
+          <div class="breakdown-row">
+            <div class="bd-label" style="padding-left:14px;color:var(--ink3);font-weight:500;font-size:11px">Kolaborasi</div>
+            <div class="bd-weight"></div>
+            <div class="bd-score">85</div>
+            <div class="bd-contrib" style="color:var(--ink3)"></div>
+          </div>
+          <div class="breakdown-row">
+            <div class="bd-label">Weighted Score</div>
+            <div class="bd-weight">40%</div>
+            <div class="bd-score">90</div>
+            <div class="bd-contrib">36.0</div>
+          </div>
+          <div class="breakdown-row" style="color:var(--orange)">
+            <div class="bd-label">Final Score</div>
+            <div class="bd-weight"></div>
+            <div class="bd-score">—</div>
+            <div class="bd-contrib" style="color:var(--orange);font-size:16px">87.0</div>
+          </div>
+        </div>
+        <div style="padding:0 20px 18px;font-size:11px;color:var(--ink3);text-align:center">
+          Bobot disesuaikan oleh CTO untuk dept Teknologi
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: OKR + PEER -->
+    <div class="grid-2-eq">
+      <!-- OKR PROGRESS -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">🎯 OKR Q2 2026 — Progress</div>
+          <span class="tag tg">3 of 4 on-track</span>
+        </div>
+        <div class="cb">
+          <div class="okr-card">
+            <div class="okr-head">
+              <div class="okr-name">OKR-1: Reduce production incident MTTR ke &lt;30 menit</div>
+              <div class="okr-pct" style="color:var(--green)">75%</div>
+            </div>
+            <div class="okr-bar"><div class="okr-bar-fill" style="width:75%;background:var(--green)"></div></div>
+            <div class="okr-kr">
+              <span>KR1: P0 incident MTTR ≤25 min (now: 28 min)</span>
+              <span style="color:var(--green);font-weight:700">85%</span>
+            </div>
+            <div class="okr-kr">
+              <span>KR2: Setup monitoring dashboard untuk 5 service kritis</span>
+              <span style="color:var(--green);font-weight:700">100%</span>
+            </div>
+            <div class="okr-kr">
+              <span>KR3: Postmortem template terstandar &amp; 100% adopsi</span>
+              <span style="color:var(--orange);font-weight:700">40%</span>
+            </div>
+          </div>
+
+          <div class="okr-card">
+            <div class="okr-head">
+              <div class="okr-name">OKR-2: Code quality &amp; testing maturity</div>
+              <div class="okr-pct" style="color:var(--green)">82%</div>
+            </div>
+            <div class="okr-bar"><div class="okr-bar-fill" style="width:82%;background:var(--green)"></div></div>
+            <div class="okr-kr">
+              <span>KR1: Code coverage backend &gt;80% (now: 78%)</span>
+              <span style="color:var(--blue);font-weight:700">78%</span>
+            </div>
+            <div class="okr-kr">
+              <span>KR2: Automated regression test untuk 3 product utama</span>
+              <span style="color:var(--green);font-weight:700">100%</span>
+            </div>
+          </div>
+
+          <div class="okr-card">
+            <div class="okr-head">
+              <div class="okr-name">OKR-3: Mentoring 3 junior dev hingga independen</div>
+              <div class="okr-pct" style="color:var(--blue)">65%</div>
+            </div>
+            <div class="okr-bar"><div class="okr-bar-fill" style="width:65%;background:var(--blue)"></div></div>
+            <div class="okr-kr">
+              <span>KR1: 3 junior bisa lead small task tanpa supervisi</span>
+              <span style="color:var(--orange);font-weight:700">2 of 3</span>
+            </div>
+          </div>
+
+          <div class="okr-card" style="background:var(--rl)">
+            <div class="okr-head">
+              <div class="okr-name" style="color:var(--red)">OKR-4: Migrate legacy auth ke OAuth 2.0 ⚠️ AT RISK</div>
+              <div class="okr-pct" style="color:var(--red)">35%</div>
+            </div>
+            <div class="okr-bar"><div class="okr-bar-fill" style="width:35%;background:var(--red)"></div></div>
+            <div class="okr-kr">
+              <span>Deadline Jun 30 · Resource conflict dengan API Gateway project</span>
+              <span style="color:var(--red);font-weight:700">Behind</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PEER COMPARE -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">📊 Comparison Anonim</div>
+          <span class="tag tgr">Mei 2026</span>
+        </div>
+        <div class="cb">
+          <div class="peer-wrap">
+            <div class="peer-bar">
+              <div class="pb-val">87</div>
+              <div class="pb-rect" style="height:87%;background:linear-gradient(180deg,var(--orange),#FF6B00)"></div>
+              <div class="pb-lbl" style="color:var(--orange);font-weight:700">Saya</div>
+            </div>
+            <div class="peer-bar">
+              <div class="pb-val">82</div>
+              <div class="pb-rect" style="height:82%;background:linear-gradient(180deg,#007AFF,#0064CC)"></div>
+              <div class="pb-lbl">Avg Dept</div>
+            </div>
+            <div class="peer-bar">
+              <div class="pb-val">81</div>
+              <div class="pb-rect" style="height:81%;background:linear-gradient(180deg,#34C759,#28b549)"></div>
+              <div class="pb-lbl">Avg L4</div>
+            </div>
+            <div class="peer-bar">
+              <div class="pb-val">79</div>
+              <div class="pb-rect" style="height:79%;background:linear-gradient(180deg,#86868B,#5C5C61)"></div>
+              <div class="pb-lbl">Avg Perush.</div>
+            </div>
+            <div class="peer-bar">
+              <div class="pb-val">95</div>
+              <div class="pb-rect" style="height:95%;background:linear-gradient(180deg,#BF5AF2,#7C3AED)"></div>
+              <div class="pb-lbl">Top Performer</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:11px 14px;background:var(--gl);border-radius:var(--rs);font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px">🎉</span>
+            <div><strong>Di atas rata-rata dept (+5 poin)</strong> dan di atas rata-rata level (+6 poin). Pertahankan!</div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--ink3);text-align:center">
+            * Data anonim, hanya menampilkan agregat tanpa nama individu lain
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: HISTORY -->
+    <div class="card">
+      <div class="ch">
+        <div class="ch-title">📅 Riwayat Detail per Bulan</div>
+        <button class="btn btn-s">Tahun: 2026 ▾</button>
+      </div>
+      <div class="cb" style="padding:14px 20px">
+        <div class="month-row">
+          <div class="m-date">Mei 2026</div>
+          <div class="m-score-circle" style="background:var(--green)">87</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:87%;background:var(--green)"></div></div>
+          <div class="m-notes">"Kontribusi mentoring + leadership pada API Gateway." — CTO</div>
+        </div>
+        <div class="month-row">
+          <div class="m-date">Apr 2026</div>
+          <div class="m-score-circle" style="background:var(--green)">84</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:84%;background:var(--green)"></div></div>
+          <div class="m-notes">"Steady delivery, code quality terjaga."</div>
+        </div>
+        <div class="month-row">
+          <div class="m-date">Mar 2026</div>
+          <div class="m-score-circle" style="background:var(--blue)">78</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:78%;background:var(--blue)"></div></div>
+          <div class="m-notes">"Sedikit slip di Q1 closing, recovered."</div>
+        </div>
+        <div class="month-row">
+          <div class="m-date">Feb 2026</div>
+          <div class="m-score-circle" style="background:var(--green)">81</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:81%;background:var(--green)"></div></div>
+          <div class="m-notes">"Good progress di OKR Q1."</div>
+        </div>
+        <div class="month-row">
+          <div class="m-date">Jan 2026</div>
+          <div class="m-score-circle" style="background:var(--green)">85</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:85%;background:var(--green)"></div></div>
+          <div class="m-notes">"Strong start year, leadership terlihat."</div>
+        </div>
+        <div class="month-row">
+          <div class="m-date">Des 2025</div>
+          <div class="m-score-circle" style="background:var(--green)">82</div>
+          <div class="m-bar-wrap"><div class="m-bar-fill" style="width:82%;background:var(--green)"></div></div>
+          <div class="m-notes">"Closing tahun solid."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO NOTE -->
+    <div style="margin-top:14px;padding:14px;background:var(--bl);border-radius:var(--rm);font-size:12px;color:var(--ink2);display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:16px">ℹ</span>
+      <div>
+        <strong>Penilaian dilakukan oleh atasan langsung (Indra Wijaya, CTO).</strong> Skor di bawah 60 selama 3 bulan berturut akan trigger SP otomatis. Untuk diskusi penilaian, jadwalkan 1-on-1 dengan atasan langsung.
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>

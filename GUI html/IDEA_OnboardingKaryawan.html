@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Onboarding Karyawan Baru</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:linear-gradient(135deg,#E5F9EC,#E8F1FF);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid rgba(48,209,88,.2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#30D158,#00C7BE);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-onboarding{margin:6px 12px 12px;padding:8px 12px;background:linear-gradient(135deg,#30D158,#00C7BE);border-radius:var(--rs);color:#fff;font-size:11px;font-weight:700;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--gl);color:var(--green)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--green);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--green);color:#fff}.btn-p:hover{background:#28b549}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px;max-width:1100px;margin:0 auto;width:100%}
+
+/* WELCOME HERO */
+.welcome-hero{background:linear-gradient(135deg,#30D158 0%,#00C7BE 50%,#007AFF 100%);border-radius:var(--r);padding:32px;color:#fff;margin-bottom:18px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;position:relative;overflow:hidden}
+.welcome-hero::before{content:'';position:absolute;right:-60px;top:-60px;width:240px;height:240px;background:rgba(255,255,255,.08);border-radius:50%}
+.welcome-hero::after{content:'';position:absolute;right:100px;bottom:-100px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%}
+.wh-confetti{position:absolute;top:14px;right:24px;font-size:32px;z-index:1}
+.wh-photo{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.25);border:4px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;flex-shrink:0;position:relative;z-index:1}
+.wh-info{position:relative;z-index:1}
+.wh-greeting{font-size:14px;opacity:.9;margin-bottom:5px;font-weight:600}
+.wh-name{font-size:30px;font-weight:800;letter-spacing:-.7px;margin-bottom:6px}
+.wh-msg{font-size:14px;opacity:.92;line-height:1.5;margin-bottom:14px;max-width:600px}
+.wh-actions{display:flex;gap:8px}
+.wh-btn{padding:9px 16px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.wh-btn-w{background:rgba(255,255,255,.95);color:var(--green)}
+.wh-btn-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
+
+/* PROGRESS BAR */
+.progress-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:20px}
+.pc-circle{width:80px;height:80px;border-radius:50%;background:conic-gradient(var(--green) 0% 65%,var(--bg) 65% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.pc-circle::after{content:'';width:60px;height:60px;background:var(--surface);border-radius:50%;position:absolute}
+.pc-pct{position:relative;z-index:1;font-size:18px;font-weight:800;font-family:var(--mono);color:var(--green)}
+.pc-info{flex:1}
+.pc-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.pc-desc{font-size:12px;color:var(--ink3);margin-bottom:8px}
+.pc-stats{display:flex;gap:14px;font-size:11px}
+.pc-stat{display:flex;align-items:center;gap:5px;color:var(--ink2)}
+.pc-stat strong{font-family:var(--mono);font-weight:800}
+
+/* CHECKLIST GRID */
+.checklist-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.cb{padding:18px 20px}.cb.np{padding:0}
+
+/* TASK CATEGORY */
+.cat-section{padding:12px 20px;background:var(--bg);font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center}
+.task-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border2);transition:background .12s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:var(--bg)}
+.task-row.done{opacity:.6}
+.task-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .15s}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-check:hover{border-color:var(--green)}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.task-title.done{text-decoration:line-through;color:var(--ink3)}
+.task-desc{font-size:11px;color:var(--ink3)}
+.task-action{flex-shrink:0}
+
+/* WELCOME MESSAGES */
+.msg-row{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border2)}
+.msg-row:last-child{border-bottom:none}
+.msg-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.msg-body{flex:1;min-width:0}
+.msg-from{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px}
+.msg-name{font-weight:700}
+.msg-text{font-size:12px;color:var(--ink2);line-height:1.55;font-style:italic}
+
+/* QUICK LINKS */
+.ql-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ql-card{padding:10px 12px;background:var(--bg);border-radius:var(--rs);display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none;color:var(--ink);transition:background .12s}
+.ql-card:hover{background:var(--bl);color:var(--blue)}
+.ql-ic{font-size:18px;flex-shrink:0}
+.ql-text{font-size:12px;font-weight:700}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">SR</div><div><div class="sb-uname">Siti Rahayu</div><div class="sb-urole">Backend Dev · Teknologi</div></div></div>
+  <div class="sb-onboarding">🌱 Hari ke-7 dari 30 hari onboarding</div>
+  <div class="sb-sec">Welcome Center</div>
+  <nav class="sb-nav">
+    <div class="ni active"><div class="ni-ic">🌱</div>Onboarding</div>
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📚</div>Info Perusahaan</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Welcome Center <span style="color:var(--border)">/</span> <strong>Onboarding</strong></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-s">❓ Butuh Bantuan?</button>
+      <button class="btn btn-p">💬 Chat HR</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- WELCOME HERO -->
+    <div class="welcome-hero">
+      <div class="wh-confetti">🎉</div>
+      <div class="wh-photo">SR</div>
+      <div class="wh-info">
+        <div class="wh-greeting">Selamat datang di keluarga IDEA,</div>
+        <div class="wh-name">Siti Rahayu! 👋</div>
+        <div class="wh-msg">Kami sangat senang Anda bergabung sebagai <strong>Backend Developer</strong> di tim Teknologi. Selama 30 hari ke depan, mari selesaikan checklist onboarding bersama-sama supaya Anda siap berkontribusi penuh.</div>
+        <div class="wh-actions">
+          <button class="wh-btn wh-btn-w">▶ Video Sambutan dari CEO (2 min)</button>
+          <button class="wh-btn wh-btn-o">📖 Baca Company Story</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-card">
+      <div class="pc-circle">
+        <span class="pc-pct">65%</span>
+      </div>
+      <div class="pc-info">
+        <div class="pc-title">Progress Onboarding Anda</div>
+        <div class="pc-desc">13 dari 20 tasks selesai · 7 task tersisa untuk activate account penuh</div>
+        <div class="pc-stats">
+          <div class="pc-stat">✓ <strong>13</strong> Selesai</div>
+          <div class="pc-stat" style="color:var(--orange)">⏳ <strong>4</strong> In progress</div>
+          <div class="pc-stat" style="color:var(--ink3)">○ <strong>3</strong> Belum mulai</div>
+          <div class="pc-stat" style="color:var(--red)">⚠ <strong>1</strong> Urgent (deadline H-1)</div>
+        </div>
+      </div>
+      <button class="btn btn-p" style="font-size:13px;padding:10px 18px">Lanjutkan →</button>
+    </div>
+
+    <!-- CHECKLIST + SIDE -->
+    <div class="checklist-grid">
+      <!-- CHECKLIST -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">✅ Onboarding Checklist</div>
+          <span class="tag tg">13 / 20 done</span>
+        </div>
+        <div class="cb np">
+
+          <!-- ADMIN -->
+          <div class="cat-section">
+            <span>📄 Administratif</span>
+            <span style="color:var(--green)">5/5 ✓</span>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Tandatangan kontrak kerja</div><div class="task-desc">Diselesaikan 1 Mei 2026</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Upload data pribadi (KTP, NPWP, BPJS)</div><div class="task-desc">Diselesaikan 2 Mei 2026</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Setup rekening bank untuk gaji</div><div class="task-desc">BCA · ***** 4521</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Aktivasi email korporat</div><div class="task-desc">siti.rahayu@ide.asia</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Setup password &amp; 2FA</div><div class="task-desc">Authenticator app terdaftar</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+
+          <!-- ASSET -->
+          <div class="cat-section">
+            <span>💻 Asset &amp; Akses</span>
+            <span style="color:var(--orange)">3/4</span>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Terima laptop kerja</div><div class="task-desc">MacBook Pro M3 · Serial: IDEA-LPT-2026-041</div></div>
+            <div class="task-action"><span class="tag tg">Signed</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Tanda tangan tanda terima asset</div><div class="task-desc">BA-ASSET-041 ditandatangani digital</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Akses VPN &amp; tools internal</div><div class="task-desc">Slack, Jira, Confluence, GitHub</div></div>
+            <div class="task-action"><span class="tag tg">Active</span></div>
+          </div>
+          <div class="task-row" style="background:#FFF8F0">
+            <div class="task-check">⚠</div>
+            <div class="task-body"><div class="task-title">Setup akses production database (read-only)</div><div class="task-desc" style="color:var(--orange);font-weight:600">⚠ Deadline besok (H-1) · IT akan kontak</div></div>
+            <div class="task-action"><button class="btn btn-s" style="font-size:11px;padding:4px 10px">📩 Email IT</button></div>
+          </div>
+
+          <!-- LEARNING -->
+          <div class="cat-section">
+            <span>🎓 Learning &amp; Knowledge</span>
+            <span style="color:var(--blue)">3/5</span>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Tonton Welcome Video dari CEO (2 min)</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Baca Employee Handbook</div><div class="task-desc">Konfirmasi pemahaman: Code of Conduct, Cuti, Reimbursement</div></div>
+            <div class="task-action"><span class="tag tg">Confirmed</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Pelajari portal IDEA</div><div class="task-desc">Tutorial 12 menit selesai ✓</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row">
+            <div class="task-check">○</div>
+            <div class="task-body"><div class="task-title">Tech Onboarding — Engineering Best Practices</div><div class="task-desc">PDF + quiz · ~45 min</div></div>
+            <div class="task-action"><button class="btn btn-p" style="font-size:11px;padding:4px 10px">▶ Mulai</button></div>
+          </div>
+          <div class="task-row">
+            <div class="task-check">○</div>
+            <div class="task-body"><div class="task-title">Quiz: Kebijakan Cuti &amp; Reimbursement</div><div class="task-desc">10 pertanyaan · ~15 min</div></div>
+            <div class="task-action"><button class="btn btn-s" style="font-size:11px;padding:4px 10px">Mulai</button></div>
+          </div>
+
+          <!-- MEET TEAM -->
+          <div class="cat-section">
+            <span>🤝 Bertemu Tim</span>
+            <span style="color:var(--blue)">2/3</span>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">1-on-1 dengan atasan langsung (Rizky Hanafi)</div><div class="task-desc">Selesai 3 Mei 2026</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row done">
+            <div class="task-check done">✓</div>
+            <div class="task-body"><div class="task-title done">Team intro meeting (Backend team)</div><div class="task-desc">5 anggota tim diperkenalkan</div></div>
+            <div class="task-action"><span class="tag tg">Done</span></div>
+          </div>
+          <div class="task-row">
+            <div class="task-check">⏳</div>
+            <div class="task-body"><div class="task-title">Coffee chat dengan buddy (Ahmad Fauzi)</div><div class="task-desc">Jadwal: 28 Mei 2026 14:00 · accept calendar invite</div></div>
+            <div class="task-action"><button class="btn btn-s" style="font-size:11px;padding:4px 10px">Jadwalkan</button></div>
+          </div>
+
+          <!-- FIRST WORK -->
+          <div class="cat-section">
+            <span>🚀 First Contribution</span>
+            <span style="color:var(--ink3)">0/3</span>
+          </div>
+          <div class="task-row">
+            <div class="task-check">○</div>
+            <div class="task-body"><div class="task-title">Setup local development environment</div><div class="task-desc">Clone repo, run docker-compose, verify hello-world</div></div>
+            <div class="task-action"><button class="btn btn-s" style="font-size:11px;padding:4px 10px">📖 Guide</button></div>
+          </div>
+          <div class="task-row">
+            <div class="task-check">○</div>
+            <div class="task-body"><div class="task-title">Selesaikan starter task</div><div class="task-desc">Bug kecil di backend API · estimasi 2 hari</div></div>
+            <div class="task-action"><button class="btn btn-s" style="font-size:11px;padding:4px 10px">Lihat</button></div>
+          </div>
+          <div class="task-row">
+            <div class="task-check">○</div>
+            <div class="task-body"><div class="task-title">Submit first Pull Request</div><div class="task-desc">Code review oleh Rizky &amp; Budi</div></div>
+            <div class="task-action"><span class="tag tgr">Pending</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDE PANEL -->
+      <div>
+        <!-- WELCOME MESSAGES -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">💌 Sambutan dari Leadership</div></div>
+          <div class="cb">
+            <div class="msg-row">
+              <div class="msg-av" style="background:linear-gradient(135deg,#0A0A0F,#3C3C43)">RA</div>
+              <div class="msg-body">
+                <div class="msg-from"><span class="msg-name">Rudi Atmadja</span><span class="tag tp">👑 Direktur Utama</span></div>
+                <div class="msg-text">"Selamat datang Siti! IDEA dibangun atas kontribusi setiap orang. Tidak sabar melihat impact yang akan kamu bawa."</div>
+              </div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">IW</div>
+              <div class="msg-body">
+                <div class="msg-from"><span class="msg-name">Indra Wijaya</span><span class="tag tb">CTO</span></div>
+                <div class="msg-text">"Welcome aboard! Dept Teknologi punya banyak project menarik. Jangan ragu tanya — semua di sini siap bantu."</div>
+              </div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>
+              <div class="msg-body">
+                <div class="msg-from"><span class="msg-name">Rizky Hanafi</span><span class="tag tgr">Atasan Langsung</span></div>
+                <div class="msg-text">"Senang banget kamu join tim! Sudah saya prep starter task yang sesuai background-mu. Yuk pair programming minggu depan!"</div>
+              </div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED)">AF</div>
+              <div class="msg-body">
+                <div class="msg-from"><span class="msg-name">Ahmad Fauzi</span><span class="tag to">🤝 Buddy</span></div>
+                <div class="msg-text">"Halo! Aku jadi buddy-mu selama onboarding. Free untuk ngobrol kapan aja — slack me anytime atau coffee chat kita minggu depan!"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK LINKS -->
+        <div class="card" style="margin-top:14px">
+          <div class="ch"><div class="ch-title">🔗 Quick Links</div></div>
+          <div class="cb">
+            <div class="ql-grid">
+              <a class="ql-card" href="IDEA_InfoPerusahaan.html"><div class="ql-ic">📚</div><div class="ql-text">Handbook</div></a>
+              <a class="ql-card" href="IDEA_OrgChart.html"><div class="ql-ic">🌳</div><div class="ql-text">Org Chart</div></a>
+              <a class="ql-card" href="IDEA_ProfilSaya.html"><div class="ql-ic">👤</div><div class="ql-text">Profil</div></a>
+              <a class="ql-card"><div class="ql-ic">📅</div><div class="ql-text">Calendar</div></a>
+              <a class="ql-card"><div class="ql-ic">💬</div><div class="ql-text">Slack</div></a>
+              <a class="ql-card"><div class="ql-ic">📋</div><div class="ql-text">Jira</div></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="card" style="margin-top:14px">
+          <div class="ch"><div class="ch-title">❓ FAQ Onboarding</div></div>
+          <div class="cb">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer">
+                <div style="font-size:12px;font-weight:700">Berapa lama probation period?</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px">3 bulan, dengan penilaian khusus. Dapat diperpanjang 1x.</div>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer">
+                <div style="font-size:12px;font-weight:700">Kapan saya bisa ambil cuti?</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px">Setelah 3 bulan kerja. Tahunan 12 hari/tahun, prorated.</div>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer">
+                <div style="font-size:12px;font-weight:700">Bagaimana sistem penilaian?</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px">OKR + Weighted, dievaluasi bulanan oleh atasan.</div>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;text-align:center;color:var(--blue);font-weight:600;font-size:11px">
+                Lihat semua FAQ →
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER ONBOARDING -->
+    <div style="margin-top:14px;padding:18px 22px;background:linear-gradient(135deg,#E5F9EC,#E8F1FF);border:1px solid rgba(48,209,88,.2);border-radius:var(--r);display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">🎯</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;margin-bottom:3px">Setelah Onboarding Selesai</div>
+        <div style="font-size:12px;color:var(--ink2);line-height:1.6">Setelah semua 20 tasks selesai, akses portal Anda akan otomatis diaktifkan penuh. Status berubah dari "Onboarding" ke "Active". OKR Q3 akan di-set oleh atasan langsung dan masuk siklus penilaian normal.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>

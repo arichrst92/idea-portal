@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Konfigurasi Penilaian Kinerja</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white:      #FFFFFF;
+    --off-white:  #F5F5F7;
+    --light-gray: #E8E8ED;
+    --mid-gray:   #C7C7CC;
+    --text-main:  #1D1D1F;
+    --text-sub:   #6E6E73;
+    --text-muted: #86868B;
+    --blue:       #0071E3;
+    --blue-soft:  #EBF4FF;
+    --blue-mid:   #D0E7FB;
+    --green:      #34C759;
+    --green-soft: #F0FBF3;
+    --orange:     #FF9500;
+    --orange-soft:#FFF8EC;
+    --red:        #FF3B30;
+    --red-soft:   #FFF2F1;
+    --purple:     #AF52DE;
+    --purple-soft:#F5EEFA;
+    --sidebar-w:  240px;
+    --topbar-h:   56px;
+    --font:       'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --radius:     14px;
+    --radius-sm:  10px;
+    --radius-xs:  8px;
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.07);
+    --shadow-md:  0 4px 20px rgba(0,0,0,0.07);
+  }
+
+  html, body { height: 100%; font-family: var(--font); background: var(--off-white); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+  /* ── LAYOUT ──────────────────────────────────────────────────── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── SIDEBAR ─────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w); height: 100vh;
+    background: var(--white); border-right: 1px solid var(--light-gray);
+    display: flex; flex-direction: column; flex-shrink: 0;
+    overflow-y: auto; overflow-x: hidden;
+  }
+  .sidebar-logo {
+    padding: 18px 20px 16px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--light-gray);
+  }
+  .sidebar-logo-mark {
+    width: 32px; height: 32px; background: var(--text-main); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .sidebar-logo-mark svg { width: 17px; height: 17px; }
+  .sidebar-logo-name { font-size: 16px; font-weight: 700; letter-spacing: -0.4px; }
+  .sidebar-logo-env  { font-size: 10px; color: var(--text-muted); }
+  .sidebar-user {
+    margin: 14px 12px; padding: 10px 12px; background: var(--off-white);
+    border-radius: var(--radius-xs); display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #7C3AED, #AF52DE);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .sidebar-user-name { font-size: 13px; font-weight: 600; }
+  .sidebar-user-role { font-size: 11px; color: var(--text-muted); }
+  .sidebar-section-label {
+    padding: 14px 20px 6px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);
+  }
+  .sidebar-nav { padding: 0 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: var(--radius-xs); cursor: pointer; font-size: 13px;
+    font-weight: 500; color: var(--text-sub); margin-bottom: 1px;
+    transition: background 0.12s;
+  }
+  .nav-item:hover  { background: var(--off-white); color: var(--text-main); }
+  .nav-item.active { background: var(--purple-soft); color: var(--purple); }
+  .nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sidebar-divider { height: 1px; background: var(--light-gray); margin: 8px 12px; }
+
+  /* ── MAIN ────────────────────────────────────────────────────── */
+  .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    height: var(--topbar-h); background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(20px); border-bottom: 1px solid var(--light-gray);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; flex-shrink: 0;
+  }
+  .topbar-breadcrumb { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .topbar-breadcrumb span { color: var(--text-main); font-weight: 500; }
+  .topbar-breadcrumb .sep { color: var(--mid-gray); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: var(--radius-xs);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: none; font-family: var(--font); transition: all 0.15s;
+  }
+  .btn-primary   { background: var(--blue); color: white; box-shadow: 0 2px 8px rgba(0,113,227,0.25); }
+  .btn-primary:hover { background: #0077ED; transform: translateY(-1px); }
+  .btn-secondary { background: var(--white); color: var(--text-main); border: 1px solid var(--light-gray); }
+  .btn-secondary:hover { background: var(--off-white); }
+  .btn-danger    { background: var(--red-soft); color: var(--red); border: 1px solid rgba(255,59,48,0.2); }
+  .btn-danger:hover { background: #FFE5E3; }
+  .btn-ghost     { background: transparent; color: var(--text-muted); border: none; padding: 6px 10px; }
+  .btn-ghost:hover { color: var(--text-main); background: var(--off-white); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-xs);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; border: none;
+    font-family: var(--font);
+  }
+
+  .content { flex: 1; overflow-y: auto; padding: 28px; }
+
+  /* ── PAGE HEADER ─────────────────────────────────────────────── */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 24px; gap: 20px;
+  }
+  .page-title-wrap {}
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .page-sub   { font-size: 14px; color: var(--text-sub); }
+
+  /* ── DEPT TABS ───────────────────────────────────────────────── */
+  .dept-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px;
+    padding: 4px; background: var(--off-white);
+    border-radius: var(--radius-sm); border: 1px solid var(--light-gray);
+    width: fit-content;
+  }
+  .dept-tab {
+    padding: 8px 18px; border-radius: var(--radius-xs);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s; color: var(--text-muted);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .dept-tab:hover { color: var(--text-main); background: var(--white); }
+  .dept-tab.active {
+    background: var(--white); color: var(--text-main);
+    box-shadow: var(--shadow-sm); font-weight: 600;
+  }
+  .dept-tab .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── MAIN GRID ───────────────────────────────────────────────── */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── CARD ────────────────────────────────────────────────────── */
+  .card {
+    background: var(--white); border: 1px solid var(--light-gray);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--light-gray);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-size: 14px; font-weight: 600; letter-spacing: -0.2px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title-icon { font-size: 16px; }
+  .card-body  { padding: 20px; }
+  .card-footer {
+    padding: 14px 20px; border-top: 1px solid var(--light-gray);
+    background: var(--off-white); display: flex; align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ── WEIGHT SPLIT ────────────────────────────────────────────── */
+  .weight-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .weight-box {
+    border: 1.5px solid var(--light-gray); border-radius: var(--radius-sm);
+    padding: 16px 18px; transition: border-color 0.15s;
+  }
+  .weight-box:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.08); }
+  .weight-box-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px; }
+  .weight-box-value { display: flex; align-items: center; gap: 6px; }
+  .weight-input {
+    width: 72px; height: 40px; border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs); font-size: 22px; font-weight: 700;
+    text-align: center; font-family: var(--font); color: var(--text-main);
+    outline: none; background: var(--off-white); transition: all 0.15s;
+  }
+  .weight-input:focus { border-color: var(--blue); background: var(--white); box-shadow: 0 0 0 3px rgba(0,113,227,0.08); }
+  .weight-pct { font-size: 22px; font-weight: 700; color: var(--text-muted); }
+  .weight-desc { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
+
+  /* Total indicator */
+  .weight-total-bar {
+    margin-bottom: 20px; padding: 12px 16px;
+    border-radius: var(--radius-xs); border: 1px solid var(--light-gray);
+    display: flex; align-items: center; gap: 14px;
+    transition: all 0.3s;
+  }
+  .weight-total-bar.valid   { background: var(--green-soft); border-color: rgba(52,199,89,0.3); }
+  .weight-total-bar.invalid { background: var(--red-soft);   border-color: rgba(255,59,48,0.3); }
+  .weight-track { flex: 1; height: 8px; background: var(--light-gray); border-radius: 4px; overflow: hidden; }
+  .weight-fill  { height: 100%; border-radius: 4px; transition: width 0.4s ease, background 0.3s; }
+  .weight-total-text { font-size: 13px; font-weight: 600; flex-shrink: 0; }
+
+  /* ── SECTION DIVIDER ─────────────────────────────────────────── */
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-muted);
+    margin: 20px 0 12px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--light-gray); }
+
+  /* ── ITEMS LIST ──────────────────────────────────────────────── */
+  .items-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 90px 90px 36px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--off-white);
+    border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .item-row:hover { border-color: var(--mid-gray); background: var(--white); }
+  .item-row.dragging { opacity: 0.5; border-style: dashed; }
+  .item-row.drag-over { border-color: var(--blue); background: var(--blue-soft); }
+
+  .drag-handle {
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab; color: var(--mid-gray); transition: color 0.15s;
+  }
+  .drag-handle:hover { color: var(--text-muted); }
+  .drag-handle:active { cursor: grabbing; }
+
+  .item-name-input {
+    height: 36px; padding: 0 12px; border: 1.5px solid transparent;
+    border-radius: var(--radius-xs); font-size: 13px; font-weight: 500;
+    font-family: var(--font); background: transparent; color: var(--text-main);
+    outline: none; transition: all 0.15s; width: 100%;
+  }
+  .item-name-input:hover { background: var(--white); border-color: var(--light-gray); }
+  .item-name-input:focus { background: var(--white); border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.08); }
+
+  .item-weight-wrap { display: flex; align-items: center; gap: 4px; }
+  .item-weight-input {
+    width: 52px; height: 36px; border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs); font-size: 14px; font-weight: 600;
+    text-align: center; font-family: var(--font); color: var(--text-main);
+    outline: none; background: var(--white); transition: all 0.15s;
+  }
+  .item-weight-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.08); }
+  .item-weight-pct { font-size: 13px; color: var(--text-muted); }
+
+  /* Category badge */
+  .item-category-select {
+    height: 36px; padding: 0 8px; border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs); font-size: 12px; font-weight: 500;
+    font-family: var(--font); background: var(--white); color: var(--text-main);
+    outline: none; cursor: pointer; transition: all 0.15s;
+    background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%2386868B' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center;
+    padding-right: 24px; -webkit-appearance: none;
+  }
+  .item-category-select:focus { border-color: var(--blue); }
+
+  .item-delete {
+    width: 32px; height: 32px; border-radius: var(--radius-xs);
+    background: transparent; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mid-gray); transition: all 0.15s;
+  }
+  .item-delete:hover { background: var(--red-soft); color: var(--red); }
+
+  /* Items subtotal */
+  .items-subtotal {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-radius: var(--radius-xs);
+    font-size: 13px; margin-top: 8px; transition: all 0.3s;
+    border: 1px solid transparent;
+  }
+  .items-subtotal.valid   { background: var(--green-soft); border-color: rgba(52,199,89,0.2); }
+  .items-subtotal.invalid { background: var(--red-soft);   border-color: rgba(255,59,48,0.2); }
+  .items-subtotal.neutral { background: var(--off-white);  border-color: var(--light-gray); }
+  .items-subtotal-label { color: var(--text-muted); font-weight: 500; }
+  .items-subtotal-value { font-weight: 700; }
+
+  /* Add item btn */
+  .add-item-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: var(--radius-xs);
+    border: 1.5px dashed var(--mid-gray); background: transparent;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; font-family: var(--font); transition: all 0.15s;
+    width: 100%; margin-top: 10px;
+  }
+  .add-item-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+
+  /* ── OKR CONFIG ──────────────────────────────────────────────── */
+  .okr-info-card {
+    background: var(--blue-soft); border: 1px solid var(--blue-mid);
+    border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 16px;
+  }
+  .okr-info-title { font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .okr-info-desc  { font-size: 12px; color: #3B6EA0; line-height: 1.6; }
+
+  .okr-setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--light-gray);
+  }
+  .okr-setting-row:last-child { border-bottom: none; }
+  .okr-setting-label { font-size: 13px; font-weight: 500; color: var(--text-main); }
+  .okr-setting-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle {
+    width: 44px; height: 26px; background: var(--mid-gray); border-radius: 13px;
+    cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; background: white; border-radius: 50%;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+  .toggle-label { font-size: 12px; color: var(--text-muted); }
+
+  /* Number input small */
+  .input-sm {
+    width: 64px; height: 32px; border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-xs); font-size: 13px; font-weight: 600;
+    text-align: center; font-family: var(--font); outline: none;
+    transition: all 0.15s;
+  }
+  .input-sm:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.08); }
+
+  /* ── PREVIEW PANEL ───────────────────────────────────────────── */
+  .preview-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .formula-box {
+    background: #0A0A0A; border-radius: var(--radius-sm);
+    padding: 18px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+  .formula-comment { font-size: 11px; color: #6B7280; margin-bottom: 10px; }
+  .formula-line    { font-size: 13px; line-height: 1.8; }
+  .f-kw  { color: #FF7B72; }
+  .f-var { color: #79C0FF; }
+  .f-num { color: #A5F3FC; font-weight: 600; }
+  .f-op  { color: #E6EDF3; }
+  .f-cmt { color: #6B7280; }
+
+  /* Score simulator */
+  .simulator-card {
+    background: var(--white); border: 1px solid var(--light-gray);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .sim-header {
+    padding: 14px 18px; background: var(--off-white);
+    border-bottom: 1px solid var(--light-gray);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sim-body { padding: 16px 18px; }
+  .sim-row  {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid var(--light-gray); gap: 12px;
+  }
+  .sim-row:last-child { border-bottom: none; }
+  .sim-label { font-size: 12px; color: var(--text-sub); flex: 1; }
+  .sim-slider {
+    -webkit-appearance: none; width: 100px; height: 4px;
+    border-radius: 2px; background: var(--light-gray); outline: none;
+    cursor: pointer;
+  }
+  .sim-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--blue);
+    border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer;
+  }
+  .sim-val { font-size: 12px; font-weight: 600; width: 28px; text-align: right; }
+
+  .sim-result {
+    margin-top: 14px; padding: 14px 16px;
+    border-radius: var(--radius-xs); text-align: center;
+  }
+  .sim-result-score { font-size: 36px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .sim-result-label { font-size: 12px; margin-top: 4px; font-weight: 500; }
+  .sim-result-sub   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* History/versions */
+  .version-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--light-gray);
+    font-size: 12px;
+  }
+  .version-item:last-child { border-bottom: none; }
+  .version-label { color: var(--text-sub); }
+  .version-label strong { color: var(--text-main); font-weight: 500; display: block; margin-bottom: 2px; }
+  .version-tag {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+  }
+
+  /* ── TAG ─────────────────────────────────────────────────────── */
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px;
+  }
+  .tag.green  { background: var(--green-soft); color: var(--green); }
+  .tag.blue   { background: var(--blue-soft);  color: var(--blue); }
+  .tag.orange { background: var(--orange-soft); color: var(--orange); }
+  .tag.red    { background: var(--red-soft);   color: var(--red); }
+  .tag.gray   { background: var(--off-white);  color: var(--text-muted); }
+
+  /* ── TOAST ───────────────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1D1D1F; color: white; padding: 12px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25); opacity: 0; transition: all 0.3s ease;
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── MODAL ───────────────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--white); border-radius: var(--radius); width: 440px;
+    overflow: hidden; transform: scale(0.95); transition: transform 0.2s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-overlay.show .modal { transform: scale(1); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--light-gray); }
+  .modal-title  { font-size: 16px; font-weight: 600; }
+  .modal-body   { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--light-gray); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── SCROLLBAR ───────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--light-gray); border-radius: 3px; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .card { animation: fadeUp 0.35s ease both; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.8"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sidebar-logo-name">IDEA</div>
+        <div class="sidebar-logo-env">Employee Portal</div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">DS</div>
+      <div>
+        <div class="sidebar-user-name">Diana Sari</div>
+        <div class="sidebar-user-role">C-Level · Dept. Teknologi</div>
+      </div>
+    </div>
+    <div class="sidebar-section-label">Dept. Teknologi</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">👥</span> Employee Management</div>
+      <div class="nav-item"><span class="nav-icon">🗂️</span> Project Management</div>
+      <div class="nav-item active"><span class="nav-icon">⭐</span> Penilaian Kinerja</div>
+      <div class="nav-item"><span class="nav-icon">📄</span> Laporan</div>
+    </nav>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Pengaturan</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item"><span class="nav-icon">⚙️</span> Pengaturan Dept</div>
+    </nav>
+  </aside>
+
+  <!-- ── MAIN ────────────────────────────────────────────────────── -->
+  <div class="main-area">
+    <div class="topbar">
+      <div class="topbar-breadcrumb">
+        Penilaian Kinerja <span class="sep">/</span> <span>Konfigurasi</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="showResetModal()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5a5 5 0 1 1 1.2 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 9.5V6.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reset ke Default
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="saveConfig()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3.5 3.5 5.5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Simpan Konfigurasi
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-title-wrap">
+          <div class="page-title">Konfigurasi Penilaian Kinerja</div>
+          <div class="page-sub">Setup item penilaian, bobot, dan parameter untuk masing-masing departemen</div>
+        </div>
+        <span class="tag blue">Berlaku mulai Q3 2025</span>
+      </div>
+
+      <!-- Dept Tabs -->
+      <div class="dept-tabs">
+        <div class="dept-tab active" onclick="switchDept(this, 'teknologi')">
+          <div class="dot" style="background:#0071E3"></div> Teknologi
+        </div>
+        <div class="dept-tab" onclick="switchDept(this, 'operation')">
+          <div class="dot" style="background:#34C759"></div> Operation
+        </div>
+        <div class="dept-tab" onclick="switchDept(this, 'sales')">
+          <div class="dot" style="background:#FF9500"></div> Sales & Marketing
+        </div>
+        <div class="dept-tab" onclick="switchDept(this, 'finance')">
+          <div class="dot" style="background:#AF52DE"></div> Finance & Tax
+        </div>
+      </div>
+
+      <!-- Config Grid -->
+      <div class="config-grid">
+
+        <!-- ── LEFT: MAIN CONFIG ───────────────────────────────── -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+          <!-- SECTION 1: Bobot Utama -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">⚖️</span> Bobot Utama: OKR vs Weighted Score</div>
+              <span class="tag green" id="mainWeightStatus">✓ Total 100%</span>
+            </div>
+            <div class="card-body">
+
+              <div class="weight-split">
+                <div class="weight-box">
+                  <div class="weight-box-label" style="color:var(--blue)">OKR Achievement</div>
+                  <div class="weight-box-value">
+                    <input type="number" class="weight-input" id="okrWeight" value="60" min="0" max="100" oninput="updateMainWeight()">
+                    <span class="weight-pct">%</span>
+                  </div>
+                  <div class="weight-desc">Pencapaian Key Results per kuartal. Diisi otomatis dari data Sales untuk Dept. Sales.</div>
+                </div>
+                <div class="weight-box">
+                  <div class="weight-box-label" style="color:var(--purple)">Weighted Score</div>
+                  <div class="weight-box-value">
+                    <input type="number" class="weight-input" id="wsWeight" value="40" min="0" max="100" oninput="updateMainWeight()" style="color:var(--purple)">
+                    <span class="weight-pct" style="color:var(--purple)">%</span>
+                  </div>
+                  <div class="weight-desc">Penilaian kualitatif berdasarkan item yang dikonfigurasi di bawah.</div>
+                </div>
+              </div>
+
+              <!-- Total bar -->
+              <div class="weight-total-bar valid" id="mainWeightBar">
+                <div class="weight-track">
+                  <div class="weight-fill" id="mainWeightFill" style="width:100%; background:var(--green)"></div>
+                </div>
+                <div class="weight-total-text" id="mainWeightText" style="color:var(--green)">✓ Total: 100%</div>
+              </div>
+
+              <div style="background:var(--off-white); border-radius:var(--radius-xs); padding:12px 14px; font-size:12px; color:var(--text-sub); line-height:1.6; border:1px solid var(--light-gray);">
+                <strong style="color:var(--text-main);">Rumus Final Score:</strong>
+                <code style="background:var(--white); padding:2px 8px; border-radius:4px; font-size:12px; display:inline-block; margin-top:4px; border:1px solid var(--light-gray);">
+                  Final Score = (OKR × <span id="okrPct" style="color:var(--blue); font-weight:700;">60%</span>) + (Weighted × <span id="wsPct" style="color:var(--purple); font-weight:700;">40%</span>)
+                </code>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Weighted Score Items -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">📋</span> Item Weighted Score</div>
+              <span class="tag orange" id="wsItemsStatus">Total: 100%</span>
+            </div>
+            <div class="card-body">
+
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                Tambah, edit, atau hapus item penilaian. Bobot tiap item harus berjumlah <strong>100%</strong>.
+                Klik nama item untuk mengedit. Drag untuk mengubah urutan.
+              </div>
+
+              <!-- Column headers -->
+              <div style="display:grid; grid-template-columns:28px 1fr 90px 90px 36px; gap:10px; padding:0 14px 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted);">
+                <div></div>
+                <div>Nama Item</div>
+                <div style="text-align:center">Bobot</div>
+                <div style="text-align:center">Kategori</div>
+                <div></div>
+              </div>
+
+              <!-- Items -->
+              <div class="items-list" id="weightedItems">
+                <!-- Generated by JS -->
+              </div>
+
+              <!-- Subtotal -->
+              <div class="items-subtotal valid" id="wsSubtotal">
+                <span class="items-subtotal-label">Total bobot item</span>
+                <span class="items-subtotal-value" id="wsSubtotalVal" style="color:var(--green)">100% ✓</span>
+              </div>
+
+              <!-- Add button -->
+              <button class="add-item-btn" onclick="addWeightedItem()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Tambah Item Penilaian
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 3: OKR Config -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">🎯</span> Konfigurasi OKR</div>
+            </div>
+            <div class="card-body">
+
+              <div class="okr-info-card">
+                <div class="okr-info-title">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 5v2.5l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                  Bagaimana OKR dievaluasi?
+                </div>
+                <div class="okr-info-desc">
+                  OKR (Objectives & Key Results) di-set oleh atasan langsung setiap awal kuartal.
+                  Evaluasi dilakukan bulanan dengan mengisi % pencapaian per Key Result.
+                  Skor OKR = rata-rata pencapaian semua Key Results bulan tersebut.
+                </div>
+              </div>
+
+              <div class="okr-setting-row">
+                <div>
+                  <div class="okr-setting-label">Auto-pull data Sales ke OKR</div>
+                  <div class="okr-setting-sub">Win rate & revenue aktual otomatis masuk sebagai Key Result (khusus Dept. Sales)</div>
+                </div>
+                <div class="toggle-wrap">
+                  <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+                  <span class="toggle-label">Aktif</span>
+                </div>
+              </div>
+
+              <div class="okr-setting-row">
+                <div>
+                  <div class="okr-setting-label">Jumlah minimum Key Results per karyawan</div>
+                  <div class="okr-setting-sub">Atasan wajib set minimal N Key Results per kuartal</div>
+                </div>
+                <input type="number" class="input-sm" value="3" min="1" max="10">
+              </div>
+
+              <div class="okr-setting-row">
+                <div>
+                  <div class="okr-setting-label">Jumlah maksimum Key Results per karyawan</div>
+                  <div class="okr-setting-sub">Batas atas Key Results agar tetap fokus</div>
+                </div>
+                <input type="number" class="input-sm" value="5" min="1" max="20">
+              </div>
+
+              <div class="okr-setting-row">
+                <div>
+                  <div class="okr-setting-label">Skor OKR dihitung dari</div>
+                  <div class="okr-setting-sub">Metode kalkulasi rata-rata Key Results</div>
+                </div>
+                <select class="item-category-select" style="width:160px">
+                  <option>Rata-rata sederhana</option>
+                  <option>Rata-rata tertimbang</option>
+                  <option>Minimum achievement</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4: SP Threshold -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">⚠️</span> Threshold Surat Peringatan (SP)</div>
+            </div>
+            <div class="card-body">
+
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:16px;">
+                <div style="padding:14px; background:var(--orange-soft); border-radius:var(--radius-xs); border:1px solid rgba(255,149,0,0.2); text-align:center;">
+                  <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--orange); margin-bottom:6px;">Batas Skor SP</div>
+                  <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <span style="font-size:18px; color:var(--orange); font-weight:700;">&lt;</span>
+                    <input type="number" class="input-sm" value="60" min="0" max="100" style="border-color:rgba(255,149,0,0.3); color:var(--orange);">
+                  </div>
+                  <div style="font-size:11px; color:var(--orange); margin-top:4px;">/100 poin</div>
+                </div>
+                <div style="padding:14px; background:var(--red-soft); border-radius:var(--radius-xs); border:1px solid rgba(255,59,48,0.2); text-align:center;">
+                  <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--red); margin-bottom:6px;">Bulan Berturut</div>
+                  <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <input type="number" class="input-sm" value="3" min="1" max="6" style="border-color:rgba(255,59,48,0.3); color:var(--red);">
+                    <span style="font-size:14px; color:var(--red); font-weight:600;">bln</span>
+                  </div>
+                  <div style="font-size:11px; color:var(--red); margin-top:4px;">trigger otomatis</div>
+                </div>
+                <div style="padding:14px; background:var(--blue-soft); border-radius:var(--radius-xs); border:1px solid var(--blue-mid); text-align:center;">
+                  <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--blue); margin-bottom:6px;">Flag Kuning</div>
+                  <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <span style="font-size:18px; color:var(--blue); font-weight:700;">&lt;</span>
+                    <input type="number" class="input-sm" value="70" min="0" max="100" style="border-color:var(--blue-mid); color:var(--blue);">
+                  </div>
+                  <div style="font-size:11px; color:var(--blue); margin-top:4px;">notif ke atasan</div>
+                </div>
+              </div>
+
+              <div style="background:var(--off-white); border-radius:var(--radius-xs); padding:12px 14px; font-size:12px; color:var(--text-sub); border:1px solid var(--light-gray); line-height:1.6;">
+                <strong style="color:var(--text-main)">Alur SP otomatis:</strong> Jika skor &lt; <strong>60</strong> selama <strong>3 bulan berturut-turut</strong>,
+                sistem akan otomatis men-draft SP dan mengirim notifikasi ke Dept. Operation untuk proses approval.
+                Skor &lt; <strong>70</strong> pada bulan pertama akan memunculkan flag kuning sebagai peringatan dini ke atasan langsung.
+              </div>
+
+              <div class="okr-setting-row" style="margin-top:12px;">
+                <div>
+                  <div class="okr-setting-label">Skip threshold saat karyawan cuti panjang</div>
+                  <div class="okr-setting-sub">Bulan dengan cuti panjang tidak dihitung dalam streak SP</div>
+                </div>
+                <div class="toggle-wrap">
+                  <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+                  <span class="toggle-label">Aktif</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── RIGHT: PREVIEW + SIMULATOR ─────────────────────── -->
+        <div class="preview-panel">
+
+          <!-- Formula Preview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">🧮</span> Formula Aktif</div>
+            </div>
+            <div class="card-body" style="padding:14px;">
+              <div class="formula-box" id="formulaBox">
+                <div class="formula-comment"># Dept. Teknologi — Q3 2025</div>
+                <div class="formula-line">
+                  <span class="f-kw">final_score</span> <span class="f-op">=</span>
+                </div>
+                <div class="formula-line" style="padding-left:16px;">
+                  (<span class="f-var">okr_score</span> <span class="f-op">×</span> <span class="f-num" id="fOkrPct">0.60</span>)
+                </div>
+                <div class="formula-line" style="padding-left:16px;">
+                  <span class="f-op">+</span> (<span class="f-var">weighted_score</span> <span class="f-op">×</span> <span class="f-num" id="fWsPct">0.40</span>)
+                </div>
+                <div class="formula-line" style="margin-top:8px; font-size:11px;">
+                  <span class="f-cmt"># weighted_score components:</span>
+                </div>
+                <div id="formulaItems" style="font-size:11px;"></div>
+                <div class="formula-line" style="margin-top:8px;">
+                  <span class="f-cmt"># SP trigger: score &lt; 60 × 3 months</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Score Simulator -->
+          <div class="simulator-card">
+            <div class="sim-header">
+              🎮 Simulator Skor
+              <span class="tag gray" style="font-size:10px; margin-left:auto;">Coba sebelum simpan</span>
+            </div>
+            <div class="sim-body">
+              <div class="sim-row">
+                <div class="sim-label">OKR Achievement</div>
+                <input type="range" class="sim-slider" id="simOkr" min="0" max="100" value="85" oninput="calcSimulator()">
+                <div class="sim-val" id="simOkrVal">85</div>
+              </div>
+              <div id="simWeightedRows">
+                <!-- Generated by JS -->
+              </div>
+
+              <!-- Result -->
+              <div class="sim-result" id="simResult" style="background:var(--blue-soft);">
+                <div class="sim-result-score" id="simScore" style="color:var(--blue)">82</div>
+                <div class="sim-result-label" id="simLabel" style="color:var(--blue)">Performa Baik</div>
+                <div class="sim-result-sub" id="simSub">Di atas threshold SP (60)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Version History -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><span class="card-title-icon">🕐</span> Riwayat Konfigurasi</div>
+            </div>
+            <div class="card-body">
+              <div class="version-item">
+                <div class="version-label">
+                  <strong>Konfigurasi saat ini</strong>
+                  OKR 60% · WS 40% · 5 item
+                </div>
+                <span class="tag green version-tag">Aktif</span>
+              </div>
+              <div class="version-item">
+                <div class="version-label">
+                  <strong>Q2 2025 — 1 Apr 2025</strong>
+                  OKR 50% · WS 50% · 4 item
+                </div>
+                <button class="btn btn-ghost btn-sm">Restore</button>
+              </div>
+              <div class="version-item">
+                <div class="version-label">
+                  <strong>Q1 2025 — 1 Jan 2025</strong>
+                  OKR 60% · WS 40% · 3 item
+                </div>
+                <button class="btn btn-ghost btn-sm">Restore</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── RESET MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Reset ke Konfigurasi Default?</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px; color:var(--text-sub); line-height:1.6;">
+        Ini akan mengembalikan semua pengaturan penilaian Dept. Teknologi ke nilai default sistem:
+        <strong style="color:var(--text-main)">OKR 60% + Weighted 40%</strong> dengan 3 item standar.
+        Konfigurasi saat ini akan disimpan di riwayat.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn btn-danger" onclick="resetConfig()">Ya, Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DATA ─────────────────────────────────────────────────────────
+  let weightedItems = [
+    { id: 1, name: 'Attitude & Soft Skill',      weight: 35, category: 'Perilaku' },
+    { id: 2, name: 'Kehadiran & Kedisiplinan',   weight: 25, category: 'Kehadiran' },
+    { id: 3, name: 'Kolaborasi & Komunikasi',    weight: 20, category: 'Perilaku' },
+    { id: 4, name: 'Inisiatif & Problem Solving',weight: 10, category: 'Kompetensi' },
+    { id: 5, name: 'Dokumentasi & Pelaporan',    weight: 10, category: 'Kompetensi' },
+  ];
+  let nextId = 6;
+
+  const categories = ['Perilaku', 'Kehadiran', 'Kompetensi', 'Kinerja', 'Lainnya'];
+
+  // ── RENDER ───────────────────────────────────────────────────────
+  function renderItems() {
+    const container = document.getElementById('weightedItems');
+    container.innerHTML = '';
+
+    weightedItems.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.dataset.id = item.id;
+
+      const catOptions = categories.map(c =>
+        `<option ${c === item.category ? 'selected' : ''}>${c}</option>`
+      ).join('');
+
+      row.innerHTML = `
+        <div class="drag-handle" title="Drag untuk reorder">
+          <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
+            <circle cx="4" cy="4"  r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="4"  r="1.5" fill="currentColor"/>
+            <circle cx="4" cy="8"  r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="8"  r="1.5" fill="currentColor"/>
+            <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <input type="text" class="item-name-input" value="${item.name}" placeholder="Nama item penilaian"
+               onchange="updateItemName(${item.id}, this.value)">
+        <div class="item-weight-wrap">
+          <input type="number" class="item-weight-input" value="${item.weight}" min="0" max="100"
+                 onchange="updateItemWeight(${item.id}, this.value)" oninput="updateItemWeight(${item.id}, this.value)">
+          <span class="item-weight-pct">%</span>
+        </div>
+        <select class="item-category-select" onchange="updateItemCategory(${item.id}, this.value)">
+          ${catOptions}
+        </select>
+        <button class="item-delete" onclick="deleteItem(${item.id})" title="Hapus item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 3.5h10M5.5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M11 3.5l-.8 8a1 1 0 0 1-1 .9H4.8a1 1 0 0 1-1-.9L3 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </button>
+      `;
+      container.appendChild(row);
+    });
+
+    updateSubtotal();
+    updateFormula();
+    updateSimulatorRows();
+    calcSimulator();
+  }
+
+  function updateItemName(id, val) {
+    const item = weightedItems.find(i => i.id === id);
+    if (item) { item.name = val; updateFormula(); updateSimulatorRows(); }
+  }
+  function updateItemWeight(id, val) {
+    const item = weightedItems.find(i => i.id === id);
+    if (item) { item.weight = parseInt(val) || 0; updateSubtotal(); updateFormula(); calcSimulator(); }
+  }
+  function updateItemCategory(id, val) {
+    const item = weightedItems.find(i => i.id === id);
+    if (item) item.category = val;
+  }
+
+  function deleteItem(id) {
+    if (weightedItems.length <= 1) { showToast('⚠️ Minimal harus ada 1 item penilaian'); return; }
+    weightedItems = weightedItems.filter(i => i.id !== id);
+    renderItems();
+    showToast('🗑️ Item dihapus');
+  }
+
+  function addWeightedItem() {
+    const remaining = 100 - weightedItems.reduce((s, i) => s + i.weight, 0);
+    weightedItems.push({
+      id: nextId++,
+      name: 'Item Penilaian Baru',
+      weight: Math.max(0, remaining),
+      category: 'Lainnya'
+    });
+    renderItems();
+    // Focus the new item's name input
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('.item-name-input');
+      if (inputs.length) inputs[inputs.length - 1].select();
+    }, 50);
+    showToast('➕ Item ditambahkan — klik nama untuk mengedit');
+  }
+
+  // ── SUBTOTAL ─────────────────────────────────────────────────────
+  function updateSubtotal() {
+    const total = weightedItems.reduce((s, i) => s + (parseInt(i.weight) || 0), 0);
+    const el    = document.getElementById('wsSubtotal');
+    const valEl = document.getElementById('wsSubtotalVal');
+    const statusEl = document.getElementById('wsItemsStatus');
+
+    if (total === 100) {
+      el.className = 'items-subtotal valid';
+      valEl.textContent = '100% ✓';
+      valEl.style.color = 'var(--green)';
+      statusEl.textContent = '✓ Total 100%';
+      statusEl.className = 'tag green';
+    } else if (total < 100) {
+      el.className = 'items-subtotal neutral';
+      valEl.textContent = `${total}% (kurang ${100 - total}%)`;
+      valEl.style.color = 'var(--orange)';
+      statusEl.textContent = `Total: ${total}%`;
+      statusEl.className = 'tag orange';
+    } else {
+      el.className = 'items-subtotal invalid';
+      valEl.textContent = `${total}% (lebih ${total - 100}%)`;
+      valEl.style.color = 'var(--red)';
+      statusEl.textContent = `Total: ${total}%`;
+      statusEl.className = 'tag red';
+    }
+  }
+
+  // ── MAIN WEIGHT ──────────────────────────────────────────────────
+  function updateMainWeight() {
+    const okr = parseInt(document.getElementById('okrWeight').value) || 0;
+    const ws  = parseInt(document.getElementById('wsWeight').value)  || 0;
+    const total = okr + ws;
+
+    // Auto-sync ws
+    const wsInput = document.getElementById('wsWeight');
+    if (document.activeElement === document.getElementById('okrWeight')) {
+      wsInput.value = Math.max(0, 100 - okr);
+    } else {
+      document.getElementById('okrWeight').value = Math.max(0, 100 - ws);
+    }
+
+    const okrFinal = parseInt(document.getElementById('okrWeight').value) || 0;
+    const wsFinal  = parseInt(document.getElementById('wsWeight').value)  || 0;
+    const t = okrFinal + wsFinal;
+
+    const bar    = document.getElementById('mainWeightBar');
+    const fill   = document.getElementById('mainWeightFill');
+    const text   = document.getElementById('mainWeightText');
+    const status = document.getElementById('mainWeightStatus');
+
+    document.getElementById('okrPct').textContent = `${okrFinal}%`;
+    document.getElementById('wsPct').textContent  = `${wsFinal}%`;
+    document.getElementById('fOkrPct').textContent = (okrFinal / 100).toFixed(2);
+    document.getElementById('fWsPct').textContent  = (wsFinal  / 100).toFixed(2);
+
+    if (t === 100) {
+      bar.className = 'weight-total-bar valid';
+      fill.style.width = '100%'; fill.style.background = 'var(--green)';
+      text.textContent = '✓ Total: 100%'; text.style.color = 'var(--green)';
+      status.textContent = '✓ Total 100%'; status.className = 'tag green';
+    } else {
+      bar.className = 'weight-total-bar invalid';
+      fill.style.width = Math.min(t, 100) + '%'; fill.style.background = 'var(--red)';
+      text.textContent = `Total: ${t}%`; text.style.color = 'var(--red)';
+      status.textContent = `Total: ${t}%`; status.className = 'tag red';
+    }
+    calcSimulator();
+  }
+
+  // ── FORMULA BOX ──────────────────────────────────────────────────
+  function updateFormula() {
+    const container = document.getElementById('formulaItems');
+    container.innerHTML = weightedItems.map(item =>
+      `<div class="formula-line" style="padding-left:16px;">
+        <span class="f-cmt"># ${item.name}: ${item.weight}%</span>
+       </div>`
+    ).join('');
+  }
+
+  // ── SIMULATOR ────────────────────────────────────────────────────
+  function updateSimulatorRows() {
+    const container = document.getElementById('simWeightedRows');
+    container.innerHTML = weightedItems.map(item =>
+      `<div class="sim-row">
+        <div class="sim-label">${item.name} <span style="color:var(--mid-gray); font-size:10px;">(${item.weight}%)</span></div>
+        <input type="range" class="sim-slider" data-item="${item.id}" min="0" max="100" value="80" oninput="calcSimulator()">
+        <div class="sim-val" id="simItemVal${item.id}">80</div>
+       </div>`
+    ).join('');
+  }
+
+  function calcSimulator() {
+    const okrWeight = parseInt(document.getElementById('okrWeight').value) || 60;
+    const wsWeight  = parseInt(document.getElementById('wsWeight').value)  || 40;
+    const okrVal    = parseInt(document.getElementById('simOkr').value);
+    document.getElementById('simOkrVal').textContent = okrVal;
+
+    // Weighted score
+    let wsTotal = 0, wsWeightSum = 0;
+    weightedItems.forEach(item => {
+      const slider = document.querySelector(`[data-item="${item.id}"]`);
+      if (!slider) return;
+      const val = parseInt(slider.value);
+      document.getElementById(`simItemVal${item.id}`).textContent = val;
+      wsTotal     += val * (item.weight / 100);
+      wsWeightSum += item.weight;
+    });
+    const wsScore = wsWeightSum > 0 ? wsTotal : 0;
+
+    const finalScore = Math.round((okrVal * okrWeight / 100) + (wsScore * wsWeight / 100));
+
+    const scoreEl = document.getElementById('simScore');
+    const labelEl = document.getElementById('simLabel');
+    const subEl   = document.getElementById('simSub');
+    const resultEl= document.getElementById('simResult');
+
+    scoreEl.textContent = finalScore;
+
+    if (finalScore >= 85) {
+      scoreEl.style.color = 'var(--green)';
+      labelEl.textContent = '🌟 Performa Sangat Baik';
+      labelEl.style.color = 'var(--green)';
+      resultEl.style.background = 'var(--green-soft)';
+      subEl.textContent = 'Di atas threshold SP (60)';
+    } else if (finalScore >= 70) {
+      scoreEl.style.color = 'var(--blue)';
+      labelEl.textContent = '✓ Performa Baik';
+      labelEl.style.color = 'var(--blue)';
+      resultEl.style.background = 'var(--blue-soft)';
+      subEl.textContent = 'Di atas threshold SP (60)';
+    } else if (finalScore >= 60) {
+      scoreEl.style.color = 'var(--orange)';
+      labelEl.textContent = '⚠️ Performa Cukup';
+      labelEl.style.color = 'var(--orange)';
+      resultEl.style.background = 'var(--orange-soft)';
+      subEl.textContent = 'Di atas batas SP, tapi perlu perhatian';
+    } else {
+      scoreEl.style.color = 'var(--red)';
+      labelEl.textContent = '🚨 Di Bawah Threshold';
+      labelEl.style.color = 'var(--red)';
+      resultEl.style.background = 'var(--red-soft)';
+      subEl.textContent = `Jika berlanjut 3 bulan → trigger SP otomatis`;
+    }
+  }
+
+  // ── DEPT SWITCH ──────────────────────────────────────────────────
+  function switchDept(el, dept) {
+    document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    const configs = {
+      teknologi: [
+        { id:1, name:'Attitude & Soft Skill',        weight:35, category:'Perilaku' },
+        { id:2, name:'Kehadiran & Kedisiplinan',      weight:25, category:'Kehadiran' },
+        { id:3, name:'Kolaborasi & Komunikasi',       weight:20, category:'Perilaku' },
+        { id:4, name:'Inisiatif & Problem Solving',   weight:10, category:'Kompetensi' },
+        { id:5, name:'Dokumentasi & Pelaporan',       weight:10, category:'Kompetensi' },
+      ],
+      operation: [
+        { id:1, name:'Kedisiplinan & Kehadiran',      weight:30, category:'Kehadiran' },
+        { id:2, name:'Kualitas Proses HR',            weight:30, category:'Kinerja' },
+        { id:3, name:'Kecepatan Respons Request',     weight:25, category:'Kinerja' },
+        { id:4, name:'Attitude & Komunikasi',         weight:15, category:'Perilaku' },
+      ],
+      sales: [
+        { id:1, name:'Attitude & Profesionalisme',   weight:20, category:'Perilaku' },
+        { id:2, name:'Kehadiran & Ketepatan Waktu',  weight:20, category:'Kehadiran' },
+        { id:3, name:'Kualitas Proposal',            weight:30, category:'Kinerja' },
+        { id:4, name:'Follow-up & Responsiveness',   weight:30, category:'Kinerja' },
+      ],
+      finance: [
+        { id:1, name:'Ketelitian & Akurasi Data',    weight:40, category:'Kompetensi' },
+        { id:2, name:'Ketepatan Waktu Laporan',      weight:30, category:'Kinerja' },
+        { id:3, name:'Kehadiran & Kedisiplinan',     weight:20, category:'Kehadiran' },
+        { id:4, name:'Attitude & Kolaborasi',        weight:10, category:'Perilaku' },
+      ],
+    };
+
+    weightedItems = configs[dept].map(i => ({...i}));
+    nextId = 10;
+
+    const okrWeights = { teknologi:60, operation:50, sales:70, finance:50 };
+    const wsWeights  = { teknologi:40, operation:50, sales:30, finance:50 };
+    document.getElementById('okrWeight').value = okrWeights[dept];
+    document.getElementById('wsWeight').value  = wsWeights[dept];
+    updateMainWeight();
+    renderItems();
+    showToast(`🔄 Beralih ke konfigurasi Dept. ${el.textContent.trim()}`);
+  }
+
+  // ── SAVE ─────────────────────────────────────────────────────────
+  function saveConfig() {
+    const total = weightedItems.reduce((s, i) => s + i.weight, 0);
+    if (total !== 100) {
+      showToast('❌ Total bobot item harus 100% sebelum menyimpan', true);
+      return;
+    }
+    const okr = parseInt(document.getElementById('okrWeight').value) || 0;
+    const ws  = parseInt(document.getElementById('wsWeight').value)  || 0;
+    if (okr + ws !== 100) {
+      showToast('❌ Total bobot OKR + Weighted harus 100%', true);
+      return;
+    }
+    showToast('✅ Konfigurasi berhasil disimpan — berlaku mulai bulan depan');
+  }
+
+  // ── RESET ─────────────────────────────────────────────────────────
+  function showResetModal() { document.getElementById('resetModal').classList.add('show'); }
+  function closeModal()     { document.getElementById('resetModal').classList.remove('show'); }
+  function resetConfig() {
+    closeModal();
+    document.getElementById('okrWeight').value = 60;
+    document.getElementById('wsWeight').value  = 40;
+    weightedItems = [
+      { id:1, name:'Attitude & Soft Skill',     weight:40, category:'Perilaku' },
+      { id:2, name:'Kehadiran & Kedisiplinan',  weight:35, category:'Kehadiran' },
+      { id:3, name:'Kolaborasi & Komunikasi',   weight:25, category:'Perilaku' },
+    ];
+    nextId = 10;
+    updateMainWeight();
+    renderItems();
+    showToast('🔄 Konfigurasi direset ke default');
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? 'var(--red)' : '#1D1D1F';
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────
+  renderItems();
+  updateMainWeight();
+
+  // Close modal on overlay click
+  document.getElementById('resetModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>

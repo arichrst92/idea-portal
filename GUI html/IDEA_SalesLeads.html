@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Sales Leads</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#FFF;--off:#F5F5F7;--lg:#E8E8ED;--mg:#C7C7CC;--main:#1D1D1F;--sub:#6E6E73;--muted:#86868B;--blue:#0071E3;--bs:#EBF4FF;--green:#34C759;--gs:#F0FBF3;--orange:#FF9500;--os:#FFF8EC;--red:#FF3B30;--rs:#FFF2F1;--purple:#AF52DE;--ps:#F5EEFA;--teal:#32ADE6;--ts:#EAF6FD;--font:'Inter',sans-serif;--r:14px;--rxs:8px}
+  html,body{height:100%;font-family:var(--font);background:var(--off);color:var(--main);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;height:100vh;background:var(--white);border-right:1px solid var(--lg);display:flex;flex-direction:column;flex-shrink:0}
+  .sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--lg)}
+  .sb-lm{width:30px;height:30px;background:var(--main);border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .sb-lm svg{width:16px;height:16px}
+  .sb-ln{font-size:15px;font-weight:700;letter-spacing:-.3px}
+  .sb-le{font-size:10px;color:var(--muted)}
+  .sb-user{margin:12px 10px;padding:9px 11px;background:var(--off);border-radius:var(--rxs);display:flex;align-items:center;gap:9px}
+  .sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF9500,#FF6B00);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+  .sb-n{font-size:12px;font-weight:600}.sb-r{font-size:10px;color:var(--muted)}
+  .sb-sec{padding:12px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .sb-nav{padding:0 7px}
+  .ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rxs);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:1px;transition:background .12s}
+  .ni:hover{background:var(--off);color:var(--main)}
+  .ni.active{background:var(--os);color:var(--orange)}
+  .ni-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sb-div{height:1px;background:var(--lg);margin:7px 11px}
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:54px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+  .tb-bc{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .tb-bc span{color:var(--main);font-weight:500}
+  .tb-r{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rxs);font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-p{background:var(--orange);color:white;box-shadow:0 2px 8px rgba(255,149,0,.25)}
+  .btn-p:hover{background:#E08600}
+  .btn-s{background:var(--white);color:var(--main);border:1px solid var(--lg)}
+  .btn-s:hover{background:var(--off)}
+  .content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+  /* FILTER BAR */
+  .filter-bar{padding:12px 22px;border-bottom:1px solid var(--lg);background:var(--white);display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .filter-search{position:relative}
+  .search-input{height:32px;width:200px;padding:0 12px 0 30px;border:1.5px solid var(--lg);border-radius:20px;font-size:12px;font-family:var(--font);outline:none;background:var(--off);transition:all .2s}
+  .search-input:focus{border-color:var(--blue);background:var(--white);width:240px}
+  .search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px}
+  .filter-chip{height:28px;padding:0 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--lg);background:var(--white);color:var(--sub);transition:all .15s;display:flex;align-items:center;gap:5px}
+  .filter-chip:hover{border-color:var(--mg)}
+  .filter-chip.active{background:var(--os);border-color:var(--orange);color:var(--orange)}
+  .filter-chip.active-blue{background:var(--bs);border-color:var(--blue);color:var(--blue)}
+  .ml{margin-left:auto}
+
+  /* MAIN LAYOUT */
+  .main-layout{flex:1;display:grid;grid-template-columns:1fr 340px;overflow:hidden}
+
+  /* FUNNEL BOARD */
+  .funnel-area{overflow-x:auto;overflow-y:hidden;display:flex;flex-direction:column}
+  .funnel-board{display:flex;gap:0;flex:1;overflow:hidden}
+  .stage-col{min-width:220px;flex:1;border-right:1px solid var(--lg);display:flex;flex-direction:column;overflow:hidden}
+  .stage-col:last-child{border-right:none}
+  .stage-hdr{padding:12px 14px;border-bottom:1px solid var(--lg);background:var(--white);flex-shrink:0}
+  .stage-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .stage-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:6px}
+  .stage-dot{width:8px;height:8px;border-radius:50%}
+  .stage-cnt{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
+  .stage-val{font-size:11px;color:var(--muted)}
+  .stage-progress{height:3px;background:var(--lg);border-radius:2px;overflow:hidden;margin-top:6px}
+  .stage-progress-fill{height:100%;border-radius:2px}
+  .stage-cards{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+
+  .lead-card{background:var(--white);border:1.5px solid var(--lg);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s;position:relative}
+  .lead-card:hover{border-color:var(--mg);box-shadow:0 3px 10px rgba(0,0,0,.07);transform:translateY(-1px)}
+  .lead-card.active-card{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.08)}
+  .lc-company{font-size:13px;font-weight:600;margin-bottom:2px}
+  .lc-service{font-size:11px;color:var(--muted);margin-bottom:7px}
+  .lc-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .lc-tag{font-size:10px;font-weight:500;padding:2px 6px;border-radius:20px}
+  .lc-value{font-size:11px;font-weight:600;color:var(--main);margin-left:auto}
+  .lc-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:7px;padding-top:7px;border-top:1px solid var(--lg)}
+  .lc-owner{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+  .lc-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white}
+  .lc-days{font-size:10px;color:var(--muted)}
+
+  /* DETAIL PANEL */
+  .detail-panel{border-left:1px solid var(--lg);background:var(--white);overflow-y:auto;display:flex;flex-direction:column}
+  .dp-header{padding:16px 18px;border-bottom:1px solid var(--lg);flex-shrink:0}
+  .dp-company{font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:3px}
+  .dp-service{font-size:13px;color:var(--sub);margin-bottom:8px}
+  .dp-value{font-size:24px;font-weight:700;color:var(--orange);letter-spacing:-.5px}
+  .dp-value-label{font-size:11px;color:var(--muted)}
+
+  .dp-section{padding:14px 18px;border-bottom:1px solid var(--lg)}
+  .dp-sec-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+  .dp-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid var(--lg)}
+  .dp-row:last-child{border-bottom:none}
+  .dp-label{color:var(--muted)}
+  .dp-val{font-weight:500}
+
+  /* AI Actions */
+  .ai-action{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:var(--off);border-radius:var(--rxs);margin-bottom:8px;cursor:pointer;transition:background .15s;border:1.5px solid transparent}
+  .ai-action:hover{background:var(--bs);border-color:var(--blue)}
+  .ai-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+  .ai-text{font-size:12px;color:var(--main);line-height:1.4}
+  .ai-btn{display:flex;gap:6px;flex-shrink:0;margin-top:2px}
+
+  /* Activity log */
+  .activity-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--lg);font-size:12px}
+  .activity-item:last-child{border-bottom:none}
+  .act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+  .act-body{flex:1;line-height:1.4;color:var(--sub)}
+  .act-time{color:var(--muted);flex-shrink:0}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+  .tag.green{background:var(--gs);color:var(--green)}
+  .tag.blue{background:var(--bs);color:var(--blue)}
+  .tag.orange{background:var(--os);color:var(--orange)}
+  .tag.red{background:var(--rs);color:var(--red)}
+  .tag.gray{background:var(--off);color:var(--muted)}
+  .tag.teal{background:var(--ts);color:var(--teal)}
+
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--lg);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".8"/></svg></div>
+      <div><div class="sb-ln">IDEA</div><div class="sb-le">Employee Portal</div></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av">MS</div>
+      <div><div class="sb-n">Maya Sari</div><div class="sb-r">Manager · Sales</div></div>
+    </div>
+    <div class="sb-sec">Sales & Marketing</div>
+    <nav class="sb-nav">
+      <div class="ni active"><span class="ni-icon">📊</span> Leads Funnel</div>
+      <div class="ni"><span class="ni-icon">📄</span> Proposal</div>
+      <div class="ni"><span class="ni-icon">🎯</span> Target & Report</div>
+      <div class="ni"><span class="ni-icon">📈</span> Win Rate</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-bc">Sales & Marketing <span class="sep" style="color:var(--mg)">/</span> <span>Leads Funnel</span></div>
+      <div class="tb-r">
+        <span style="font-size:12px;color:var(--muted)">Win Rate: <strong style="color:var(--green)">68%</strong></span>
+        <button class="btn btn-s">📊 Report</button>
+        <button class="btn btn-p" onclick="alert('Lead baru')">+ Lead Baru</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-search">
+        <span class="search-ico">🔍</span>
+        <input class="search-input" placeholder="Cari company, PIC...">
+      </div>
+      <div class="filter-chip active" onclick="this.classList.toggle('active')">🏷️ Semua Services</div>
+      <div class="filter-chip" onclick="this.classList.toggle('active-blue')">👤 Semua Sales</div>
+      <div class="filter-chip" onclick="this.classList.toggle('active')">Juli 2025</div>
+      <div class="ml" style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--muted)">Pipeline Value: <strong style="color:var(--main)">Rp 4,2M</strong></span>
+        <span style="font-size:12px;color:var(--muted)">12 Leads Aktif</span>
+      </div>
+    </div>
+
+    <div class="main-layout">
+      <div class="funnel-area">
+        <div class="funnel-board">
+
+          <!-- PROSPECT -->
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-hdr-top">
+                <div class="stage-title"><div class="stage-dot" style="background:var(--muted)"></div>Prospect</div>
+                <div class="stage-cnt" style="background:var(--off);color:var(--muted)">4</div>
+              </div>
+              <div class="stage-val">Rp 960jt</div>
+              <div class="stage-progress"><div class="stage-progress-fill" style="width:33%;background:var(--muted)"></div></div>
+            </div>
+            <div class="stage-cards">
+              <div class="lead-card" onclick="selectLead(this)">
+                <div class="lc-company">PT Garuda Indonesia</div>
+                <div class="lc-service">IT Consulting</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--bs);color:var(--blue)">IT Consulting</span>
+                  <span class="lc-value">Rp 350jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--orange)">FN</div>Fajar N.</div>
+                  <div class="lc-days">3 hari</div>
+                </div>
+              </div>
+              <div class="lead-card" onclick="selectLead(this)">
+                <div class="lc-company">PT Bank BRI</div>
+                <div class="lc-service">Software Development</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--ps);color:var(--purple)">Software Dev</span>
+                  <span class="lc-value">Rp 280jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--green)">GK</div>Gita K.</div>
+                  <div class="lc-days">1 hari</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QUALIFIED -->
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-hdr-top">
+                <div class="stage-title"><div class="stage-dot" style="background:var(--blue)"></div>Qualified</div>
+                <div class="stage-cnt" style="background:var(--bs);color:var(--blue)">3</div>
+              </div>
+              <div class="stage-val">Rp 840jt</div>
+              <div class="stage-progress"><div class="stage-progress-fill" style="width:20%;background:var(--blue)"></div></div>
+            </div>
+            <div class="stage-cards">
+              <div class="lead-card" onclick="selectLead(this)">
+                <div class="lc-company">PT Pertamina Digital</div>
+                <div class="lc-service">IT Consulting + Outsourcing</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--ts);color:var(--teal)">Outsourcing</span>
+                  <span class="lc-tag" style="background:var(--bs);color:var(--blue)">IT Consulting</span>
+                  <span class="lc-value">Rp 540jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--orange)">FN</div>Fajar N.</div>
+                  <div class="lc-days">8 hari</div>
+                </div>
+              </div>
+              <div class="lead-card" onclick="selectLead(this)">
+                <div class="lc-company">PT Indosat Ooredoo</div>
+                <div class="lc-service">Software Development</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--ps);color:var(--purple)">Software Dev</span>
+                  <span class="lc-value">Rp 300jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--green)">GK</div>Gita K.</div>
+                  <div class="lc-days">5 hari</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROPOSAL -->
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-hdr-top">
+                <div class="stage-title"><div class="stage-dot" style="background:var(--purple)"></div>Proposal</div>
+                <div class="stage-cnt" style="background:var(--ps);color:var(--purple)">2</div>
+              </div>
+              <div class="stage-val">Rp 1,2M</div>
+              <div class="stage-progress"><div class="stage-progress-fill" style="width:14%;background:var(--purple)"></div></div>
+            </div>
+            <div class="stage-cards">
+              <div class="lead-card active-card" onclick="selectLead(this)" id="activeCard">
+                <div style="font-size:10px;color:var(--blue);font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:4px">
+                  <div style="width:5px;height:5px;border-radius:50%;background:var(--blue)"></div> Proposal v2 terkirim
+                </div>
+                <div class="lc-company">PT Astra International</div>
+                <div class="lc-service">IT Consulting</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--bs);color:var(--blue)">IT Consulting</span>
+                  <span class="lc-value" style="color:var(--orange)">Rp 780jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--orange)">FN</div>Fajar N.</div>
+                  <div class="lc-days">14 hari</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEGOTIATION -->
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-hdr-top">
+                <div class="stage-title"><div class="stage-dot" style="background:var(--orange)"></div>Negotiation</div>
+                <div class="stage-cnt" style="background:var(--os);color:var(--orange)">2</div>
+              </div>
+              <div class="stage-val">Rp 960jt</div>
+              <div class="stage-progress"><div class="stage-progress-fill" style="width:14%;background:var(--orange)"></div></div>
+            </div>
+            <div class="stage-cards">
+              <div class="lead-card" onclick="selectLead(this)">
+                <div class="lc-company">PT Mandiri Sekuritas</div>
+                <div class="lc-service">Software Development</div>
+                <div class="lc-meta">
+                  <span class="lc-tag" style="background:var(--ps);color:var(--purple)">Software Dev</span>
+                  <span class="lc-value">Rp 480jt</span>
+                </div>
+                <div class="lc-bottom">
+                  <div class="lc-owner"><div class="lc-av" style="background:var(--green)">GK</div>Gita K.</div>
+                  <div class="lc-days">19 hari</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLOSED WON -->
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-hdr-top">
+                <div class="stage-title"><div class="stage-dot" style="background:var(--green)"></div>Closed Won</div>
+                <div class="stage-cnt" style="background:var(--gs);color:var(--green)">3</div>
+              </div>
+              <div class="stage-val" style="color:var(--green)">Rp 1,4M ✓</div>
+              <div class="stage-progress"><div class="stage-progress-fill" style="width:100%;background:var(--green)"></div></div>
+            </div>
+            <div class="stage-cards">
+              <div class="lead-card" style="opacity:.85;border-color:var(--green)" onclick="selectLead(this)">
+                <div style="font-size:10px;color:var(--green);font-weight:600;margin-bottom:4px">✓ Deal · 1 Jul 2025</div>
+                <div class="lc-company">PT Telkom Indonesia</div>
+                <div class="lc-service">IT Consulting</div>
+                <div class="lc-meta"><span class="lc-value">Rp 780jt</span></div>
+                <div class="lc-bottom"><div class="lc-owner"><div class="lc-av" style="background:var(--orange)">FN</div>Fajar N.</div><span class="tag green">Won</span></div>
+                <!-- COMMISSION → PAYROLL LINK -->
+                <div style="margin-top:8px;padding:6px 8px;background:linear-gradient(90deg,var(--gs),var(--bs));border-radius:6px;display:flex;align-items:center;gap:6px;font-size:10px">
+                  <span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--green);color:white;align-items:center;justify-content:center;font-size:9px">💰</span>
+                  <span style="flex:1"><strong>Komisi 3% = Rp 23,4jt</strong> → variable line di Payroll Jul 2025</span>
+                  <span class="tag green" style="font-size:9px;padding:1px 5px">Auto-flow ✓</span>
+                </div>
+              </div>
+              <div class="lead-card" style="opacity:.85;border-color:var(--green)" onclick="selectLead(this)">
+                <div style="font-size:10px;color:var(--green);font-weight:600;margin-bottom:4px">✓ Deal · 20 Jun 2025</div>
+                <div class="lc-company">PT Bank Nusantara</div>
+                <div class="lc-service">Outsourcing</div>
+                <div class="lc-meta"><span class="lc-value">Rp 620jt</span></div>
+                <div class="lc-bottom"><div class="lc-owner"><div class="lc-av" style="background:var(--green)">GK</div>Gita K.</div><span class="tag green">Won</span></div>
+                <!-- COMMISSION → PAYROLL LINK -->
+                <div style="margin-top:8px;padding:6px 8px;background:linear-gradient(90deg,var(--gs),var(--bs));border-radius:6px;display:flex;align-items:center;gap:6px;font-size:10px">
+                  <span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--green);color:white;align-items:center;justify-content:center;font-size:9px">💰</span>
+                  <span style="flex:1"><strong>Komisi 3% = Rp 18,6jt</strong> → variable line di Payroll Jun 2025</span>
+                  <span class="tag green" style="font-size:9px;padding:1px 5px">Paid ✓</span>
+                </div>
+              </div>
+              <!-- DIREKTUR-DRIVEN DEAL (no commission) -->
+              <div class="lead-card" style="opacity:.85;border-color:var(--purple)" onclick="selectLead(this)">
+                <div style="font-size:10px;color:var(--purple);font-weight:600;margin-bottom:4px">✓ Deal · 8 Jul 2025 · Direktur-driven</div>
+                <div class="lc-company">PT Astra International</div>
+                <div class="lc-service">IT Consulting</div>
+                <div class="lc-meta"><span class="lc-value">Rp 1,2M</span></div>
+                <div class="lc-bottom"><div class="lc-owner"><div class="lc-av" style="background:var(--purple)">DU</div>Direktur Utama</div><span class="tag purple">Won</span></div>
+                <div style="margin-top:8px;padding:6px 8px;background:var(--ps);border-radius:6px;display:flex;align-items:center;gap:6px;font-size:10px">
+                  <span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--purple);color:white;align-items:center;justify-content:center;font-size:9px">ℹ</span>
+                  <span style="flex:1"><strong>Tidak ada komisi</strong> (Direktur-driven, sesuai aturan)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DETAIL PANEL -->
+      <div class="detail-panel">
+        <div class="dp-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="tag orange">Proposal Stage</span>
+            <span class="tag gray">14 hari dalam pipeline</span>
+          </div>
+          <div class="dp-company">PT Astra International</div>
+          <div class="dp-service">IT Consulting · Fajar Nugraha</div>
+          <div style="margin-top:10px">
+            <div class="dp-value-label">Estimasi Nilai Deal</div>
+            <div class="dp-value">Rp 780.000.000</div>
+          </div>
+        </div>
+
+        <div class="dp-section">
+          <div class="dp-sec-title">Informasi Lead</div>
+          <div class="dp-row"><span class="dp-label">PIC Client</span><span class="dp-val">Bapak Hendri Santoso</span></div>
+          <div class="dp-row"><span class="dp-label">Email</span><span class="dp-val" style="color:var(--blue)">hendri@astra.co.id</span></div>
+          <div class="dp-row"><span class="dp-label">Services</span><span class="dp-val">IT Consulting</span></div>
+          <div class="dp-row"><span class="dp-label">Sumber</span><span class="dp-val">Referral · Rizky H.</span></div>
+          <div class="dp-row"><span class="dp-label">Assigned to</span><span class="dp-val">Fajar Nugraha</span></div>
+          <div class="dp-row"><span class="dp-label">Masuk pipeline</span><span class="dp-val">24 Jun 2025</span></div>
+        </div>
+
+        <div class="dp-section">
+          <div class="dp-sec-title" style="display:flex;align-items:center;gap:6px">🤖 AI Action Items</div>
+          <div class="ai-action">
+            <div class="ai-icon">📞</div>
+            <div style="flex:1">
+              <div class="ai-text">Follow up call dengan Pak Hendri — belum ada response untuk proposal v2 sejak 2 hari lalu</div>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--green);background:var(--gs);color:var(--green);cursor:pointer;font-family:var(--font)">✓ Accept</button>
+                <button style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--lg);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font)">Edit</button>
+                <button style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--lg);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font)">Ignore</button>
+              </div>
+            </div>
+          </div>
+          <div class="ai-action">
+            <div class="ai-icon">📄</div>
+            <div style="flex:1">
+              <div class="ai-text">Siapkan breakdown ROI untuk justifikasi nilai Rp 780jt kepada management Astra</div>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--blue);background:var(--bs);color:var(--blue);cursor:pointer;font-family:var(--font)">✓ Accept</button>
+                <button style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--lg);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font)">Ignore</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dp-section">
+          <div class="dp-sec-title">📋 Activity Log</div>
+          <div class="activity-item"><div class="act-dot" style="background:var(--blue)"></div><div class="act-body">Proposal v2 dikirim via email ke Pak Hendri</div><div class="act-time">2 hr lalu</div></div>
+          <div class="activity-item"><div class="act-dot" style="background:var(--green)"></div><div class="act-body">Meeting online 1 jam — feedback positif, minta revisi harga</div><div class="act-time">3 hr lalu</div></div>
+          <div class="activity-item"><div class="act-dot" style="background:var(--orange)"></div><div class="act-body">Proposal v1 dikirim</div><div class="act-time">7 Jul</div></div>
+          <div class="activity-item"><div class="act-dot" style="background:var(--muted)"></div><div class="act-body">Lead qualified — stage dinaikkan ke Proposal</div><div class="act-time">5 Jul</div></div>
+          <div class="activity-item"><div class="act-dot" style="background:var(--muted)"></div><div class="act-body">Cold call perdana — interest medium</div><div class="act-time">24 Jun</div></div>
+        </div>
+
+        <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--lg);margin-top:auto">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-p" style="flex:1;justify-content:center" onclick="alert('Pindah stage')">→ Pindah ke Negotiation</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-s" style="flex:1;justify-content:center" onclick="alert('Log aktivitas')">+ Log Aktivitas</button>
+            <button class="btn btn-s" style="flex:1;justify-content:center" onclick="alert('Edit proposal')">📄 Edit Proposal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare

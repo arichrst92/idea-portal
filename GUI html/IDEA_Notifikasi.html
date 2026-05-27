@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Notifikasi</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s;position:relative}
+.ni:hover{background:var(--bg)}
+.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue);color:#fff;font-size:12px}
+.ni-badge{position:absolute;right:10px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#0064CC}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow:hidden;display:flex}
+
+/* LEFT SIDE FILTERS */
+.filt-panel{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;padding:20px 0}
+.fp-sec{padding:0 18px 14px}
+.fp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:8px}
+.fp-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:500;color:var(--ink);transition:background .12s;margin-bottom:2px}
+.fp-item:hover{background:var(--bg)}
+.fp-item.active{background:var(--bl);color:var(--blue);font-weight:600}
+.fp-dot{width:8px;height:8px;border-radius:50%}
+.fp-count{margin-left:auto;font-size:11px;color:var(--ink3);font-weight:600;background:var(--bg);padding:1px 7px;border-radius:20px}
+.fp-item.active .fp-count{background:var(--blue);color:#fff}
+
+/* NOTIFICATION LIST */
+.notif-main{flex:1;overflow-y:auto;padding:20px 28px}
+.notif-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.nh-title{font-size:22px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
+.nh-count{font-size:11px;font-weight:700;background:var(--blue);color:#fff;padding:3px 10px;border-radius:20px}
+.nh-actions{display:flex;gap:8px;align-items:center}
+
+/* SEARCH BAR */
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;width:280px}
+.search input{border:none;outline:none;font-family:var(--font);font-size:13px;flex:1;background:transparent;color:var(--ink)}
+
+/* DATE GROUP */
+.date-group{margin-bottom:24px}
+.date-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:10px;padding-left:4px}
+
+/* NOTIF CARD */
+.notif{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:14px 16px;display:flex;gap:14px;margin-bottom:8px;cursor:pointer;transition:all .15s;position:relative}
+.notif:hover{border-color:rgba(0,122,255,.3);box-shadow:0 2px 8px rgba(0,0,0,.05);transform:translateY(-1px)}
+.notif.unread{background:linear-gradient(90deg,#EBF4FF 0%,#FFFFFF 30%)}
+.notif.unread::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;background:var(--blue);border-radius:0 3px 3px 0}
+.n-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.n-body{flex:1;min-width:0}
+.n-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:3px}
+.n-title{font-size:13px;font-weight:700;letter-spacing:-.1px}
+.n-time{font-size:11px;color:var(--ink3);font-weight:500;white-space:nowrap;flex-shrink:0}
+.n-msg{font-size:12px;color:var(--ink2);line-height:1.5;margin-bottom:8px}
+.n-msg strong{color:var(--ink);font-weight:600}
+.n-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.n-act{display:flex;gap:6px;margin-left:auto}
+.n-act-btn{font-size:11px;padding:3px 10px;border-radius:5px;cursor:pointer;font-family:var(--font);font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--ink2);transition:all .12s}
+.n-act-btn:hover{background:var(--bg);color:var(--ink)}
+.n-act-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.n-act-btn.primary:hover{background:#0064CC}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tt{background:var(--tl);color:var(--teal)}
+.tgr{background:var(--bg);color:var(--ink3)}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink3)}
+.empty-state-icon{font-size:48px;margin-bottom:14px;opacity:.4}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni active"><div class="ni-ic">🔔</div>Notifikasi<span class="ni-badge">12</span></div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📋</div>Project</div>
+    <div class="ni"><div class="ni-ic">💼</div>Cuti &amp; Reimburse</div>
+    <div class="ni"><div class="ni-ic">💰</div>Slip Gaji</div>
+    <div class="ni"><div class="ni-ic">📊</div>Penilaian Saya</div>
+  </nav>
+  <div class="sb-sec">Manager</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">⭐</div>Penilaian Tim</div>
+    <div class="ni"><div class="ni-ic">✅</div>Approval<span class="ni-badge">3</span></div>
+    <div class="ni"><div class="ni-ic">📢</div>Broadcast</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Notifikasi</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s" onclick="markAllRead()">✓ Tandai semua dibaca</button>
+      <button class="btn btn-s">⚙️ Preferensi</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- LEFT FILTER PANEL -->
+    <aside class="filt-panel">
+      <div class="fp-sec">
+        <div class="fp-title">Status</div>
+        <div class="fp-item active" onclick="filterBy('all', this)"><span>📥 Semua</span><span class="fp-count">28</span></div>
+        <div class="fp-item" onclick="filterBy('unread', this)"><span>● Belum Dibaca</span><span class="fp-count">12</span></div>
+        <div class="fp-item" onclick="filterBy('read', this)"><span>✓ Sudah Dibaca</span><span class="fp-count">16</span></div>
+      </div>
+
+      <div class="fp-sec">
+        <div class="fp-title">Kategori</div>
+        <div class="fp-item" onclick="filterBy('approval', this)"><span class="fp-dot" style="background:var(--red)"></span>Approval<span class="fp-count">3</span></div>
+        <div class="fp-item" onclick="filterBy('assignment', this)"><span class="fp-dot" style="background:var(--blue)"></span>Assignment<span class="fp-count">4</span></div>
+        <div class="fp-item" onclick="filterBy('payroll', this)"><span class="fp-dot" style="background:var(--green)"></span>Payroll<span class="fp-count">2</span></div>
+        <div class="fp-item" onclick="filterBy('penilaian', this)"><span class="fp-dot" style="background:var(--orange)"></span>Penilaian<span class="fp-count">5</span></div>
+        <div class="fp-item" onclick="filterBy('alert', this)"><span class="fp-dot" style="background:var(--red)"></span>Alert &amp; SP<span class="fp-count">2</span></div>
+        <div class="fp-item" onclick="filterBy('event', this)"><span class="fp-dot" style="background:var(--purple)"></span>Event &amp; Broadcast<span class="fp-count">6</span></div>
+        <div class="fp-item" onclick="filterBy('system', this)"><span class="fp-dot" style="background:var(--teal)"></span>Sistem<span class="fp-count">6</span></div>
+      </div>
+
+      <div class="fp-sec">
+        <div class="fp-title">Periode</div>
+        <div class="fp-item active"><span>📅 Hari ini</span></div>
+        <div class="fp-item"><span>7 hari terakhir</span></div>
+        <div class="fp-item"><span>30 hari terakhir</span></div>
+        <div class="fp-item"><span>Semua waktu</span></div>
+      </div>
+    </aside>
+
+    <!-- NOTIFICATION LIST -->
+    <main class="notif-main">
+      <div class="notif-header">
+        <div class="nh-title">Notifikasi <span class="nh-count">12 baru</span></div>
+        <div class="nh-actions">
+          <div class="search">
+            <span style="color:var(--ink3)">🔍</span>
+            <input type="text" placeholder="Cari notifikasi...">
+          </div>
+        </div>
+      </div>
+
+      <!-- HARI INI -->
+      <div class="date-group">
+        <div class="date-label">Hari ini · 26 Mei 2026</div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--rl);color:var(--red)">⚠️</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Approval Layoff diperlukan</div>
+              <div class="n-time">5 menit lalu</div>
+            </div>
+            <div class="n-msg"><strong>Hendra Rahman</strong> (Finance Staff) — request layoff dari GM Finance. Anda Layer 2 approver. <strong>Deadline H-3 (29 Mei)</strong>.</div>
+            <div class="n-meta">
+              <span class="tag tr">● Approval</span>
+              <span class="tag tgr">Layer 2</span>
+              <div class="n-act">
+                <button class="n-act-btn">Detail</button>
+                <button class="n-act-btn primary">Review →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--ol);color:var(--orange)">💼</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Penilaian bulanan menunggu Anda</div>
+              <div class="n-time">1 jam lalu</div>
+            </div>
+            <div class="n-msg">5 anggota tim Anda belum dinilai bulan Mei. <strong>Payroll akan ditahan jika penilaian tidak submit sebelum H-5 (28 Mei)</strong>.</div>
+            <div class="n-meta">
+              <span class="tag to">● Penilaian</span>
+              <span class="tag tr">Urgent</span>
+              <div class="n-act">
+                <button class="n-act-btn primary">Buka Form →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--bl);color:var(--blue)">📋</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Anda di-assign ke project baru</div>
+              <div class="n-time">2 jam lalu</div>
+            </div>
+            <div class="n-msg"><strong>API Gateway Integration — PT Telkom</strong> oleh PM Rizky Hanafi. Alokasi 30%, periode Mei–Okt 2026.</div>
+            <div class="n-meta">
+              <span class="tag tb">● Assignment</span>
+              <span class="tag tgr">PM: Rizky H.</span>
+              <div class="n-act">
+                <button class="n-act-btn">Buka Project →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--gl);color:var(--green)">✓</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Reimbursement Anda di-approve</div>
+              <div class="n-time">3 jam lalu</div>
+            </div>
+            <div class="n-msg">Reimbursement transport <strong>Rp 450.000</strong> di-approve oleh Finance. Transfer dijadwalkan 27 Mei (terpisah dari payroll).</div>
+            <div class="n-meta">
+              <span class="tag tg">● Approved</span>
+              <div class="n-act">
+                <button class="n-act-btn">Lihat detail</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--pl);color:var(--purple)">📢</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Broadcast dari Direktur Utama</div>
+              <div class="n-time">4 jam lalu</div>
+            </div>
+            <div class="n-msg">"All-hands meeting akan dilaksanakan tanggal 30 Mei 2026 pukul 10:00 WIB. Mohon clear schedule." — RSVP ditunggu sampai 28 Mei.</div>
+            <div class="n-meta">
+              <span class="tag tp">● Broadcast</span>
+              <span class="tag tgr">RSVP required</span>
+              <div class="n-act">
+                <button class="n-act-btn">RSVP ✓</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEMARIN -->
+      <div class="date-group">
+        <div class="date-label">Kemarin · 25 Mei 2026</div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--rl);color:var(--red)">🚩</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">SP Otomatis — siap di-issue</div>
+              <div class="n-time">Kemarin 16:32</div>
+            </div>
+            <div class="n-msg">AI mendeteksi <strong>Denny Maulana</strong> mendapat skor &lt;60 selama 3 bulan berturut. Draft SP1 telah digenerate.</div>
+            <div class="n-meta">
+              <span class="tag tr">● Alert SP</span>
+              <span class="tag tp">🤖 AI Generated</span>
+              <div class="n-act">
+                <button class="n-act-btn">Review Draft</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif unread" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--ol);color:var(--orange)">📅</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Kontrak PKWT akan berakhir (H-30)</div>
+              <div class="n-time">Kemarin 14:00</div>
+            </div>
+            <div class="n-msg">Kontrak <strong>Siti Rahayu</strong> (Backend Dev) berakhir 24 Jun 2026. Putuskan: Renew / End / Convert ke PKWTT.</div>
+            <div class="n-meta">
+              <span class="tag to">● Alert Kontrak</span>
+              <div class="n-act">
+                <button class="n-act-btn">Putuskan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--gl);color:var(--green)">💰</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Slip gaji Mei 2026 telah terbit</div>
+              <div class="n-time">Kemarin 09:00</div>
+            </div>
+            <div class="n-msg">Slip gaji Anda untuk periode <strong>Mei 2026</strong> sudah tersedia. Take Home Pay: Rp 18.450.000.</div>
+            <div class="n-meta">
+              <span class="tag tg">● Payroll</span>
+              <div class="n-act">
+                <button class="n-act-btn">Buka Slip</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 HARI TERAKHIR -->
+      <div class="date-group">
+        <div class="date-label">7 hari terakhir</div>
+
+        <div class="notif" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--bl);color:var(--blue)">🎯</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">OKR Q2 telah di-set untuk tim Anda</div>
+              <div class="n-time">3 hari lalu</div>
+            </div>
+            <div class="n-msg">GM Teknologi telah meng-set 4 objektif untuk dept Teknologi Q2 (Apr–Jun). Cek alignment dengan KR personal Anda.</div>
+            <div class="n-meta">
+              <span class="tag tb">● Penilaian</span>
+              <div class="n-act">
+                <button class="n-act-btn">Lihat OKR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--pl);color:var(--purple)">🎉</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Event: Town Hall Q2 2026</div>
+              <div class="n-time">5 hari lalu</div>
+            </div>
+            <div class="n-msg">Q2 Town Hall akan dilaksanakan <strong>10 Jun 2026 · 14:00–16:00</strong> di Auditorium Lt.5. RSVP dibuka.</div>
+            <div class="n-meta">
+              <span class="tag tp">● Event</span>
+              <div class="n-act">
+                <button class="n-act-btn">RSVP</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif" onclick="openNotif(this)">
+          <div class="n-icon" style="background:var(--tl);color:var(--teal)">🔧</div>
+          <div class="n-body">
+            <div class="n-top">
+              <div class="n-title">Maintenance Portal — 28 Mei 2026</div>
+              <div class="n-time">6 hari lalu</div>
+            </div>
+            <div class="n-msg">Portal akan offline untuk maintenance pada <strong>28 Mei 2026 · 22:00–01:00 WIB</strong>. Mohon selesaikan submit penting sebelum jam tersebut.</div>
+            <div class="n-meta">
+              <span class="tag tt">● Sistem</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</div>
+
+<script>
+function markAllRead(){
+  document.querySelectorAll('.notif.unread').forEach(n=>n.classList.remove('unread'));
+  document.querySelectorAll('.ni-badge,.nh-count').forEach(b=>b.style.display='none');
+  alert('Semua notifikasi ditandai sudah dibaca.');
+}
+function openNotif(el){
+  el.classList.remove('unread');
+}
+function filterBy(cat, el){
+  document.querySelectorAll('.fp-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

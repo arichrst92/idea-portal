@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Project Health Dashboard (Executive)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:#0A0A0F;color:#fff;display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{width:34px;height:34px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:rgba(255,255,255,.5);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:var(--rm);display:flex;align-items:center;gap:10px;cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:rgba(255,255,255,.55);font-weight:500}
+.sb-persona{margin:6px 12px 12px;padding:6px 10px;background:linear-gradient(135deg,#0071E3,#007AFF);border-radius:var(--rs);font-size:10px;font-weight:700;text-align:center;letter-spacing:.5px}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.4)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:rgba(255,255,255,.05);color:#fff}
+.ni.active{background:rgba(0,122,255,.18);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:rgba(255,255,255,.06)}
+.ni.active .ni-ic{background:var(--blue);color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:#0A0A0F;color:#fff}.btn-p:hover{background:#1A1A20}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-red{background:var(--red);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* HERO ALERT */
+.hero-alert{background:linear-gradient(135deg,#FF453A 0%,#C0392B 100%);border-radius:var(--r);padding:18px 24px;color:#fff;margin-bottom:18px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;cursor:pointer}
+.hero-alert::before{content:'';position:absolute;right:-40px;top:-30px;width:140px;height:140px;background:rgba(255,255,255,.08);border-radius:50%}
+.hero-alert-icon{font-size:32px;position:relative;z-index:1}
+.hero-alert-text{flex:1;position:relative;z-index:1}
+.hero-alert-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
+.hero-alert-sub{font-size:12px;opacity:.9}
+.hero-alert-btn{padding:8px 16px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:var(--rs);color:#fff;font-weight:700;font-size:12px;cursor:pointer;backdrop-filter:blur(8px);font-family:var(--font);position:relative;z-index:1}
+
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative}
+.stat-lbl{font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-.8px;font-family:var(--mono);line-height:1}
+.stat-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font)}
+.cb{padding:18px 20px}.cb.np{padding:0}
+
+/* PROJECT ROW */
+.pr-grid-head{display:grid;grid-template-columns:1.8fr 1fr 1fr 1.6fr 1fr 1fr 0.6fr;gap:10px;padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px}
+.pr-row{display:grid;grid-template-columns:1.8fr 1fr 1fr 1.6fr 1fr 1fr 0.6fr;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border2);font-size:12px;align-items:center;cursor:pointer;transition:background .12s}
+.pr-row:last-child{border-bottom:none}.pr-row:hover{background:var(--bg)}
+.pr-row.atrisk{background:linear-gradient(90deg,#FFEFEE 0%,transparent 100%)}
+.pr-name{font-weight:700;font-size:13px}
+.pr-pm{font-size:11px;color:var(--ink3);margin-top:2px}
+.pr-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:4px}
+.pr-bar-fill{height:100%;border-radius:3px}
+
+/* TYPE DISTRIBUTION DONUT */
+.donut-wrap{display:flex;align-items:center;gap:24px}
+.donut-svg{width:160px;height:160px;flex-shrink:0}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:8px}
+.dl-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:var(--rs)}
+.dl-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.dl-info{flex:1}
+.dl-name{font-size:12px;font-weight:700}
+.dl-sub{font-size:11px;color:var(--ink3)}
+.dl-val{font-size:14px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px}
+
+/* UTILIZATION */
+.util-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.util-row:last-child{border-bottom:none}
+.util-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.util-name{font-size:12px;font-weight:700;flex:1}
+.util-bar-wrap{flex:1.5;background:var(--bg);border-radius:5px;height:18px;overflow:hidden;position:relative;display:flex}
+.util-seg{height:100%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.util-pct{font-family:var(--mono);font-weight:800;font-size:13px;min-width:55px;text-align:right}
+
+/* TIMELINE GANTT MINI */
+.gantt-mini{display:flex;flex-direction:column;gap:6px}
+.gm-row{display:flex;align-items:center;gap:10px}
+.gm-name{width:200px;font-size:12px;font-weight:600}
+.gm-track{flex:1;height:18px;background:var(--bg);border-radius:5px;position:relative;overflow:hidden}
+.gm-bar{position:absolute;top:0;bottom:0;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.gm-today{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red);z-index:5}
+.gm-months{display:flex;gap:0;margin-left:210px;font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase}
+.gm-months span{flex:1;text-align:center;padding:2px 0}
+
+/* INVOICE OUTSTANDING */
+.inv-mini-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2);font-size:12px}
+.inv-mini-row:last-child{border-bottom:none}
+.inv-mini-info{flex:1}
+.inv-mini-no{font-family:var(--mono);font-weight:700;font-size:11px;color:var(--blue)}
+.inv-mini-client{font-weight:700;font-size:12px;margin-top:2px}
+.inv-mini-amt{font-family:var(--mono);font-weight:800;font-size:13px;text-align:right}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="#0A0A0F"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Executive Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">RA</div><div><div class="sb-uname">Rudi Atmadja</div><div class="sb-urole">Direktur Utama</div></div></div>
+  <div class="sb-persona">👑 Persona: Direktur Utama</div>
+  <div class="sb-sec">Executive Suite</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📊</div>Overview Dashboard</div>
+    <div class="ni"><div class="ni-ic">💼</div>P&amp;L &amp; EBITDA</div>
+    <div class="ni"><div class="ni-ic">🤖</div>AI Summary</div>
+    <div class="ni"><div class="ni-ic">👥</div>People Analytics</div>
+    <div class="ni active"><div class="ni-ic">📋</div>Project Health</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Executive <span style="color:var(--border)">/</span> <strong>Project Health Dashboard</strong></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s">🤖 AI Insight</button>
+      <button class="btn btn-s">📥 Export PDF</button>
+      <button class="btn btn-p">+ Override Status (Direktur)</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HERO ALERT -->
+    <div class="hero-alert">
+      <div class="hero-alert-icon">🚨</div>
+      <div class="hero-alert-text">
+        <div class="hero-alert-title">2 project AT RISK — perlu intervensi Direksi</div>
+        <div class="hero-alert-sub">HRIS Sinar Mas Land (overdue 12 hari) · Mobile App Bank Nusantara (over-budget 18%)</div>
+      </div>
+      <button class="hero-alert-btn">Lihat detail →</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-lbl">Total Project Aktif</div>
+        <div class="stat-val">23</div>
+        <div class="stat-sub">14 Client · 6 Internal · 3 R&amp;D</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">At Risk / Delayed</div>
+        <div class="stat-val" style="color:var(--red)">2</div>
+        <div class="stat-sub">9% from total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">On Track</div>
+        <div class="stat-val" style="color:var(--green)">18</div>
+        <div class="stat-sub">78% deliverables met</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Avg Utilization</div>
+        <div class="stat-val" style="color:var(--blue)">87<span style="font-size:18px">%</span></div>
+        <div class="stat-sub">target 80–95%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Outstanding Termin</div>
+        <div class="stat-val" style="color:var(--orange)">Rp 3,8M</div>
+        <div class="stat-sub">18 invoice belum lunas</div>
+      </div>
+    </div>
+
+    <!-- AT-RISK PROJECTS -->
+    <div class="card">
+      <div class="ch">
+        <div class="ch-title">🚨 Project At Risk — Perlu Perhatian Direksi</div>
+        <span class="tag tr">2 project</span>
+      </div>
+
+      <div class="pr-grid-head">
+        <div>Project</div>
+        <div>Tipe</div>
+        <div>Status</div>
+        <div>Progress vs Timeline</div>
+        <div>Tim</div>
+        <div>Nilai</div>
+        <div style="text-align:right">Aksi</div>
+      </div>
+
+      <div class="pr-row atrisk" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">HRIS Implementation</div>
+          <div class="pr-pm">PT Sinar Mas Land · PM: Bayu Aditya</div>
+        </div>
+        <div><span class="tag tb">Client Project</span></div>
+        <div><span class="tag tr">🚨 Overdue 12d</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">55% · Timeline 75%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:55%;background:var(--red)"></div></div>
+          <div style="font-size:10px;color:var(--red);margin-top:2px;font-weight:600">Selisih -20% — keterlambatan</div>
+        </div>
+        <div>5 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 1,2M</div>
+        <div style="text-align:right"><button class="btn btn-red" style="font-size:10px;padding:4px 8px">Review</button></div>
+      </div>
+
+      <div class="pr-row atrisk" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">Mobile App Banking</div>
+          <div class="pr-pm">PT Bank Nusantara · PM: Rizky Hanafi</div>
+        </div>
+        <div><span class="tag tb">Client Project</span></div>
+        <div><span class="tag to">⚠️ Over-budget 18%</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">68% · Timeline 65%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:68%;background:var(--orange)"></div></div>
+          <div style="font-size:10px;color:var(--orange);margin-top:2px;font-weight:600">Cost overrun Rp 145jt</div>
+        </div>
+        <div>7 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 800jt</div>
+        <div style="text-align:right"><button class="btn btn-red" style="font-size:10px;padding:4px 8px">Review</button></div>
+      </div>
+    </div>
+
+    <!-- ALL PROJECTS -->
+    <div class="card">
+      <div class="ch">
+        <div class="ch-title">📋 Semua Project Aktif</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select style="padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:var(--font);outline:none">
+            <option>Semua Status</option>
+            <option>Active</option>
+            <option>On Hold</option>
+            <option>At Risk</option>
+          </select>
+          <button class="ch-action">Lihat semua →</button>
+        </div>
+      </div>
+
+      <div class="pr-grid-head">
+        <div>Project</div>
+        <div>Tipe</div>
+        <div>Status</div>
+        <div>Progress vs Timeline</div>
+        <div>Tim</div>
+        <div>Nilai</div>
+        <div style="text-align:right">Aksi</div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">API Gateway Integration</div>
+          <div class="pr-pm">PT Telkom · PM: Rizky Hanafi</div>
+        </div>
+        <div><span class="tag tb">Client</span></div>
+        <div><span class="tag tg">✓ On Track</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">45% · Timeline 42%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:45%;background:var(--green)"></div></div>
+        </div>
+        <div>6 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 780jt</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">Portal Internal IDEA</div>
+          <div class="pr-pm">Internal · PM: Bayu Aditya</div>
+        </div>
+        <div><span class="tag tp">Internal</span></div>
+        <div><span class="tag tg">✓ On Track</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">78% · Timeline 80%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:78%;background:var(--green)"></div></div>
+        </div>
+        <div>8 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">OPEX</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">Web Portal Redesign</div>
+          <div class="pr-pm">PT Indofood · PM: Reza Yanuar</div>
+        </div>
+        <div><span class="tag tb">Client</span></div>
+        <div><span class="tag tg">✓ On Track</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">62% · Timeline 60%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:62%;background:var(--green)"></div></div>
+        </div>
+        <div>4 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 360jt</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">R&amp;D — AI Code Review</div>
+          <div class="pr-pm">Internal R&amp;D · PM: Ari Christian</div>
+        </div>
+        <div><span class="tag tp">R&amp;D</span></div>
+        <div><span class="tag tb">📊 Discovery</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">25% · open-ended</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:25%;background:var(--purple)"></div></div>
+        </div>
+        <div>3 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">R&amp;D</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">IT Consulting Q2 — Astra</div>
+          <div class="pr-pm">PT Astra · Direktur-driven · PM: Rizky H.</div>
+        </div>
+        <div><span class="tag tb">Client</span></div>
+        <div><span class="tag tg">✓ On Track</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">35% · Timeline 30%</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:35%;background:var(--green)"></div></div>
+        </div>
+        <div>4 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 1,2M</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+
+      <div class="pr-row" onclick="openProject(this)">
+        <div>
+          <div class="pr-name">ERP Pertamina</div>
+          <div class="pr-pm">PT Pertamina · PM: Bayu Aditya</div>
+        </div>
+        <div><span class="tag tb">Client</span></div>
+        <div><span class="tag to">⏸ On Hold</span></div>
+        <div>
+          <div style="font-size:11px;font-weight:600">40% · paused 2 minggu</div>
+          <div class="pr-bar"><div class="pr-bar-fill" style="width:40%;background:var(--orange)"></div></div>
+        </div>
+        <div>6 orang</div>
+        <div style="font-family:var(--mono);font-weight:700">Rp 950jt</div>
+        <div style="text-align:right"><button class="btn btn-s" style="font-size:10px;padding:4px 8px">👁</button></div>
+      </div>
+    </div>
+
+    <!-- ROW: TYPE DISTRIBUTION + UTILIZATION -->
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px">
+      <!-- TYPE DISTRIBUTION -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">🎯 Distribution per Tipe Project</div>
+        </div>
+        <div class="cb">
+          <div class="donut-wrap">
+            <!-- SVG Donut -->
+            <svg class="donut-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg)" stroke-width="14"/>
+              <!-- Client: 14/23 ≈ 61% -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#007AFF" stroke-width="14" stroke-dasharray="153 252" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <!-- Internal: 6/23 ≈ 26% → 65 -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#BF5AF2" stroke-width="14" stroke-dasharray="65 252" stroke-dashoffset="-153" transform="rotate(-90 50 50)"/>
+              <!-- R&D: 3/23 ≈ 13% → 33 -->
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#32D2F2" stroke-width="14" stroke-dasharray="33 252" stroke-dashoffset="-218" transform="rotate(-90 50 50)"/>
+              <text x="50" y="48" text-anchor="middle" font-size="14" font-weight="800" font-family="JetBrains Mono">23</text>
+              <text x="50" y="60" text-anchor="middle" font-size="6" fill="#86868B" font-weight="600">Project Aktif</text>
+            </svg>
+
+            <div class="donut-legend">
+              <div class="dl-item">
+                <div class="dl-dot" style="background:var(--blue)"></div>
+                <div class="dl-info">
+                  <div class="dl-name">Client Project</div>
+                  <div class="dl-sub">Revenue · 61% portfolio</div>
+                </div>
+                <div class="dl-val">14</div>
+              </div>
+              <div class="dl-item">
+                <div class="dl-dot" style="background:var(--purple)"></div>
+                <div class="dl-info">
+                  <div class="dl-name">Internal Project</div>
+                  <div class="dl-sub">Cost OPEX/CAPEX</div>
+                </div>
+                <div class="dl-val">6</div>
+              </div>
+              <div class="dl-item">
+                <div class="dl-dot" style="background:var(--teal)"></div>
+                <div class="dl-info">
+                  <div class="dl-name">R&amp;D</div>
+                  <div class="dl-sub">Innovation budget</div>
+                </div>
+                <div class="dl-val">3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP UTILIZATION -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">⚡ Top Utilization Project</div>
+          <a class="ch-action" href="IDEA_EmployeeMgmtTK.html">Workload view →</a>
+        </div>
+        <div class="cb">
+          <div class="util-row">
+            <div class="util-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">AG</div>
+            <div class="util-name">API Gateway</div>
+            <div class="util-bar-wrap">
+              <div class="util-seg" style="width:92%;background:var(--green)">92%</div>
+            </div>
+            <div class="util-pct" style="color:var(--green)">92%</div>
+          </div>
+          <div class="util-row">
+            <div class="util-av" style="background:linear-gradient(135deg,#FF453A,#C0392B)">HR</div>
+            <div class="util-name">HRIS Sinar Mas</div>
+            <div class="util-bar-wrap">
+              <div class="util-seg" style="width:88%;background:var(--red)">88%</div>
+            </div>
+            <div class="util-pct" style="color:var(--red)">88%</div>
+          </div>
+          <div class="util-row">
+            <div class="util-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">MA</div>
+            <div class="util-name">Mobile App BN</div>
+            <div class="util-bar-wrap">
+              <div class="util-seg" style="width:85%;background:var(--orange)">85%</div>
+            </div>
+            <div class="util-pct" style="color:var(--orange)">85%</div>
+          </div>
+          <div class="util-row">
+            <div class="util-av" style="background:linear-gradient(135deg,#BF5AF2,#7C3AED)">PI</div>
+            <div class="util-name">Portal Internal</div>
+            <div class="util-bar-wrap">
+              <div class="util-seg" style="width:80%;background:var(--blue)">80%</div>
+            </div>
+            <div class="util-pct" style="color:var(--blue)">80%</div>
+          </div>
+          <div class="util-row">
+            <div class="util-av" style="background:linear-gradient(135deg,#32D2F2,#007AFF)">WP</div>
+            <div class="util-name">Web Portal Redesign</div>
+            <div class="util-bar-wrap">
+              <div class="util-seg" style="width:65%;background:var(--blue)">65%</div>
+            </div>
+            <div class="util-pct">65%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE GANTT MINI -->
+    <div class="card">
+      <div class="ch">
+        <div class="ch-title">📅 Delivery Timeline — Q2 2026</div>
+        <span class="tag tgr">12 project aktif di kuartal ini</span>
+      </div>
+      <div class="cb">
+        <div class="gm-months">
+          <span>Apr</span><span>Mei</span><span>Jun</span>
+        </div>
+        <div class="gantt-mini" style="margin-top:8px">
+          <div class="gm-row">
+            <div class="gm-name">API Gateway · Telkom</div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:0;width:75%;background:var(--green)">45%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">HRIS · Sinar Mas <span class="tag tr" style="font-size:9px;padding:1px 5px">RISK</span></div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:5%;width:60%;background:var(--red)">55%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">Mobile App · Bank Nusantara</div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:10%;width:55%;background:var(--orange)">68%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">Web Portal · Indofood</div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:15%;width:50%;background:var(--green)">62%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">IT Consulting · Astra <span class="tag tp" style="font-size:9px;padding:1px 5px">DIRUT</span></div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:25%;width:55%;background:var(--green)">35%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">Portal Internal IDEA</div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:0;width:90%;background:var(--green)">78%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">ERP · Pertamina <span class="tag to" style="font-size:9px;padding:1px 5px">HOLD</span></div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:0;width:45%;background:var(--orange);opacity:.5">40%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+          <div class="gm-row">
+            <div class="gm-name">R&amp;D AI Code Review</div>
+            <div class="gm-track">
+              <div class="gm-bar" style="left:20%;width:30%;background:var(--purple)">25%</div>
+              <div class="gm-today" style="left:55%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICE OUTSTANDING + REVENUE FORECAST -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">💰 Outstanding Termin — Linked Invoice</div>
+          <a class="ch-action" href="IDEA_InvoiceAR.html">Buka AR Tracking →</a>
+        </div>
+        <div class="cb np" style="padding:14px 20px">
+          <div class="inv-mini-row">
+            <div class="inv-mini-info">
+              <div class="inv-mini-no">INV-2026-038 · H+45 🚨</div>
+              <div class="inv-mini-client">HRIS · PT Sinar Mas Land</div>
+            </div>
+            <div>
+              <div class="inv-mini-amt" style="color:var(--red)">Rp 320 jt</div>
+              <div style="text-align:right"><span class="tag tr">Overdue</span></div>
+            </div>
+          </div>
+          <div class="inv-mini-row">
+            <div class="inv-mini-info">
+              <div class="inv-mini-no">INV-2026-040</div>
+              <div class="inv-mini-client">API Gateway · PT Telkom · Termin 2</div>
+            </div>
+            <div>
+              <div class="inv-mini-amt">Rp 312 jt</div>
+              <div style="text-align:right"><span class="tag tb">Sent</span></div>
+            </div>
+          </div>
+          <div class="inv-mini-row">
+            <div class="inv-mini-info">
+              <div class="inv-mini-no">INV-2026-035</div>
+              <div class="inv-mini-client">IT Consulting Astra · Termin 1</div>
+            </div>
+            <div>
+              <div class="inv-mini-amt" style="color:var(--orange)">Rp 300 jt</div>
+              <div style="text-align:right"><span class="tag to">Partial 50%</span></div>
+            </div>
+          </div>
+          <div class="inv-mini-row">
+            <div class="inv-mini-info">
+              <div class="inv-mini-no">INV-2026-029 · H+14</div>
+              <div class="inv-mini-client">Web Portal · PT Indofood</div>
+            </div>
+            <div>
+              <div class="inv-mini-amt" style="color:var(--orange)">Rp 180 jt</div>
+              <div style="text-align:right"><span class="tag to">Late</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">📈 Revenue Forecast vs Actual (2026)</div>
+          <span class="tag tg">↑ 8% YoY</span>
+        </div>
+        <div class="cb">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:50px;font-size:11px;font-weight:700;color:var(--ink3)">Q1</div>
+              <div style="flex:1;height:18px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative">
+                <div style="position:absolute;top:0;left:0;height:100%;width:95%;background:var(--green);border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:10px;font-weight:700">Rp 3,8M</div>
+              </div>
+              <div style="width:55px;font-size:11px;color:var(--green);font-weight:700;text-align:right">↑ 5%</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:50px;font-size:11px;font-weight:700;color:var(--ink3)">Q2*</div>
+              <div style="flex:1;height:18px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative">
+                <div style="position:absolute;top:0;left:0;height:100%;width:78%;background:linear-gradient(90deg,var(--blue),var(--bl));border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:10px;font-weight:700">Rp 3,1M / 4M</div>
+                <div style="position:absolute;top:0;right:0;height:100%;width:22%;background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,122,255,.15) 4px,rgba(0,122,255,.15) 8px)"></div>
+              </div>
+              <div style="width:55px;font-size:11px;color:var(--blue);font-weight:700;text-align:right">78% YTD</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:50px;font-size:11px;font-weight:700;color:var(--ink3)">Q3</div>
+              <div style="flex:1;height:18px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative">
+                <div style="position:absolute;top:0;left:0;height:100%;width:60%;background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 4px,var(--border) 4px,var(--border) 8px);border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:var(--ink2);font-size:10px;font-weight:700">Forecast Rp 3,5M</div>
+              </div>
+              <div style="width:55px;font-size:11px;color:var(--ink3);font-weight:700;text-align:right">Forecast</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:50px;font-size:11px;font-weight:700;color:var(--ink3)">Q4</div>
+              <div style="flex:1;height:18px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative">
+                <div style="position:absolute;top:0;left:0;height:100%;width:55%;background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 4px,var(--border) 4px,var(--border) 8px);border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:var(--ink2);font-size:10px;font-weight:700">Forecast Rp 3,2M</div>
+              </div>
+              <div style="width:55px;font-size:11px;color:var(--ink3);font-weight:700;text-align:right">Forecast</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);display:flex;justify-content:space-between;font-size:12px">
+            <div><span style="color:var(--ink3);font-weight:600">YTD Total:</span> <strong style="font-family:var(--mono)">Rp 6,9M</strong></div>
+            <div><span style="color:var(--ink3);font-weight:600">Target 2026:</span> <strong style="font-family:var(--mono)">Rp 14,5M</strong></div>
+            <div><span style="color:var(--ink3);font-weight:600">Achieve:</span> <strong style="color:var(--green);font-family:var(--mono)">47.6%</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI INSIGHT FOOTER -->
+    <div style="margin-top:14px;padding:14px 20px;background:linear-gradient(135deg,#0A0A0F 0%,#1A1A20 100%);border-radius:var(--r);color:#fff;display:flex;align-items:flex-start;gap:14px">
+      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#BF5AF2,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:#BF5AF2;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">AI Strategic Insight</div>
+        <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.85)">
+          <strong style="color:#fff">2 project Client at risk berasal dari portfolio yang sama (PM Bayu &amp; PM Rizky overlap)</strong> — keduanya juga handle 6+ project lain. Risk mitigasi: tambah PM Junior atau redistribute project. Revenue Q2 78% achieved, masih on-track untuk capai target tahunan Rp 14,5M dengan 8% YoY growth.
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:6px">Generated 26 Mei 2026 09:30 · Confidence 87%</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+function openProject(el){
+  document.querySelectorAll('.pr-row').forEach(r=>r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

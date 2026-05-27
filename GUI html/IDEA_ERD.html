@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA Internal Portal — Database Schema & ERD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2333;
+    --border: #30363D;
+    --primary: #2563EB;
+    --primary-soft: #1D4ED8;
+    --accent: #38BDF8;
+    --green: #22C55E;
+    --orange: #F97316;
+    --purple: #A855F7;
+    --yellow: #EAB308;
+    --red: #EF4444;
+    --teal: #14B8A6;
+    --pink: #EC4899;
+    --text: #E6EDF3;
+    --text-muted: #8B949E;
+    --text-dim: #484F58;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+  .logo { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    background: var(--primary);
+    color: white;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 18px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    letter-spacing: 2px;
+  }
+  .logo-text { font-size: 22px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+  .header-stats { display: flex; gap: 32px; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* LAYOUT */
+  .container { max-width: 1800px; margin: 0 auto; padding: 40px 48px; }
+
+  /* LEGEND */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 40px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* SECTION */
+  .section { margin-bottom: 56px; }
+  .section-title {
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: var(--primary);
+    border-radius: 2px;
+  }
+
+  /* TABLE GRID */
+  .table-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+  .table-grid.wide { grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); }
+  .table-grid.full { grid-template-columns: 1fr; }
+
+  /* TABLE CARD */
+  .tbl {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .tbl:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+  .tbl-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tbl-name {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .tbl-badge {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+  }
+
+  .tbl-body { padding: 0; }
+
+  .col-row {
+    display: grid;
+    grid-template-columns: 22px 140px 100px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .col-row:hover { background: rgba(255,255,255,0.02); }
+
+  .col-icon { font-size: 11px; text-align: center; }
+  .col-name { color: var(--text); font-weight: 500; }
+  .col-name.pk { color: var(--yellow); }
+  .col-name.fk { color: var(--accent); }
+  .col-name.idx { color: var(--green); }
+  .col-type { color: var(--text-muted); font-size: 11px; }
+  .col-desc { color: var(--text-dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .col-sep {
+    padding: 6px 18px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* RELATIONSHIP DIAGRAM */
+  .rel-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 40px;
+    overflow-x: auto;
+  }
+  .rel-diagram svg { min-width: 1200px; }
+
+  /* INDEX KEY */
+  .key-box {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .key-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+  .key-sym { font-size: 14px; }
+
+  /* RELATIONSHIP LIST */
+  .rel-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 8px;
+  }
+  .rel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .rel-from { color: var(--yellow); font-weight: 600; }
+  .rel-type { color: var(--text-muted); padding: 2px 6px; background: var(--surface2); border-radius: 4px; font-size: 11px; }
+  .rel-to { color: var(--accent); font-weight: 600; }
+  .rel-via { color: var(--text-dim); font-size: 10px; }
+
+  /* COLOR THEMES per domain */
+  .dom-core    .tbl-header { background: linear-gradient(135deg, #1E3A5F, #1D4ED8); }
+  .dom-core    .tbl-name   { color: #93C5FD; }
+  .dom-hr      .tbl-header { background: linear-gradient(135deg, #1F2937, #7C3AED); }
+  .dom-hr      .tbl-name   { color: #C4B5FD; }
+  .dom-project .tbl-header { background: linear-gradient(135deg, #1F2937, #0D9488); }
+  .dom-project .tbl-name   { color: #5EEAD4; }
+  .dom-sales   .tbl-header { background: linear-gradient(135deg, #1F2937, #C2410C); }
+  .dom-sales   .tbl-name   { color: #FCA5A5; }
+  .dom-finance .tbl-header { background: linear-gradient(135deg, #1F2937, #15803D); }
+  .dom-finance .tbl-name   { color: #86EFAC; }
+  .dom-outsrc  .tbl-header { background: linear-gradient(135deg, #1F2937, #B45309); }
+  .dom-outsrc  .tbl-name   { color: #FCD34D; }
+  .dom-comms   .tbl-header { background: linear-gradient(135deg, #1F2937, #BE185D); }
+  .dom-comms   .tbl-name   { color: #F9A8D4; }
+
+  /* SQL SCHEMA BLOCK */
+  .sql-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .sql-header {
+    background: var(--surface2);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sql-header .dot { width: 10px; height: 10px; border-radius: 50%; }
+  pre {
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: var(--text);
+  }
+  .kw  { color: #FF7B72; }
+  .tp  { color: #79C0FF; }
+  .cm  { color: var(--text-dim); font-style: italic; }
+  .st  { color: #A5F3FC; }
+  .nm  { color: #E6EDF3; }
+  .fn  { color: #D2A8FF; }
+  .op  { color: #FF7B72; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">IDEA</div>
+      <div>
+        <div class="logo-text">Database Schema & ERD</div>
+        <div class="logo-sub">Internal Portal System — PostgreSQL 16</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat"><div class="stat-num">42</div><div class="stat-lbl">Tables</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-lbl">Domains</div></div>
+      <div class="stat"><div class="stat-num">60+</div><div class="stat-lbl">Relations</div></div>
+      <div class="stat"><div class="stat-num">PG 16</div><div class="stat-lbl">Engine</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#EAB308"></div> PK — Primary Key</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#38BDF8"></div> FK — Foreign Key</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22C55E"></div> IDX — Indexed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#A855F7"></div> UQ — Unique</div>
+    <div class="legend-item" style="margin-left:24px"><div class="legend-dot" style="background:#2563EB"></div> Core / Auth Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7C3AED"></div> HR Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0D9488"></div> Project Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#C2410C"></div> Sales Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#15803D"></div> Finance Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#B45309"></div> Outsource Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#BE185D"></div> Comms Domain</div>
+  </div>
+
+  <!-- KEY -->
+  <div class="key-box">
+    <div class="key-item"><span class="key-sym" style="color:#EAB308">🔑</span> Primary Key</div>
+    <div class="key-item"><span class="key-sym" style="color:#38BDF8">🔗</span> Foreign Key</div>
+    <div class="key-item"><span class="key-sym" style="color:#22C55E">📌</span> Index</div>
+    <div class="key-item"><span class="key-sym" style="color:#A855F7">✦</span> Unique</div>
+    <div class="key-item"><span class="key-sym">⬜</span> Nullable</div>
+    <div class="key-item"><span class="key-sym" style="color:#EF4444">■</span> Not Null</div>
+    <div class="key-item"><span class="key-sym" style="color:#F97316">⚙</span> Default/Computed</div>
+    <div class="key-item"><span class="key-sym" style="color:#14B8A6">≡</span> Enum</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 1: CORE / AUTH
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title" style="--c:#2563EB">DOMAIN 1 — CORE & AUTHENTICATION</div>
+    <div class="table-grid dom-core">
+
+      <!-- users -->
+      <div class="tbl dom-core">
+        <div class="tbl-header">
+          <span class="tbl-name">users</span>
+          <span class="tbl-badge">AUTH</span>
+        </div>
+        <div class="tbl-body">
+          <div class="col-sep">— identity</div>
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#22C55E">📌</span><span class="col-name idx">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">email</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Unique login email</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">password_hash</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Argon2 hash</span></div>
+          <div class="col-sep">— access</div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">active|inactive|locked</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">last_login_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Last successful login</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">failed_attempts</span><span class="col-type">INT</span><span class="col-desc">Default 0; lock at 5</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">locked_until</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">30-min lockout</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">theme</span><span class="col-type">ENUM</span><span class="col-desc">light|dark; default light</span></div>
+          <div class="col-sep">— audit</div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">updated_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto updated</span></div>
+        </div>
+      </div>
+
+      <!-- refresh_tokens -->
+      <div class="tbl dom-core">
+        <div class="tbl-header">
+          <span class="tbl-name">refresh_tokens</span>
+          <span class="tbl-badge">AUTH</span>
+        </div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">user_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ users.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">token_hash</span><span class="col-type">VARCHAR(512)</span><span class="col-desc">Hashed refresh token</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">expires_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">7-day expiry</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">revoked</span><span class="col-type">BOOLEAN</span><span class="col-desc">Default false</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- audit_logs -->
+      <div class="tbl dom-core">
+        <div class="tbl-header">
+          <span class="tbl-name">audit_logs</span>
+          <span class="tbl-badge">CORE</span>
+        </div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">user_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ users.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">action</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">e.g. APPROVE_PAYROLL</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">entity_type</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">e.g. payroll, employee</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">entity_id</span><span class="col-type">UUID</span><span class="col-desc">ID of affected record</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">old_value</span><span class="col-type">JSONB</span><span class="col-desc">Previous state</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">new_value</span><span class="col-type">JSONB</span><span class="col-desc">New state</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">ip_address</span><span class="col-type">INET</span><span class="col-desc">Client IP</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- notifications -->
+      <div class="tbl dom-core">
+        <div class="tbl-header">
+          <span class="tbl-name">notifications</span>
+          <span class="tbl-badge">CORE</span>
+        </div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">recipient_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ users.id</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">type</span><span class="col-type">ENUM</span><span class="col-desc">approval|alert|info|deadline</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">title</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Notification title</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">body</span><span class="col-type">TEXT</span><span class="col-desc">Notification body</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">entity_type</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">Related entity</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">entity_id</span><span class="col-type">UUID</span><span class="col-desc">Related record ID</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">is_read</span><span class="col-type">BOOLEAN</span><span class="col-desc">Default false</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">read_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When read</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 2: HR
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 2 — HR & EMPLOYEE MANAGEMENT</div>
+    <div class="table-grid wide dom-hr">
+
+      <!-- departments -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">departments</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">code</span><span class="col-type">VARCHAR(20)</span><span class="col-desc">e.g. TECH, OPS, SALES, FIN</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">name</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">Full department name</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">is_active</span><span class="col-type">BOOLEAN</span><span class="col-desc">Default true</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- job_levels -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">job_levels</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">department_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ departments.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">level_number</span><span class="col-type">INT</span><span class="col-desc">1=Direktur … 6=Staff</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">title</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">e.g. CTO, Senior Dev</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">salary_min</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Min salary range IDR</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">salary_max</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Max salary range IDR</span></div>
+        </div>
+      </div>
+
+      <!-- employees -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">employees</span><span class="tbl-badge">CORE TABLE</span></div>
+        <div class="tbl-body">
+          <div class="col-sep">— identity</div>
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">nik</span><span class="col-type">VARCHAR(50)</span><span class="col-desc">National ID; unique</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">employee_code</span><span class="col-type">VARCHAR(20)</span><span class="col-desc">Internal ID e.g. EMP-001</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">full_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Full legal name</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">email</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Work email</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">phone</span><span class="col-type">VARCHAR(20)</span><span class="col-desc">Mobile number</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">photo_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">gender</span><span class="col-type">ENUM</span><span class="col-desc">male|female</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">birth_date</span><span class="col-type">DATE</span><span class="col-desc">Date of birth</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">address</span><span class="col-type">TEXT</span><span class="col-desc">Home address</span></div>
+          <div class="col-sep">— employment</div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">department_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ departments.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">job_level_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ job_levels.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">direct_supervisor_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (self)</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">employee_type</span><span class="col-type">ENUM</span><span class="col-desc">internal|outsource_b|outsource_c</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">contract_type</span><span class="col-type">ENUM</span><span class="col-desc">pkwtt|pkwt</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">join_date</span><span class="col-type">DATE</span><span class="col-desc">Employment start date</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">contract_end_date</span><span class="col-type">DATE</span><span class="col-desc">PKWT only</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">end_date</span><span class="col-type">DATE</span><span class="col-desc">Actual exit date</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">active|probation|on_leave|resigned|terminated</span></div>
+          <div class="col-sep">— financial</div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">base_salary</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Basic salary IDR</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">bank_account</span><span class="col-type">VARCHAR(50)</span><span class="col-desc">Bank account number</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">bank_name</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">Bank name</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">npwp</span><span class="col-type">VARCHAR(30)</span><span class="col-desc">Tax ID number</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">bpjs_kesehatan</span><span class="col-type">VARCHAR(30)</span><span class="col-desc">BPJS health number</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">bpjs_ketenagakerjaan</span><span class="col-type">VARCHAR(30)</span><span class="col-desc">BPJS employment number</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">bpjs_config</span><span class="col-type">JSONB</span><span class="col-desc">{kes_company:%,kes_emp:%,...}</span></div>
+          <div class="col-sep">— audit</div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">updated_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto updated</span></div>
+        </div>
+      </div>
+
+      <!-- leave_requests -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">leave_requests</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">leave_type</span><span class="col-type">ENUM</span><span class="col-desc">annual|sick|maternity|bereavement|marriage</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">start_date</span><span class="col-type">DATE</span><span class="col-desc">Leave start date</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">end_date</span><span class="col-type">DATE</span><span class="col-desc">Leave end date</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">working_days</span><span class="col-type">INT</span><span class="col-desc">Effective working days</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">reason</span><span class="col-type">TEXT</span><span class="col-desc">Leave reason</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">document_url</span><span class="col-type">TEXT</span><span class="col-desc">Doctor cert / supporting doc</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">pending|approved|rejected|cancelled</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l1</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l2</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Submission time</span></div>
+        </div>
+      </div>
+
+      <!-- performance_assessments -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">performance_assessments</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">assessor_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (supervisor)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">okr_period_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ okr_periods.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_year</span><span class="col-type">INT</span><span class="col-desc">Assessment year</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_month</span><span class="col-type">INT</span><span class="col-desc">Assessment month 1-12</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">okr_score</span><span class="col-type">NUMERIC(5,2)</span><span class="col-desc">0-100 OKR achievement</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">weighted_score</span><span class="col-type">NUMERIC(5,2)</span><span class="col-desc">0-100 weighted score</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">final_score</span><span class="col-type">NUMERIC(5,2)</span><span class="col-desc">Computed final score</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">weighted_breakdown</span><span class="col-type">JSONB</span><span class="col-desc">{attitude, attendance, collaboration}</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">notes</span><span class="col-type">TEXT</span><span class="col-desc">Assessor notes</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|submitted|skipped</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">skip_reason</span><span class="col-type">TEXT</span><span class="col-desc">e.g. on extended leave</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">submitted_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When submitted</span></div>
+        </div>
+      </div>
+
+      <!-- payroll_records -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">payroll_records</span><span class="tbl-badge">HR+FIN</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_year</span><span class="col-type">INT</span><span class="col-desc">Payroll year</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_month</span><span class="col-type">INT</span><span class="col-desc">Payroll month</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">working_days</span><span class="col-type">INT</span><span class="col-desc">Actual attendance days</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">base_salary</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Base salary this period</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">components</span><span class="col-type">JSONB</span><span class="col-desc">{allowances, overtime, bonus, deductions}</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">bpjs_company</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Company BPJS portion</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">bpjs_employee</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Employee BPJS deduction</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">pph21</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Income tax (manual input)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">gross_salary</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Total before deductions</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">net_salary</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Take-home pay</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|submitted|approved|published</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">payslip_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path to PDF</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">published_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When slip published</span></div>
+        </div>
+      </div>
+
+      <!-- warning_letters -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">warning_letters</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">sp_type</span><span class="col-type">ENUM</span><span class="col-desc">SP1|SP2|SP3|SP-O1|SP-O2|SP-O3</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">trigger_type</span><span class="col-type">ENUM</span><span class="col-desc">automatic|manual</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">violation_description</span><span class="col-type">TEXT</span><span class="col-desc">Reason for SP</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">ai_draft</span><span class="col-type">TEXT</span><span class="col-desc">AI-generated draft text</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">final_letter</span><span class="col-type">TEXT</span><span class="col-desc">Final edited letter</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|pending_approval|issued|acknowledged</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id GM/CLevel</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">acknowledged_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Employee digital ack time</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">letter_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- hiring_requests -->
+      <div class="tbl dom-hr">
+        <div class="tbl-header"><span class="tbl-name">hiring_requests</span><span class="tbl-badge">HR</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">requester_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">department_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ departments.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">job_level_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ job_levels.id</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">reason_type</span><span class="col-type">ENUM</span><span class="col-desc">new_headcount|replacement</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Job description / requirements</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">target_join_date</span><span class="col-type">DATE</span><span class="col-desc">Expected join date</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">pending_l1|pending_l2|approved|in_process|filled|cancelled</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l1</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l2</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 3: PROJECT
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 3 — PROJECT MANAGEMENT</div>
+    <div class="table-grid wide dom-project">
+
+      <!-- clients -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">clients</span><span class="tbl-badge">MASTER</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">company_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Client company name</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">pic_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Point of contact name</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">pic_email</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">PIC email for token links</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">pic_phone</span><span class="col-type">VARCHAR(20)</span><span class="col-desc">PIC phone</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">address</span><span class="col-type">TEXT</span><span class="col-desc">Client address</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">contract_start</span><span class="col-type">DATE</span><span class="col-desc">Master contract start</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">contract_end</span><span class="col-type">DATE</span><span class="col-desc">Master contract end</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">is_active</span><span class="col-type">BOOLEAN</span><span class="col-desc">Default true</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- projects -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">projects</span><span class="tbl-badge">PROJECT</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Project name</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">client_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ clients.id (nullable for internal)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">deal_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ sales_deals.id (nullable)</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">project_type</span><span class="col-type">ENUM</span><span class="col-desc">client|internal|rnd</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Project description</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">start_date</span><span class="col-type">DATE</span><span class="col-desc">Project start</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">target_end_date</span><span class="col-type">DATE</span><span class="col-desc">Planned end date</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">actual_end_date</span><span class="col-type">DATE</span><span class="col-desc">Actual completion date</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|active|on_hold|completed|terminated</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">project_manager_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">closed_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (Direktur override)</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">closure_reason</span><span class="col-type">TEXT</span><span class="col-desc">Required for terminated</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">closing_doc_url</span><span class="col-type">TEXT</span><span class="col-desc">Client sign-off document</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- project_members -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">project_members</span><span class="tbl-badge">JUNCTION</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">project_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ projects.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">role_in_project</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">e.g. Backend Dev, QA</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">allocation_pct</span><span class="col-type">INT</span><span class="col-desc">0-100 allocation %</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">joined_at</span><span class="col-type">DATE</span><span class="col-desc">When member joined project</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">left_at</span><span class="col-type">DATE</span><span class="col-desc">When member left (if any)</span></div>
+        </div>
+      </div>
+
+      <!-- milestones -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">milestones</span><span class="tbl-badge">PROJECT</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">project_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ projects.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Milestone name</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">target_date</span><span class="col-type">DATE</span><span class="col-desc">Milestone deadline</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">sort_order</span><span class="col-type">INT</span><span class="col-desc">Display order</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">open|in_progress|completed</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">completed_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Actual completion</span></div>
+        </div>
+      </div>
+
+      <!-- tasks -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">tasks</span><span class="tbl-badge">PROJECT</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">milestone_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ milestones.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">assignee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">title</span><span class="col-type">VARCHAR(500)</span><span class="col-desc">Task title</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Task details</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">deadline</span><span class="col-type">DATE</span><span class="col-desc">Task deadline</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">priority</span><span class="col-type">ENUM</span><span class="col-desc">low|medium|high|critical</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">backlog|in_progress|review|done</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">sort_order</span><span class="col-type">INT</span><span class="col-desc">Kanban position</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">completed_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When moved to Done</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- invoice_terms -->
+      <div class="tbl dom-project">
+        <div class="tbl-header"><span class="tbl-name">invoice_terms</span><span class="tbl-badge">PROJECT+FIN</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">project_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ projects.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">term_number</span><span class="col-type">INT</span><span class="col-desc">Termin 1, 2, 3…</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">percentage</span><span class="col-type">NUMERIC(5,2)</span><span class="col-desc">% of contract value</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">trigger_description</span><span class="col-type">TEXT</span><span class="col-desc">e.g. "on milestone X completion"</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">trigger_milestone_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ milestones.id (optional)</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">pending|invoiced|paid</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">invoice_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ invoices.id (when created)</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 4: SALES
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 4 — SALES & MARKETING</div>
+    <div class="table-grid dom-sales">
+
+      <!-- leads -->
+      <div class="tbl dom-sales">
+        <div class="tbl-header"><span class="tbl-name">leads</span><span class="tbl-badge">SALES</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">client_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ clients.id (nullable: new prospect)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">assigned_to</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (Sales PIC)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">closed_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (could be Direktur)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">referral_employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (nullable)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">company_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Prospect company</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">pic_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Prospect PIC</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">pic_email</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Prospect email</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">service_category</span><span class="col-type">ENUM</span><span class="col-desc">consulting|outsourcing|software|other</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">source</span><span class="col-type">ENUM</span><span class="col-desc">own_network|referral_internal|direktur|inbound</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">stage</span><span class="col-type">ENUM</span><span class="col-desc">prospect|qualified|proposal|negotiation|won|lost</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">is_direktur_driven</span><span class="col-type">BOOLEAN</span><span class="col-desc">No commission if true</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">lost_reason</span><span class="col-type">TEXT</span><span class="col-desc">Required when stage=lost</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">po_url</span><span class="col-type">TEXT</span><span class="col-desc">Purchase order document</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">estimated_value</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Estimated deal value IDR</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">closed_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When won or lost</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">reopened_from</span><span class="col-type">UUID FK</span><span class="col-desc">→ leads.id (re-engagement)</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- proposals -->
+      <div class="tbl dom-sales">
+        <div class="tbl-header"><span class="tbl-name">proposals</span><span class="tbl-badge">SALES</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">lead_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ leads.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">created_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">version</span><span class="col-type">INT</span><span class="col-desc">Version number (1, 2, 3…)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">scope_of_work</span><span class="col-type">TEXT</span><span class="col-desc">Proposal SOW</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">timeline_description</span><span class="col-type">TEXT</span><span class="col-desc">Timeline description</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">total_value</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Proposal total value</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">currency</span><span class="col-type">VARCHAR(3)</span><span class="col-desc">IDR, USD etc</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|pending_approval|approved|sent|won|lost</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">pdf_url</span><span class="col-type">TEXT</span><span class="col-desc">Generated PDF MinIO path</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">sent_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When sent to client</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_manager</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_gm</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- sales_targets -->
+      <div class="tbl dom-sales">
+        <div class="tbl-header"><span class="tbl-name">sales_targets</span><span class="tbl-badge">SALES</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (nullable=dept target)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">department_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ departments.id (nullable=individual)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_year</span><span class="col-type">INT</span><span class="col-desc">Target year</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_month</span><span class="col-type">INT</span><span class="col-desc">Target month (0=annual)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">revenue_target</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Revenue target IDR</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">leads_target</span><span class="col-type">INT</span><span class="col-desc">New leads count target</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">win_rate_target</span><span class="col-type">NUMERIC(5,2)</span><span class="col-desc">Target win rate %</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">set_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 5: FINANCE
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 5 — FINANCE & TAX</div>
+    <div class="table-grid wide dom-finance">
+
+      <!-- chart_of_accounts -->
+      <div class="tbl dom-finance">
+        <div class="tbl-header"><span class="tbl-name">chart_of_accounts</span><span class="tbl-badge">FINANCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#A855F7">✦</span><span class="col-name">account_code</span><span class="col-type">VARCHAR(20)</span><span class="col-desc">e.g. 1-1001 (unique)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">account_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Account name</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">account_type</span><span class="col-type">ENUM</span><span class="col-desc">asset|liability|equity|revenue|expense</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">normal_balance</span><span class="col-type">ENUM</span><span class="col-desc">debit|credit</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">parent_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ chart_of_accounts.id (tree)</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">is_active</span><span class="col-type">BOOLEAN</span><span class="col-desc">Default true</span></div>
+        </div>
+      </div>
+
+      <!-- transactions -->
+      <div class="tbl dom-finance">
+        <div class="tbl-header"><span class="tbl-name">transactions</span><span class="tbl-badge">FINANCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">account_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ chart_of_accounts.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">created_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (Finance staff)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">transaction_date</span><span class="col-type">DATE</span><span class="col-desc">Accrual date</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">transaction_type</span><span class="col-type">ENUM</span><span class="col-desc">debit|credit</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount_original</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Amount in original currency</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">currency</span><span class="col-type">VARCHAR(3)</span><span class="col-desc">e.g. IDR, USD, SGD</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">exchange_rate</span><span class="col-type">NUMERIC(12,4)</span><span class="col-desc">Rate to IDR (1.0 for IDR)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount_idr</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">IDR equivalent (functional)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Transaction description</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">reference_type</span><span class="col-type">VARCHAR(50)</span><span class="col-desc">e.g. payroll, invoice, reimburse</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">reference_id</span><span class="col-type">UUID</span><span class="col-desc">Linked record ID</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">document_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path to receipt/doc</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|verified|posted</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">reversal_of</span><span class="col-type">UUID FK</span><span class="col-desc">→ transactions.id (reversal)</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- invoices -->
+      <div class="tbl dom-finance">
+        <div class="tbl-header"><span class="tbl-name">invoices</span><span class="tbl-badge">FINANCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">client_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ clients.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">project_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ projects.id (nullable)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">outsource_placement_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ outsource_placements.id (nullable)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">invoice_number</span><span class="col-type">VARCHAR(50)</span><span class="col-desc">Manual input by Finance</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">invoice_date</span><span class="col-type">DATE</span><span class="col-desc">Invoice issuance date</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">due_date</span><span class="col-type">DATE</span><span class="col-desc">Payment due date</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Invoice amount</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">currency</span><span class="col-type">VARCHAR(3)</span><span class="col-desc">Invoice currency</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount_idr</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">IDR equivalent</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">sent|partial|paid|overdue|cancelled</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">paid_amount</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Amount received so far</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">paid_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Full payment date</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">invoice_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path to uploaded invoice</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">ppn_applicable</span><span class="col-type">BOOLEAN</span><span class="col-desc">Is PPN applicable?</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- reimbursements -->
+      <div class="tbl dom-finance">
+        <div class="tbl-header"><span class="tbl-name">reimbursements</span><span class="tbl-badge">FINANCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">expense_date</span><span class="col-type">DATE</span><span class="col-desc">Date of expense</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Claim amount</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">currency</span><span class="col-type">VARCHAR(3)</span><span class="col-desc">Expense currency</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">exchange_rate</span><span class="col-type">NUMERIC(12,4)</span><span class="col-desc">Rate to IDR</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">amount_idr</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">IDR equivalent</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">category</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">e.g. transport, meals, supplies</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Expense description</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">receipt_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path (mandatory)</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">pending|approved|rejected|paid|cancelled</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l1</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by_l2</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">paid_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Transfer date</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 6: OUTSOURCE
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 6 — OUTSOURCE MANAGEMENT</div>
+    <div class="table-grid wide dom-outsrc">
+
+      <!-- outsource_placements -->
+      <div class="tbl dom-outsrc">
+        <div class="tbl-header"><span class="tbl-name">outsource_placements</span><span class="tbl-badge">OUTSOURCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (Type B or C)</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">client_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ clients.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">position_at_client</span><span class="col-type">VARCHAR(100)</span><span class="col-desc">Job title at client site</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">start_date</span><span class="col-type">DATE</span><span class="col-desc">Placement start</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">end_date</span><span class="col-type">DATE</span><span class="col-desc">Contract end date</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">billing_rate</span><span class="col-type">NUMERIC(18,2)</span><span class="col-desc">Rate charged to client</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">billing_currency</span><span class="col-type">VARCHAR(3)</span><span class="col-desc">Billing currency</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">billing_type</span><span class="col-type">ENUM</span><span class="col-desc">flat_monthly|per_timesheet</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">active|ended|terminated</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">contract_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO contract document</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">amendment_url</span><span class="col-type">TEXT</span><span class="col-desc">Latest amendment document</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">allocation_pct</span><span class="col-type">INT</span><span class="col-desc">% of time at this client</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- timesheets -->
+      <div class="tbl dom-outsrc">
+        <div class="tbl-header"><span class="tbl-name">timesheets</span><span class="tbl-badge">OUTSOURCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">placement_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ outsource_placements.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_year</span><span class="col-type">INT</span><span class="col-desc">Timesheet year</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_month</span><span class="col-type">INT</span><span class="col-desc">Timesheet month</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">days_present</span><span class="col-type">INT</span><span class="col-desc">Total attendance days</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">days_absent</span><span class="col-type">INT</span><span class="col-desc">Total absent days</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">overtime_hours</span><span class="col-type">NUMERIC(6,2)</span><span class="col-desc">Overtime hours</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">daily_detail</span><span class="col-type">JSONB</span><span class="col-desc">[{date, status, notes}] per day</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|submitted|approved|rejected</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">approved_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id (Operation)</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">rejection_reason</span><span class="col-type">TEXT</span><span class="col-desc">If rejected</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">submitted_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">When submitted</span></div>
+        </div>
+      </div>
+
+      <!-- berita_acara -->
+      <div class="tbl dom-outsrc">
+        <div class="tbl-header"><span class="tbl-name">berita_acara</span><span class="tbl-badge">OUTSOURCE</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">timesheet_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ timesheets.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">placement_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ outsource_placements.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">ba_number</span><span class="col-type">VARCHAR(50)</span><span class="col-desc">BA document number</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_year</span><span class="col-type">INT</span><span class="col-desc">BA period year</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">period_month</span><span class="col-type">INT</span><span class="col-desc">BA period month</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">idea_signed_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">idea_signed_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">IDEA signature timestamp</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">client_token</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Unique signing token for client</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">client_token_expires</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Token expiry</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">client_signed_name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">PIC name who signed</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">client_signed_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Client signature timestamp</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|idea_signed|client_signed|completed</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">pdf_url</span><span class="col-type">TEXT</span><span class="col-desc">Final signed PDF MinIO path</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOMAIN 7: COMMS
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">DOMAIN 7 — COMMUNICATIONS & CONTENT</div>
+    <div class="table-grid dom-comms">
+
+      <!-- broadcasts -->
+      <div class="tbl dom-comms">
+        <div class="tbl-header"><span class="tbl-name">broadcasts</span><span class="tbl-badge">COMMS</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">created_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">title</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Broadcast title</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">content</span><span class="col-type">TEXT</span><span class="col-desc">Rich text HTML content</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">attachments</span><span class="col-type">JSONB</span><span class="col-desc">[{name, url, size}]</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">target_departments</span><span class="col-type">UUID[]</span><span class="col-desc">Target dept IDs (null=all)</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">target_levels</span><span class="col-type">INT[]</span><span class="col-desc">Target level numbers</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">scheduled_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Future publish time</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">status</span><span class="col-type">ENUM</span><span class="col-desc">draft|scheduled|published</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">published_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Actual publish time</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- events -->
+      <div class="tbl dom-comms">
+        <div class="tbl-header"><span class="tbl-name">events</span><span class="tbl-badge">COMMS</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">created_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">title</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Event name</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">description</span><span class="col-type">TEXT</span><span class="col-desc">Event details</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">start_datetime</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Event start</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">end_datetime</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Event end</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">location</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Physical or virtual location</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">target_departments</span><span class="col-type">UUID[]</span><span class="col-desc">Target dept IDs (null=all)</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- event_rsvps -->
+      <div class="tbl dom-comms">
+        <div class="tbl-header"><span class="tbl-name">event_rsvps</span><span class="tbl-badge">JUNCTION</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">event_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ events.id</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">employee_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">response</span><span class="col-type">ENUM</span><span class="col-desc">attending|not_attending</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">responded_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+        </div>
+      </div>
+
+      <!-- company_documents -->
+      <div class="tbl dom-comms">
+        <div class="tbl-header"><span class="tbl-name">company_documents</span><span class="tbl-badge">CMS</span></div>
+        <div class="tbl-body">
+          <div class="col-row"><span class="col-icon" style="color:#EAB308">🔑</span><span class="col-name pk">id</span><span class="col-type">UUID</span><span class="col-desc">Primary key</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">parent_id</span><span class="col-type">UUID FK</span><span class="col-desc">→ company_documents.id (folder tree)</span></div>
+          <div class="col-row"><span class="col-icon">■</span><span class="col-name">name</span><span class="col-type">VARCHAR(255)</span><span class="col-desc">Document or folder name</span></div>
+          <div class="col-row"><span class="col-icon">≡</span><span class="col-name">type</span><span class="col-type">ENUM</span><span class="col-desc">folder|document</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">file_url</span><span class="col-type">TEXT</span><span class="col-desc">MinIO path (documents only)</span></div>
+          <div class="col-row"><span class="col-icon">⬜</span><span class="col-name">file_size</span><span class="col-type">BIGINT</span><span class="col-desc">File size in bytes</span></div>
+          <div class="col-row"><span class="col-icon" style="color:#38BDF8">🔗</span><span class="col-name fk">uploaded_by</span><span class="col-type">UUID FK</span><span class="col-desc">→ employees.id</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Auto now()</span></div>
+          <div class="col-row"><span class="col-icon">⚙</span><span class="col-name">updated_at</span><span class="col-type">TIMESTAMPTZ</span><span class="col-desc">Last modified</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RELATIONSHIPS -->
+  <div class="section">
+    <div class="section-title">KEY RELATIONSHIPS</div>
+    <div class="rel-list">
+      <div class="rel-item"><span class="rel-from">employees</span><span class="rel-type">N:1</span><span class="rel-to">departments</span><span class="rel-via">dept assignment</span></div>
+      <div class="rel-item"><span class="rel-from">employees</span><span class="rel-type">N:1</span><span class="rel-to">job_levels</span><span class="rel-via">level assignment</span></div>
+      <div class="rel-item"><span class="rel-from">employees</span><span class="rel-type">N:1 (self)</span><span class="rel-to">employees</span><span class="rel-via">direct_supervisor_id</span></div>
+      <div class="rel-item"><span class="rel-from">users</span><span class="rel-type">1:1</span><span class="rel-to">employees</span><span class="rel-via">portal account</span></div>
+      <div class="rel-item"><span class="rel-from">projects</span><span class="rel-type">N:1</span><span class="rel-to">clients</span><span class="rel-via">client project</span></div>
+      <div class="rel-item"><span class="rel-from">projects</span><span class="rel-type">N:M</span><span class="rel-to">employees</span><span class="rel-via">project_members</span></div>
+      <div class="rel-item"><span class="rel-from">projects</span><span class="rel-type">1:N</span><span class="rel-to">milestones</span><span class="rel-via">project structure</span></div>
+      <div class="rel-item"><span class="rel-from">milestones</span><span class="rel-type">1:N</span><span class="rel-to">tasks</span><span class="rel-via">task grouping</span></div>
+      <div class="rel-item"><span class="rel-from">leads</span><span class="rel-type">1:N</span><span class="rel-to">proposals</span><span class="rel-via">lead proposals</span></div>
+      <div class="rel-item"><span class="rel-from">leads</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">assigned_to + closed_by</span></div>
+      <div class="rel-item"><span class="rel-from">outsource_placements</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">placed employee</span></div>
+      <div class="rel-item"><span class="rel-from">outsource_placements</span><span class="rel-type">N:1</span><span class="rel-to">clients</span><span class="rel-via">placement at client</span></div>
+      <div class="rel-item"><span class="rel-from">timesheets</span><span class="rel-type">N:1</span><span class="rel-to">outsource_placements</span><span class="rel-via">monthly timesheet</span></div>
+      <div class="rel-item"><span class="rel-from">berita_acara</span><span class="rel-type">1:1</span><span class="rel-to">timesheets</span><span class="rel-via">BA from timesheet</span></div>
+      <div class="rel-item"><span class="rel-from">payroll_records</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">monthly payroll</span></div>
+      <div class="rel-item"><span class="rel-from">performance_assessments</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">assessed employee</span></div>
+      <div class="rel-item"><span class="rel-from">warning_letters</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">SP issued to</span></div>
+      <div class="rel-item"><span class="rel-from">transactions</span><span class="rel-type">N:1</span><span class="rel-to">chart_of_accounts</span><span class="rel-via">CoA mapping</span></div>
+      <div class="rel-item"><span class="rel-from">invoices</span><span class="rel-type">N:1</span><span class="rel-to">clients</span><span class="rel-via">billed to client</span></div>
+      <div class="rel-item"><span class="rel-from">invoices</span><span class="rel-type">N:1</span><span class="rel-to">projects</span><span class="rel-via">project invoice</span></div>
+      <div class="rel-item"><span class="rel-from">invoice_terms</span><span class="rel-type">N:1</span><span class="rel-to">projects</span><span class="rel-via">payment terms</span></div>
+      <div class="rel-item"><span class="rel-from">hiring_requests</span><span class="rel-type">N:1</span><span class="rel-to">departments</span><span class="rel-via">dept requesting</span></div>
+      <div class="rel-item"><span class="rel-from">leave_requests</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">leave by employee</span></div>
+      <div class="rel-item"><span class="rel-from">reimbursements</span><span class="rel-type">N:1</span><span class="rel-to">employees</span><span class="rel-via">claimed by employee</span></div>
+      <div class="rel-item"><span class="rel-from">audit_logs</span><span class="rel-type">N:1</span><span class="rel-to">users</span><span class="rel-via">action by user</span></div>
+      <div class="rel-item"><span class="rel-from">notifications</span><span class="rel-type">N:1</span><span class="rel-to">users</span><span class="rel-via">sent to user</span></div>
+      <div class="rel-item"><span class="rel-from">chart_of_accounts</span><span class="rel-type">N:1 (self)</span><span class="rel-to">chart_of_accounts</span><span class="rel-via">parent_id (tree)</span></div>
+      <div class="rel-item"><span class="rel-from">company_documents</span><span class="rel-type">N:1 (self)</span><span class="rel-to">company_documents</span><span class="rel-via">folder structure</span></div>
+      <div class="rel-item"><span class="rel-from">event_rsvps</span><span class="rel-type">N:1</span><span class="rel-to">events + employees</span><span class="rel-via">RSVP junction</span></div>
+      <div class="rel-item"><span class="rel-from">projects</span><span class="rel-type">N:1</span><span class="rel-to">leads</span><span class="rel-via">deal_id (sales origin)</span></div>
+    </div>
+  </div>
+
+  <!-- INDEX STRATEGY -->
+  <div class="section">
+    <div class="section-title">CRITICAL INDEXES & CONSTRAINTS</div>
+    <div class="sql-block">
+      <div class="sql-header">
+        <div class="dot" style="background:#EF4444"></div>
+        <div class="dot" style="background:#EAB308"></div>
+        <div class="dot" style="background:#22C55E"></div>
+        schema_indexes.sql — Critical performance indexes
+      </div>
+      <pre><span class="cm">-- ── EMPLOYEES ─────────────────────────────────────────────────────</span>
+<span class="kw">CREATE UNIQUE INDEX</span> idx_employees_nik <span class="kw">ON</span> <span class="nm">employees</span>(<span class="st">nik</span>);
+<span class="kw">CREATE UNIQUE INDEX</span> idx_employees_code <span class="kw">ON</span> <span class="nm">employees</span>(<span class="st">employee_code</span>);
+<span class="kw">CREATE INDEX</span> idx_employees_dept <span class="kw">ON</span> <span class="nm">employees</span>(<span class="st">department_id</span>, <span class="st">status</span>);
+<span class="kw">CREATE INDEX</span> idx_employees_supervisor <span class="kw">ON</span> <span class="nm">employees</span>(<span class="st">direct_supervisor_id</span>);
+<span class="kw">CREATE INDEX</span> idx_employees_contract_end <span class="kw">ON</span> <span class="nm">employees</span>(<span class="st">contract_end_date</span>) <span class="kw">WHERE</span> contract_type = <span class="st">'pkwt'</span>;
+
+<span class="cm">-- ── PAYROLL ────────────────────────────────────────────────────────</span>
+<span class="kw">CREATE UNIQUE INDEX</span> idx_payroll_period <span class="kw">ON</span> <span class="nm">payroll_records</span>(<span class="st">employee_id</span>, <span class="st">period_year</span>, <span class="st">period_month</span>);
+<span class="kw">CREATE INDEX</span> idx_payroll_status <span class="kw">ON</span> <span class="nm">payroll_records</span>(<span class="st">status</span>, <span class="st">period_year</span>, <span class="st">period_month</span>);
+
+<span class="cm">-- ── ASSESSMENTS ────────────────────────────────────────────────────</span>
+<span class="kw">CREATE UNIQUE INDEX</span> idx_assessment_period <span class="kw">ON</span> <span class="nm">performance_assessments</span>(<span class="st">employee_id</span>, <span class="st">period_year</span>, <span class="st">period_month</span>);
+<span class="kw">CREATE INDEX</span> idx_assessment_score <span class="kw">ON</span> <span class="nm">performance_assessments</span>(<span class="st">employee_id</span>, <span class="st">final_score</span>, <span class="st">period_year</span>);
+
+<span class="cm">-- ── PROJECTS ───────────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_projects_status <span class="kw">ON</span> <span class="nm">projects</span>(<span class="st">status</span>, <span class="st">project_type</span>);
+<span class="kw">CREATE INDEX</span> idx_project_members_emp <span class="kw">ON</span> <span class="nm">project_members</span>(<span class="st">employee_id</span>) <span class="kw">WHERE</span> left_at <span class="op">IS NULL</span>;
+<span class="kw">CREATE INDEX</span> idx_tasks_deadline <span class="kw">ON</span> <span class="nm">tasks</span>(<span class="st">deadline</span>, <span class="st">status</span>) <span class="kw">WHERE</span> status != <span class="st">'done'</span>;
+
+<span class="cm">-- ── LEADS & SALES ──────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_leads_assigned <span class="kw">ON</span> <span class="nm">leads</span>(<span class="st">assigned_to</span>, <span class="st">stage</span>);
+<span class="kw">CREATE INDEX</span> idx_leads_stage_service <span class="kw">ON</span> <span class="nm">leads</span>(<span class="st">stage</span>, <span class="st">service_category</span>, <span class="st">created_at</span>);
+
+<span class="cm">-- ── OUTSOURCE ──────────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_placements_active <span class="kw">ON</span> <span class="nm">outsource_placements</span>(<span class="st">status</span>, <span class="st">end_date</span>) <span class="kw">WHERE</span> status = <span class="st">'active'</span>;
+<span class="kw">CREATE UNIQUE INDEX</span> idx_timesheet_period <span class="kw">ON</span> <span class="nm">timesheets</span>(<span class="st">placement_id</span>, <span class="st">period_year</span>, <span class="st">period_month</span>);
+
+<span class="cm">-- ── FINANCE ────────────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_transactions_date_acct <span class="kw">ON</span> <span class="nm">transactions</span>(<span class="st">transaction_date</span>, <span class="st">account_id</span>) <span class="kw">WHERE</span> status = <span class="st">'posted'</span>;
+<span class="kw">CREATE INDEX</span> idx_invoices_overdue <span class="kw">ON</span> <span class="nm">invoices</span>(<span class="st">due_date</span>, <span class="st">status</span>) <span class="kw">WHERE</span> status <span class="op">IN</span> (<span class="st">'sent'</span>, <span class="st">'partial'</span>);
+
+<span class="cm">-- ── NOTIFICATIONS ──────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_notifications_unread <span class="kw">ON</span> <span class="nm">notifications</span>(<span class="st">recipient_id</span>, <span class="st">is_read</span>, <span class="st">created_at</span>) <span class="kw">WHERE</span> is_read = <span class="kw">false</span>;
+
+<span class="cm">-- ── AUDIT LOGS ─────────────────────────────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_audit_entity <span class="kw">ON</span> <span class="nm">audit_logs</span>(<span class="st">entity_type</span>, <span class="st">entity_id</span>, <span class="st">created_at</span>);
+<span class="kw">CREATE INDEX</span> idx_audit_user <span class="kw">ON</span> <span class="nm">audit_logs</span>(<span class="st">user_id</span>, <span class="st">created_at</span>);
+
+<span class="cm">-- ── FULL TEXT SEARCH (Global Search) ──────────────────────────────</span>
+<span class="kw">CREATE INDEX</span> idx_employees_fts <span class="kw">ON</span> <span class="nm">employees</span> <span class="kw">USING</span> <span class="fn">gin</span>(<span class="fn">to_tsvector</span>(<span class="st">'indonesian'</span>, full_name || <span class="st">' '</span> || email));
+<span class="kw">CREATE INDEX</span> idx_projects_fts <span class="kw">ON</span> <span class="nm">projects</span> <span class="kw">USING</span> <span class="fn">gin</span>(<span class="fn">to_tsvector</span>(<span class="st">'indonesian'</span>, name || <span class="st">' '</span> || <span class="fn">coalesce</span>(description,<span class="st">''</span>)));
+
+<span class="cm">-- ── SP THRESHOLD CHECK FUNCTION ────────────────────────────────────</span>
+<span class="kw">CREATE OR REPLACE FUNCTION</span> <span class="fn">check_sp_threshold</span>() <span class="kw">RETURNS</span> <span class="tp">TRIGGER</span> <span class="kw">AS</span> $$
+<span class="kw">BEGIN</span>
+  <span class="cm">-- Check if employee scored < 60 for 3 consecutive months</span>
+  <span class="kw">IF</span> (<span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">FROM</span> <span class="nm">performance_assessments</span>
+      <span class="kw">WHERE</span> employee_id = NEW.employee_id
+        <span class="kw">AND</span> final_score < <span class="st">60</span>
+        <span class="kw">AND</span> status = <span class="st">'submitted'</span>
+        <span class="kw">AND</span> (period_year, period_month) <span class="op">>=</span> (
+            <span class="kw">SELECT</span> period_year, period_month <span class="kw">FROM</span> <span class="nm">performance_assessments</span>
+            <span class="kw">ORDER BY</span> period_year <span class="kw">DESC</span>, period_month <span class="kw">DESC</span> <span class="kw">LIMIT</span> <span class="st">1</span> <span class="kw">OFFSET</span> <span class="st">2</span>
+        )) >= <span class="st">3</span>
+  <span class="kw">THEN</span>
+    <span class="cm">-- Create SP trigger notification to Operation</span>
+    <span class="kw">INSERT INTO</span> <span class="nm">notifications</span>(recipient_id, type, title, entity_type, entity_id)
+    <span class="kw">SELECT</span> u.id, <span class="st">'alert'</span>, <span class="st">'SP Threshold Triggered for '</span> || e.full_name,
+           <span class="st">'employee'</span>, NEW.employee_id
+    <span class="kw">FROM</span> <span class="nm">employees</span> e <span class="kw">JOIN</span> <span class="nm">users</span> u <span class="kw">ON</span> u.employee_id = e.id
+    <span class="kw">WHERE</span> e.department_id = (<span class="kw">SELECT</span> department_id <span class="kw">FROM</span> <span class="nm">departments</span> <span class="kw">WHERE</span> code = <span class="st">'OPS'</span>);
+  <span class="kw">END IF</span>;
+  <span class="kw">RETURN NEW</span>;
+<span class="kw">END</span>;
+$$ <span class="kw">LANGUAGE</span> plpgsql;
+
+<span class="kw">CREATE TRIGGER</span> trg_sp_threshold
+<span class="kw">AFTER INSERT OR UPDATE ON</span> <span class="nm">performance_assessments</span>
+<span class="kw">FOR EACH ROW EXECUTE FUNCTION</span> <span class="fn">check_sp_threshold</span>();</pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Add hover tooltips for column types
+document.querySelectorAll('.col-row').forEach(row => {
+  row.addEventListener('mouseenter', () => {
+    row.style.background = 'rgba(37, 99, 235, 0.08)';
+  });
+  row.addEventListener('mouseleave', () => {
+    row.style.background = '';
+  });
+});
+
+// Count tables
+const tables = document.querySelectorAll('.tbl').length;
+console.log(`ERD loaded: ${tables} tables rendered`);
+</script>
+</body>
+</html>

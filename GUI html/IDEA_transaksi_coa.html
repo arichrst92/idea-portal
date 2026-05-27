@@ -1,0 +1,209 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>IDEA — Input Transaksi & CoA</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.tb-bc{font-size:13px;color:var(--ink3)}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
+.btn-p{background:var(--blue);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.content{flex:1;overflow:hidden;display:flex}
+.left-col{width:440px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+.right-col{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
+.sec-hdr{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700}
+.cb{padding:16px 18px}
+.fl{margin-bottom:14px}
+.fl-label{font-size:12px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.fl-req{color:var(--red);font-size:11px}
+.fl-inp,.fl-sel,.fl-ta{width:100%;height:38px;padding:0 10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);outline:none;background:var(--surface)}
+.fl-inp:focus,.fl-sel:focus,.fl-ta:focus{border-color:var(--blue)}
+.fl-ta{height:70px;padding:9px 10px;resize:none;line-height:1.5}
+.fl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fl-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+/* journal entry rows */
+.je-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.je-row:last-child{margin-bottom:0}
+.je-inp{flex:1;height:34px;padding:0 9px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;background:var(--surface)}
+.je-inp.mono{font-family:var(--mono);text-align:right}
+.je-inp:focus{border-color:var(--blue)}
+.je-del{width:26px;height:26px;background:var(--rl);border:none;border-radius:5px;cursor:pointer;font-size:11px;color:var(--red);flex-shrink:0}
+/* tx list */
+.tx-item{padding:12px 18px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.tx-item:hover{background:var(--bg)}.tx-item.active{background:var(--bl)}
+.tx-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.tx-desc{font-size:13px;font-weight:700}
+.tx-amt{font-size:13px;font-weight:800;font-family:var(--mono)}
+.tx-meta{font-size:11px;color:var(--ink3);font-weight:500}
+/* coa tree */
+.coa-item{padding:8px 18px;border-bottom:1px solid var(--border2);font-size:12px;cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:10px}
+.coa-item:hover{background:var(--bg)}
+.coa-group{padding:6px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3)}
+.coa-code{font-family:var(--mono);color:var(--ink3);width:52px;flex-shrink:0}
+.coa-name{flex:1;font-weight:600}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head><body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div><div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div></div>
+  <div class="sb-user"><div class="sb-av">IP</div><div><div class="sb-uname">Intan Permata</div><div class="sb-urole">Staff · Finance</div></div></div>
+  <div class="sb-sec">Finance & Accounting</div>
+  <nav class="sb-nav">
+    <div class="ni active"><div class="ni-ic">📝</div>Input Transaksi</div>
+    <div class="ni"><div class="ni-ic">📊</div>Laporan Keuangan</div>
+    <div class="ni"><div class="ni-ic">🧾</div>Invoice &amp; AR</div>
+    <div class="ni"><div class="ni-ic">🛒</div>Pengadaan</div>
+    <div class="ni"><div class="ni-ic">📂</div>Chart of Accounts</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Finance <span style="color:var(--border)">/</span> <strong>Input Transaksi &amp; CoA</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s" onclick="showTab('coa')">🗂️ Kelola CoA</button>
+      <button class="btn btn-s" onclick="showTab('import')">📥 Import Journal</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- LEFT: Form + List -->
+    <div class="left-col">
+      <!-- Input Form -->
+      <div class="sec-hdr">➕ Transaksi Baru</div>
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border)">
+        <div class="fl-grid" style="margin-bottom:12px">
+          <div class="fl"><div class="fl-label">Tanggal <span class="fl-req">*</span></div><input type="date" class="fl-inp" value="2025-07-07"></div>
+          <div class="fl"><div class="fl-label">Tipe <span class="fl-req">*</span></div><select class="fl-sel"><option>Journal Entry</option><option>Invoice (AR)</option><option>Bill (AP)</option><option>Pembayaran</option><option>Pengeluaran</option></select></div>
+        </div>
+        <div class="fl"><div class="fl-label">Deskripsi <span class="fl-req">*</span></div><input class="fl-inp" placeholder="Keterangan transaksi..." value="Pembayaran gaji karyawan Juli 2025"></div>
+        <div class="fl-grid" style="margin-top:12px;margin-bottom:12px">
+          <div class="fl"><div class="fl-label">No. Referensi</div><input class="fl-inp" value="JE-2025-07-085"></div>
+          <div class="fl"><div class="fl-label">Mata Uang</div><select class="fl-sel"><option>IDR</option><option>USD</option><option>SGD</option></select></div>
+        </div>
+        <!-- Journal Rows -->
+        <div class="fl-label" style="margin-bottom:8px">Journal Entries (Debit / Kredit) <span class="fl-req">*</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 24px;gap:6px;margin-bottom:6px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3)">Akun (CoA)</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);text-align:right">Debit</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);text-align:right">Kredit</div>
+          <div></div>
+        </div>
+        <div id="jeRows">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 24px;gap:6px;margin-bottom:6px">
+            <input class="je-inp" value="6100 - Beban Gaji">
+            <input class="je-inp mono" value="312,450,000" placeholder="0">
+            <input class="je-inp mono" placeholder="0">
+            <button class="je-del" onclick="this.closest('div').remove()">✕</button>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 24px;gap:6px;margin-bottom:6px">
+            <input class="je-inp" value="1100 - Kas & Bank">
+            <input class="je-inp mono" placeholder="0">
+            <input class="je-inp mono" value="312,450,000">
+            <button class="je-del" onclick="this.closest('div').remove()">✕</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+          <button class="btn btn-s" style="font-size:11px;padding:5px 10px" onclick="addJERow()">+ Tambah Baris</button>
+          <div style="font-size:12px;font-weight:700;display:flex;gap:16px">
+            <span>Debit: <span style="color:var(--green);font-family:var(--mono)">312,450,000</span></span>
+            <span>Kredit: <span style="color:var(--blue);font-family:var(--mono)">312,450,000</span></span>
+          </div>
+        </div>
+        <button class="btn btn-p" style="width:100%;margin-top:14px;justify-content:center" onclick="alert('Transaksi disimpan!')">💾 Simpan Transaksi</button>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="sec-hdr">📋 Transaksi Terbaru</div>
+      ${[
+        {d:'Pembayaran Outsource Bank Nusantara',amt:'+90,000,000',date:'5 Jul',type:'Invoice',color:'var(--green)'},
+        {d:'Pembelian Laptop Developer',amt:'-24,500,000',date:'4 Jul',type:'Pengeluaran',color:'var(--red)'},
+        {d:'Bayar BPJS Ketenagakerjaan',amt:'-8,200,000',date:'3 Jul',type:'Bill',color:'var(--red)'},
+        {d:'Terima DP Proyek PT Astra',amt:'+234,000,000',date:'2 Jul',type:'Invoice',color:'var(--green)'},
+      ].map(t=>`<div class="tx-item">
+        <div class="tx-top"><div class="tx-desc">${t.d}</div><div class="tx-amt" style="color:${t.color}">Rp ${t.amt}</div></div>
+        <div class="tx-meta">${t.date} Jul 2025 · ${t.type}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- RIGHT: CoA -->
+    <div class="right-col">
+      <div class="card">
+        <div class="ch"><div class="ch-title">🗂️ Chart of Accounts</div>
+          <div style="display:flex;gap:8px">
+            <input placeholder="Cari akun..." style="height:32px;padding:0 10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;width:180px">
+            <button class="btn btn-s" style="font-size:11px" onclick="alert('Import CoA dari Excel')">📥 Import</button>
+            <button class="btn btn-p" style="font-size:11px" onclick="alert('Tambah akun baru')">+ Akun</button>
+          </div>
+        </div>
+        <div style="overflow-y:auto;max-height:calc(100vh - 200px)">
+          ${[
+            {group:'1. ASET',items:[
+              {code:'1100',name:'Kas & Bank',type:'Kas'},
+              {code:'1200',name:'Piutang Usaha (AR)',type:'Piutang'},
+              {code:'1300',name:'Biaya Dibayar Dimuka',type:'Aktiva Lancar'},
+              {code:'1500',name:'Aset Tetap',type:'Aktiva Tetap'},
+              {code:'1510',name:'Akumulasi Depresiasi',type:'Kontra Aset'},
+            ]},
+            {group:'2. LIABILITAS',items:[
+              {code:'2100',name:'Utang Usaha (AP)',type:'Utang Lancar'},
+              {code:'2200',name:'Utang Pajak',type:'Utang Lancar'},
+              {code:'2300',name:'Utang BPJS',type:'Utang Lancar'},
+            ]},
+            {group:'3. EKUITAS',items:[
+              {code:'3100',name:'Modal Disetor',type:'Ekuitas'},
+              {code:'3200',name:'Laba Ditahan',type:'Ekuitas'},
+            ]},
+            {group:'4. PENDAPATAN',items:[
+              {code:'4100',name:'Pendapatan Jasa IT',type:'Revenue'},
+              {code:'4200',name:'Pendapatan Outsourcing',type:'Revenue'},
+              {code:'4300',name:'Pendapatan Lainnya',type:'Revenue'},
+            ]},
+            {group:'6. BEBAN',items:[
+              {code:'6100',name:'Beban Gaji',type:'Expense'},
+              {code:'6200',name:'Beban BPJS',type:'Expense'},
+              {code:'6300',name:'Beban Kantor',type:'Expense'},
+              {code:'6400',name:'Beban Pemasaran',type:'Expense'},
+              {code:'6500',name:'Beban Depresiasi',type:'Expense'},
+            ]},
+          ].map(g=>`
+            <div class="coa-group">${g.group}</div>
+            ${g.items.map(a=>`<div class="coa-item" onclick="selectCoA(this)">
+              <span class="coa-code">${a.code}</span>
+              <span class="coa-name">${a.name}</span>
+              <span class="tag tgr" style="font-size:10px">${a.type}</span>
+            </div>`).join('')}
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function addJERow(){const c=document.getElementById('jeRows');const d=document.createElement('div');d.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 24px;gap:6px;margin-bottom:6px';d.innerHTML='<input class="je-inp" placeholder="Pilih akun CoA..."><input class="je-inp mono" placeholder="0"><input class="je-inp mono" placeholder="0"><button class="je-del" onclick="this.closest(\'div\').remove()">✕</button>';c.appendChild(d)}
+function selectCoA(el){document.querySelectorAll('.coa-item').forEach(i=>i.style.background='');el.style.background='var(--bl)'}
+function showTab(t){alert('Tab: '+t)}
+</script>
+</body></html>

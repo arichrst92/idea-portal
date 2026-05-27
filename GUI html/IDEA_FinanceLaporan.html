@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Laporan Keuangan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#FFF;--off:#F5F5F7;--lg:#E8E8ED;--mg:#C7C7CC;--main:#1D1D1F;--sub:#6E6E73;--muted:#86868B;--blue:#0071E3;--bs:#EBF4FF;--green:#34C759;--gs:#F0FBF3;--orange:#FF9500;--os:#FFF8EC;--red:#FF3B30;--rs:#FFF2F1;--purple:#AF52DE;--ps:#F5EEFA;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--r:14px;--rxs:8px}
+  html,body{height:100%;font-family:var(--font);background:var(--off);color:var(--main);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;height:100vh;background:var(--white);border-right:1px solid var(--lg);display:flex;flex-direction:column;flex-shrink:0}
+  .sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--lg)}
+  .sb-lm{width:30px;height:30px;background:var(--main);border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .sb-lm svg{width:16px;height:16px}
+  .sb-ln{font-size:15px;font-weight:700;letter-spacing:-.3px}.sb-le{font-size:10px;color:var(--muted)}
+  .sb-user{margin:12px 10px;padding:9px 11px;background:var(--off);border-radius:var(--rxs);display:flex;align-items:center;gap:9px}
+  .sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#AF52DE,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+  .sb-n{font-size:12px;font-weight:600}.sb-r{font-size:10px;color:var(--muted)}
+  .sb-sec{padding:12px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .sb-nav{padding:0 7px}
+  .ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rxs);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:1px;transition:background .12s}
+  .ni:hover{background:var(--off);color:var(--main)}
+  .ni.active{background:var(--ps);color:var(--purple)}
+  .ni-icon{width:16px;height:16px;flex-shrink:0}
+  .sb-div{height:1px;background:var(--lg);margin:7px 11px}
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:54px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+  .tb-bc{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .tb-bc span{color:var(--main);font-weight:500}
+  .tb-r{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rxs);font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-p{background:var(--purple);color:white;box-shadow:0 2px 8px rgba(175,82,222,.25)}
+  .btn-p:hover{background:#9B42C8}
+  .btn-s{background:var(--white);color:var(--main);border:1px solid var(--lg)}
+  .btn-s:hover{background:var(--off)}
+  .content{flex:1;overflow-y:auto;padding:24px}
+
+  /* PERIOD & TABS */
+  .period-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .period-sel{height:34px;padding:0 12px;border:1.5px solid var(--lg);border-radius:var(--rxs);font-size:13px;font-family:var(--font);outline:none;background:var(--white);cursor:pointer;transition:all .15s}
+  .period-sel:focus{border-color:var(--purple)}
+  .report-tabs{display:flex;background:var(--off);border:1px solid var(--lg);border-radius:var(--rxs);padding:3px;gap:2px;margin-left:auto}
+  .rt{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--font);transition:all .15s}
+  .rt.active{background:var(--white);color:var(--main);box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+  /* KPI ROW */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);padding:18px 20px}
+  .kpi-val{font-size:24px;font-weight:700;letter-spacing:-.6px;font-family:var(--mono);margin-bottom:3px}
+  .kpi-lbl{font-size:12px;color:var(--muted)}
+  .kpi-trend{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+
+  /* CHARTS GRID */
+  .charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
+
+  /* WIDGET */
+  .widget{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+  .widget:last-child{margin-bottom:0}
+  .wh{padding:15px 20px;border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between}
+  .wh-t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .wh-action{font-size:12px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font)}
+  .wb{padding:18px 20px}
+
+  /* BAR CHART */
+  .chart-bars{display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:8px}
+  .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:0}
+  .bar-stack{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .5s ease}
+  .bar-month{font-size:10px;color:var(--muted);margin-top:4px;text-align:center}
+  .chart-legend{display:flex;gap:16px;justify-content:center;margin-top:8px}
+  .cl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub)}
+  .cl-dot{width:8px;height:8px;border-radius:2px}
+
+  /* DONUT */
+  .donut-wrap{position:relative;width:120px;height:120px;margin:0 auto}
+  .donut-wrap svg{transform:rotate(-90deg)}
+  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .donut-val{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1}
+  .donut-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+  .donut-legend{margin-top:14px}
+  .dl-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--lg);font-size:12px}
+  .dl-item:last-child{border-bottom:none}
+  .dl-label{display:flex;align-items:center;gap:7px;color:var(--sub)}
+  .dl-dot{width:8px;height:8px;border-radius:50%}
+  .dl-val{font-weight:600;font-family:var(--mono)}
+
+  /* LAPORAN TABLE */
+  .lap-tabs{display:flex;gap:0;border-bottom:1px solid var(--lg)}
+  .lt{padding:10px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+  .lt.active{color:var(--purple);border-bottom-color:var(--purple)}
+  .lt:hover{color:var(--main)}
+
+  .fin-table{width:100%;border-collapse:collapse}
+  .fin-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:10px 16px;text-align:left;background:var(--off);border-bottom:1px solid var(--lg)}
+  .fin-table th.num{text-align:right}
+  .fin-table td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--lg);transition:background .1s}
+  .fin-table tr:last-child td{border-bottom:none}
+  .fin-table tr:hover td{background:var(--off)}
+  .fin-table td.num{text-align:right;font-family:var(--mono);font-size:12px}
+  .fin-table td.positive{color:var(--green);font-weight:600}
+  .fin-table td.negative{color:var(--red);font-weight:600}
+  .fin-table tr.section-header td{background:var(--off);font-weight:600;font-size:12px;color:var(--sub);padding:8px 16px;letter-spacing:.3px}
+  .fin-table tr.total td{background:var(--off);font-weight:700;border-top:2px solid var(--lg)}
+  .fin-table tr.total td.positive{color:var(--green)}
+  .fin-table tr.grand-total td{background:var(--main);color:white;font-weight:700}
+  .fin-table tr.grand-total td.positive{color:#86EFAC}
+  .fin-table tr.grand-total td.negative{color:#FCA5A5}
+
+  .coa-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:var(--mono)}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+  .tag.green{background:var(--gs);color:var(--green)}
+  .tag.blue{background:var(--bs);color:var(--blue)}
+  .tag.orange{background:var(--os);color:var(--orange)}
+  .tag.red{background:var(--rs);color:var(--red)}
+  .tag.gray{background:var(--off);color:var(--muted)}
+  .tag.purple{background:var(--ps);color:var(--purple)}
+
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--lg);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".8"/></svg></div>
+      <div><div class="sb-ln">IDEA</div><div class="sb-le">Employee Portal</div></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av">IP</div>
+      <div><div class="sb-n">Intan Permata</div><div class="sb-r">Manager · Finance</div></div>
+    </div>
+    <div class="sb-sec">Finance & Tax</div>
+    <nav class="sb-nav">
+      <div class="ni active"><span class="ni-icon">📊</span> Laporan Keuangan</div>
+      <div class="ni"><span class="ni-icon">📋</span> Transaksi Harian</div>
+      <div class="ni"><span class="ni-icon">🧾</span> Invoice</div>
+      <div class="ni"><span class="ni-icon">💰</span> Reimbursement</div>
+      <div class="ni"><span class="ni-icon">🏦</span> Payroll</div>
+      <div class="ni"><span class="ni-icon">📑</span> Pengadaan</div>
+      <div class="ni"><span class="ni-icon">🗂️</span> Chart of Accounts</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-bc">Finance & Tax <span class="sep" style="color:var(--mg)">/</span> <span>Laporan Keuangan</span></div>
+      <div class="tb-r">
+        <button class="btn btn-s">📤 Export Excel</button>
+        <button class="btn btn-s">📄 Export PDF</button>
+        <button class="btn btn-p">+ Input Transaksi</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Period & Tabs -->
+      <div class="period-row">
+        <select class="period-sel">
+          <option>Juli 2025</option><option>Juni 2025</option><option>Mei 2025</option>
+          <option>Q2 2025 (Apr–Jun)</option><option>Q1 2025 (Jan–Mar)</option><option>YTD 2025</option>
+        </select>
+        <select class="period-sel">
+          <option>IDR (Rupiah)</option><option>USD</option><option>SGD</option>
+        </select>
+        <span class="tag purple">Basis Akrual</span>
+        <div class="report-tabs" style="margin-left:auto">
+          <button class="rt active" onclick="switchReport(this,'overview')">Overview</button>
+          <button class="rt" onclick="switchReport(this,'laba-rugi')">Laba Rugi</button>
+          <button class="rt" onclick="switchReport(this,'neraca')">Neraca</button>
+          <button class="rt" onclick="switchReport(this,'arus-kas')">Arus Kas</button>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--blue)">Rp 2,4M</div>
+          <div class="kpi-lbl">Total Revenue</div>
+          <div class="kpi-trend" style="color:var(--green)"><span>↑</span> +12% vs Jun 2025</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--red)">Rp 1,49M</div>
+          <div class="kpi-lbl">Total Expense</div>
+          <div class="kpi-trend" style="color:var(--orange)"><span>↑</span> +5% vs Jun 2025</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--green)">Rp 912jt</div>
+          <div class="kpi-lbl">Net Profit</div>
+          <div class="kpi-trend" style="color:var(--green)"><span>↑</span> +24% vs Jun 2025</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--purple)">38%</div>
+          <div class="kpi-lbl">Profit Margin</div>
+          <div class="kpi-trend" style="color:var(--green)"><span>↑</span> dari 34% bulan lalu</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="widget">
+          <div class="wh"><div class="wh-t">📈 Revenue vs Expense 7 Bulan Terakhir</div><button class="wh-action">Detail →</button></div>
+          <div class="wb">
+            <div class="chart-legend">
+              <div class="cl-item"><div class="cl-dot" style="background:var(--blue)"></div>Revenue</div>
+              <div class="cl-item"><div class="cl-dot" style="background:#E8E8ED"></div>Expense</div>
+              <div class="cl-item"><div class="cl-dot" style="background:var(--green)"></div>Profit</div>
+            </div>
+            <div class="chart-bars" id="finBars"></div>
+            <div id="finLabels" style="display:flex;gap:10px"></div>
+          </div>
+        </div>
+        <div class="widget">
+          <div class="wh"><div class="wh-t">🥧 Revenue Breakdown</div></div>
+          <div class="wb">
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#E8E8ED" stroke-width="16"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--blue)" stroke-width="16" stroke-dasharray="289.03" stroke-dashoffset="0" stroke-linecap="butt"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--orange)" stroke-width="16" stroke-dasharray="289.03" stroke-dashoffset="173.4" stroke-linecap="butt"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--green)" stroke-width="16" stroke-dasharray="289.03" stroke-dashoffset="231.2" stroke-linecap="butt"/>
+              </svg>
+              <div class="donut-center">
+                <div class="donut-val">Rp 2,4M</div>
+                <div class="donut-lbl">Total</div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="dl-item"><div class="dl-label"><div class="dl-dot" style="background:var(--blue)"></div>IT Consulting</div><div class="dl-val">60%</div></div>
+              <div class="dl-item"><div class="dl-label"><div class="dl-dot" style="background:var(--orange)"></div>Outsourcing</div><div class="dl-val">20%</div></div>
+              <div class="dl-item"><div class="dl-label"><div class="dl-dot" style="background:var(--green)"></div>Software Dev</div><div class="dl-val">20%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Laporan Table -->
+      <div class="widget">
+        <div class="lap-tabs" id="lapTabs">
+          <div class="lt active" onclick="switchTab(this,'lr')">Laba Rugi</div>
+          <div class="lt" onclick="switchTab(this,'neraca')">Neraca</div>
+          <div class="lt" onclick="switchTab(this,'transaksi')">Transaksi Terbaru</div>
+          <div class="lt" onclick="switchTab(this,'invoice')">Outstanding Invoice</div>
+        </div>
+
+        <!-- Laba Rugi -->
+        <div id="tab-lr">
+          <table class="fin-table">
+            <tr><th>Akun</th><th>Kode CoA</th><th class="num">Juli 2025</th><th class="num">Juni 2025</th><th class="num">Perubahan</th></tr>
+            <tr class="section-header"><td colspan="5">PENDAPATAN</td></tr>
+            <tr><td>Jasa Konsultasi IT</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">4-1001</span></td><td class="num">1.440.000.000</td><td class="num">1.280.000.000</td><td class="num positive">+160.000.000</td></tr>
+            <tr><td>Penempatan Outsource</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">4-1002</span></td><td class="num">480.000.000</td><td class="num">430.000.000</td><td class="num positive">+50.000.000</td></tr>
+            <tr><td>Software Development</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">4-1003</span></td><td class="num">480.000.000</td><td class="num">430.000.000</td><td class="num positive">+50.000.000</td></tr>
+            <tr class="total"><td colspan="2"><strong>Total Pendapatan</strong></td><td class="num positive">2.400.000.000</td><td class="num">2.140.000.000</td><td class="num positive">+260.000.000</td></tr>
+            <tr class="section-header"><td colspan="5">BEBAN OPERASIONAL</td></tr>
+            <tr><td>Gaji & Tunjangan Karyawan</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">5-1001</span></td><td class="num">780.000.000</td><td class="num">760.000.000</td><td class="num negative">-20.000.000</td></tr>
+            <tr><td>Biaya Operasional Kantor</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">5-1002</span></td><td class="num">120.000.000</td><td class="num">115.000.000</td><td class="num negative">-5.000.000</td></tr>
+            <tr><td>Biaya Marketing & Sales</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">5-1003</span></td><td class="num">95.000.000</td><td class="num">88.000.000</td><td class="num negative">-7.000.000</td></tr>
+            <tr><td>Biaya Teknologi & Infrastruktur</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">5-1004</span></td><td class="num">145.000.000</td><td class="num">130.000.000</td><td class="num negative">-15.000.000</td></tr>
+            <tr><td>Biaya Profesional & Legal</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">5-1005</span></td><td class="num">55.000.000</td><td class="num">50.000.000</td><td class="num negative">-5.000.000</td></tr>
+            <tr><td>Pajak PPN (11%)</td><td><span class="coa-badge" style="background:var(--os);color:var(--orange)">5-2001</span></td><td class="num">264.000.000</td><td class="num">235.400.000</td><td class="num negative">-28.600.000</td></tr>
+            <tr><td>PPh Badan (Est.)</td><td><span class="coa-badge" style="background:var(--os);color:var(--orange)">5-2002</span></td><td class="num">30.000.000</td><td class="num">28.000.000</td><td class="num negative">-2.000.000</td></tr>
+            <tr class="total"><td colspan="2"><strong>Total Beban</strong></td><td class="num negative">1.489.000.000</td><td class="num">1.406.400.000</td><td class="num negative">-82.600.000</td></tr>
+            <tr class="grand-total"><td colspan="2"><strong>LABA BERSIH</strong></td><td class="num positive">911.000.000</td><td class="num positive">733.600.000</td><td class="num positive">+177.400.000</td></tr>
+          </table>
+        </div>
+
+        <!-- Neraca (hidden) -->
+        <div id="tab-neraca" style="display:none">
+          <table class="fin-table">
+            <tr><th>Akun</th><th>Kode CoA</th><th class="num">Juli 2025</th><th class="num">Des 2024</th></tr>
+            <tr class="section-header"><td colspan="4">ASET LANCAR</td></tr>
+            <tr><td>Kas & Setara Kas</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">1-1001</span></td><td class="num">3.240.000.000</td><td class="num">2.480.000.000</td></tr>
+            <tr><td>Piutang Usaha</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">1-1002</span></td><td class="num">480.000.000</td><td class="num">320.000.000</td></tr>
+            <tr><td>Biaya Dibayar Dimuka</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">1-1003</span></td><td class="num">96.000.000</td><td class="num">80.000.000</td></tr>
+            <tr class="total"><td colspan="2"><strong>Total Aset Lancar</strong></td><td class="num positive">3.816.000.000</td><td class="num">2.880.000.000</td></tr>
+            <tr class="section-header"><td colspan="4">ASET TIDAK LANCAR</td></tr>
+            <tr><td>Peralatan & Inventaris</td><td><span class="coa-badge" style="background:var(--bs);color:var(--blue)">1-2001</span></td><td class="num">540.000.000</td><td class="num">580.000.000</td></tr>
+            <tr><td>Akumulasi Penyusutan</td><td><span class="coa-badge" style="background:var(--rs);color:var(--red)">1-2002</span></td><td class="num negative">(240.000.000)</td><td class="num negative">(200.000.000)</td></tr>
+            <tr class="total"><td colspan="2"><strong>Total Aset</strong></td><td class="num positive">4.116.000.000</td><td class="num">3.260.000.000</td></tr>
+            <tr class="section-header"><td colspan="4">KEWAJIBAN & EKUITAS</td></tr>
+            <tr><td>Utang Usaha</td><td><span class="coa-badge" style="background:var(--os);color:var(--orange)">2-1001</span></td><td class="num">180.000.000</td><td class="num">160.000.000</td></tr>
+            <tr><td>Utang Pajak</td><td><span class="coa-badge" style="background:var(--os);color:var(--orange)">2-1002</span></td><td class="num">120.000.000</td><td class="num">95.000.000</td></tr>
+            <tr><td>Modal Disetor</td><td><span class="coa-badge" style="background:var(--gs);color:var(--green)">3-1001</span></td><td class="num">1.200.000.000</td><td class="num">1.200.000.000</td></tr>
+            <tr><td>Laba Ditahan</td><td><span class="coa-badge" style="background:var(--gs);color:var(--green)">3-1002</span></td><td class="num">2.616.000.000</td><td class="num">1.805.000.000</td></tr>
+            <tr class="grand-total"><td colspan="2"><strong>Total Kewajiban & Ekuitas</strong></td><td class="num positive">4.116.000.000</td><td class="num positive">3.260.000.000</td></tr>
+          </table>
+        </div>
+
+        <!-- Transaksi Terbaru (hidden) -->
+        <div id="tab-transaksi" style="display:none">
+          <table class="fin-table">
+            <tr><th>Tanggal</th><th>Deskripsi</th><th>CoA</th><th>Tipe</th><th class="num">Jumlah (IDR)</th><th>Status</th></tr>
+            ${[
+              {date:'7 Jul',desc:'Invoice PT Telkom — Consulting Fee Jun',coa:'4-1001',type:'Kredit',amount:'240.000.000',status:'posted',statusC:'green'},
+              {date:'6 Jul',desc:'Gaji Karyawan Juli 2025 — Payroll',coa:'5-1001',type:'Debit',amount:'780.000.000',status:'posted',statusC:'green'},
+              {date:'5 Jul',desc:'Sewa Kantor Q3 2025',coa:'5-1002',type:'Debit',amount:'45.000.000',status:'posted',statusC:'green'},
+              {date:'5 Jul',desc:'Invoice Bank Nusantara — Outsource Jun',coa:'4-1002',type:'Kredit',amount:'180.000.000',status:'posted',statusC:'green'},
+              {date:'4 Jul',desc:'Biaya Cloud GCP — Q2 settlement',coa:'5-1004',type:'Debit',amount:'32.000.000',status:'verified',statusC:'blue'},
+              {date:'3 Jul',desc:'Reimbursement — Fajar N. (transport)',coa:'5-1002',type:'Debit',amount:'850.000',status:'verified',statusC:'blue'},
+              {date:'2 Jul',desc:'PPN Masa Juni 2025',coa:'5-2001',type:'Debit',amount:'235.400.000',status:'draft',statusC:'orange'},
+            ].map(t=>`<tr>
+              <td style="color:var(--muted)">${t.date}</td>
+              <td>${t.desc}</td>
+              <td><span class="coa-badge" style="background:${t.type==='Kredit'?'var(--bs)':'var(--rs)'};color:${t.type==='Kredit'?'var(--blue)':'var(--red)'}">${t.coa}</span></td>
+              <td><span class="tag ${t.type==='Kredit'?'blue':'red'}" style="font-size:10px">${t.type}</span></td>
+              <td class="num ${t.type==='Kredit'?'positive':''}">${t.type==='Kredit'?'+':'−'}${t.amount}</td>
+              <td><span class="tag ${t.statusC}">${t.status}</span></td>
+            </tr>`).join('')}
+          </table>
+        </div>
+
+        <!-- Invoice (hidden) -->
+        <div id="tab-invoice" style="display:none">
+          <table class="fin-table">
+            <tr><th>No. Invoice</th><th>Client</th><th class="num">Nilai (IDR)</th><th>Jatuh Tempo</th><th>Status</th><th class="num">Outstanding</th></tr>
+            ${[
+              {no:'INV-2025-071',client:'PT Telkom Indonesia',amount:'240.000.000',due:'15 Jul 2025',status:'overdue',outs:'240.000.000'},
+              {no:'INV-2025-068',client:'PT Bank Nusantara',amount:'180.000.000',due:'20 Jul 2025',status:'sent',outs:'180.000.000'},
+              {no:'INV-2025-065',client:'PT Astra International',amount:'120.000.000',due:'25 Jul 2025',status:'sent',outs:'120.000.000'},
+              {no:'INV-2025-060',client:'PT Indosat Ooredoo',amount:'96.000.000',due:'10 Jul 2025',status:'partial',outs:'48.000.000'},
+              {no:'INV-2025-055',client:'PT Garuda Indonesia',amount:'84.000.000',due:'5 Jul 2025',status:'paid',outs:'0'},
+            ].map(inv=>`<tr>
+              <td style="font-family:var(--mono);font-size:12px;color:var(--blue)">${inv.no}</td>
+              <td>${inv.client}</td>
+              <td class="num">${inv.amount}</td>
+              <td style="font-size:12px;color:${inv.status==='overdue'?'var(--red)':'var(--muted)'}">${inv.due}</td>
+              <td><span class="tag ${inv.status==='paid'?'green':inv.status==='overdue'?'red':inv.status==='partial'?'orange':'blue'}">${inv.status}</span></td>
+              <td class="num ${inv.outs==='0'?'':'negative'}">${inv.outs==='0'?'—':inv.outs}</td>
+            </tr>`).join('')}
+            <tr class="total">
+              <td colspan="5"><strong>Total Outstanding</strong></td>
+              <td class="num negative">588.000.000</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Bar chart
+const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul'];
+const rev=[180,210,195,220,240,225,240];
+const exp=[130,145,140,155,160,150,149];
+const maxV=Math.max(...rev);
+const bars=document.getElementById('finBars');
+const lbls=document.getElementById('finLabels');
+months.forEach((m,i)=>{
+  const g=document.createElement('div');g.className='bar-group';
+  const isLast=i===months.length-1;
+  g.innerHTML=`
+    <div class="bar-stack" style="height:${Math.max(rev[i],exp[i])/maxV*100}%;position:relative;display:flex;align-items:flex-end;gap:3px;width:100%">
+      <div style="flex:1;height:${rev[i]/maxV*100}%;background:${isLast?'var(--blue)':'rgba(0,113,227,.3)'};border-radius:3px 3px 0 0;min-height:3px"></div>
+      <div style="flex:1;height:${exp[i]/maxV*100}%;background:${isLast?'var(--lg)':'rgba(200,200,200,.5)'};border-radius:3px 3px 0 0;min-height:3px;border:1px solid var(--lg)"></div>
+      <div style="flex:1;height:${(rev[i]-exp[i])/maxV*100}%;background:${isLast?'var(--green)':'rgba(52,199,89,.3)'};border-radius:3px 3px 0 0;min-height:3px"></div>
+    </div>`;
+  bars.appendChild(g);
+  const l=document.createElement('div');l.style.cssText='flex:1;font-size:10px;color:var(--muted);text-align:center;margin-top:4px';l.textContent=m;
+  lbls.appendChild(l);
+});
+
+function switchReport(btn,v){document.querySelectorAll('.rt').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+
+function switchTab(btn,tab){
+  document.querySelectorAll('.lt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const tabs=['lr','neraca','transaksi','invoice'];
+  tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display='none'});
+  const el=document.getElementById('tab-'+tab);
+  if(el)el.style.display='block';
+}
+</script>
+</body>
+</html>

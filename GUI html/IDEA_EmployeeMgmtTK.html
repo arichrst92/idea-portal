@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Employee Management Teknologi</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#AF52DE,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue);color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#0064CC}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.kpi-val{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:2px;font-family:var(--mono)}
+.kpi-lbl{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* TOOLBAR */
+.tb-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:14px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;width:280px}
+.search input{border:none;outline:none;font-family:var(--font);font-size:13px;flex:1;background:transparent;color:var(--ink)}
+.view-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px}
+.vb{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink3);font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:5px}
+.vb.active{background:var(--blue);color:#fff;box-shadow:0 1px 3px rgba(0,122,255,.3)}
+
+/* PANELS */
+.panel{display:none}.panel.show{display:block}
+
+/* TABLE-LIKE GRID */
+.emp-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.et-header{display:grid;grid-template-columns:2.2fr 1fr 1.4fr 1.2fr 1fr 0.6fr;gap:14px;padding:14px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px}
+.et-row{display:grid;grid-template-columns:2.2fr 1fr 1.4fr 1.2fr 1fr 0.6fr;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border2);font-size:13px;align-items:center;cursor:pointer;transition:background .12s}
+.et-row:last-child{border-bottom:none}
+.et-row:hover{background:var(--bg)}
+.et-row.selected{background:var(--bl)}
+.et-emp{display:flex;align-items:center;gap:10px}
+.et-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.et-name{font-weight:700;font-size:13px}.et-pos{font-size:11px;color:var(--ink3);font-weight:500}
+.et-alloc-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:4px}
+.et-alloc-fill{height:100%;border-radius:3px}
+.et-rating{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:-.3px}
+
+/* WORKLOAD VIEW */
+.wl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.wl-info{flex:1}
+.wl-name{font-weight:700;font-size:14px;margin-bottom:3px}
+.wl-meta{font-size:11px;color:var(--ink3);margin-bottom:10px}
+.wl-bar{height:24px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative;display:flex}
+.wl-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;padding:0 5px}
+.wl-warn{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--red)}
+
+/* SKILL TAGS */
+.skill-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.skill{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--bl);color:var(--blue);font-weight:600}
+
+/* AVAILABILITY DOT */
+.av-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.av-green{background:var(--green)}.av-yellow{background:var(--orange)}.av-red{background:var(--red)}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Tech Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">IW</div><div><div class="sb-uname">Indra Wijaya</div><div class="sb-urole">CTO · Teknologi</div></div></div>
+  <div class="sb-sec">Dept. Teknologi</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📋</div>Project Management</div>
+    <div class="ni active"><div class="ni-ic">👥</div>Employee Management</div>
+    <div class="ni"><div class="ni-ic">📝</div>Penilaian</div>
+    <div class="ni"><div class="ni-ic">📚</div>Dokumentasi</div>
+    <div class="ni"><div class="ni-ic">📊</div>Report</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Teknologi <span style="color:var(--border)">/</span> <strong>Employee Management</strong></div>
+    <div>
+      <button class="btn btn-s">📊 Export Dept Report</button>
+      <button class="btn btn-p">+ Workload Plan Sprint</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val">38</div><div class="kpi-lbl">Total Teknologi</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">31</div><div class="kpi-lbl">Available (≤100%)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">4</div><div class="kpi-lbl">Over-allocated</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">3</div><div class="kpi-lbl">Low Allocation (&lt;50%)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--blue)">82.4</div><div class="kpi-lbl">Avg Rating (Mei)</div></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="tb-row">
+      <div style="display:flex;gap:10px;align-items:center;flex:1">
+        <div class="search">
+          <span style="color:var(--ink3)">🔍</span>
+          <input type="text" placeholder="Cari nama, NIK, atau skill...">
+        </div>
+        <select style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;background:var(--surface)">
+          <option>Semua Posisi</option>
+          <option>Backend</option>
+          <option>Frontend</option>
+          <option>DevOps</option>
+          <option>QA</option>
+          <option>UI/UX</option>
+        </select>
+        <select style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;background:var(--surface)">
+          <option>Semua Level</option>
+          <option>L4 — Manager</option>
+          <option>L5 — Lead</option>
+          <option>L6 — Staff</option>
+        </select>
+      </div>
+      <div class="view-toggle">
+        <button class="vb active" onclick="showView('list', this)">📋 List</button>
+        <button class="vb" onclick="showView('workload', this)">📊 Workload</button>
+        <button class="vb" onclick="showView('matrix', this)">🎯 Matrix</button>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div class="panel show" id="panelList">
+      <div class="emp-table">
+        <div class="et-header">
+          <div>Karyawan</div>
+          <div>Level</div>
+          <div>Alokasi · Project</div>
+          <div>Skill Set</div>
+          <div>Rating Mei</div>
+          <div style="text-align:right">Aksi</div>
+        </div>
+
+        <div class="et-row selected" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>
+            <div>
+              <div class="et-name">Rizky Hanafi <span class="av-dot av-green" title="Available"></span></div>
+              <div class="et-pos">Lead Developer · IDE-2023-007</div>
+            </div>
+          </div>
+          <div><span class="tag tb">L5 — Lead</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">95%</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:95%;background:var(--green)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">3 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Go</span>
+            <span class="skill">PostgreSQL</span>
+            <span class="skill">K8s</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--green)">85</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#FF453A,#C0392B)">SR</div>
+            <div>
+              <div class="et-name">Siti Rahayu <span class="av-dot av-red" title="Over-allocated"></span></div>
+              <div class="et-pos">Backend Developer · IDE-2026-041</div>
+            </div>
+          </div>
+          <div><span class="tag tgr">L6 — Staff</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--red)">130% ⚠️</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:100%;background:var(--red)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">4 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Python</span>
+            <span class="skill">FastAPI</span>
+            <span class="skill">Redis</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--orange)">62</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>
+            <div>
+              <div class="et-name">Budi Santoso <span class="av-dot av-green"></span></div>
+              <div class="et-pos">Senior Developer · IDE-2022-013</div>
+            </div>
+          </div>
+          <div><span class="tag tb">L4 → L5</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">80%</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:80%;background:var(--green)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">2 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Java</span>
+            <span class="skill">Spring</span>
+            <span class="skill">Kafka</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--green)">90</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED)">AF</div>
+            <div>
+              <div class="et-name">Ahmad Fauzi <span class="av-dot av-yellow"></span></div>
+              <div class="et-pos">Frontend Developer · IDE-2023-021</div>
+            </div>
+          </div>
+          <div><span class="tag tgr">L6 — Staff</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">110% ⚠️</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:100%;background:var(--orange)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">3 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">React</span>
+            <span class="skill">TypeScript</span>
+            <span class="skill">Tailwind</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--green)">76</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">DM</div>
+            <div>
+              <div class="et-name">Denny Maulana <span class="av-dot av-green"></span> <span class="tag tr" style="margin-left:4px">SP1</span></div>
+              <div class="et-pos">Staff Developer · IDE-2024-009</div>
+            </div>
+          </div>
+          <div><span class="tag tgr">L6 — Staff</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">40%</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:40%;background:var(--orange)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">1 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Node.js</span>
+            <span class="skill">MongoDB</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--red)">55</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#32D2F2,#007AFF)">YR</div>
+            <div>
+              <div class="et-name">Yuda Rakasiwi <span class="av-dot av-green"></span></div>
+              <div class="et-pos">Backend Developer · IDE-2024-018</div>
+            </div>
+          </div>
+          <div><span class="tag tgr">L6 — Staff</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">90%</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:90%;background:var(--green)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">2 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Python</span>
+            <span class="skill">FastAPI</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--green)">78</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+
+        <div class="et-row" onclick="selectEmp(this)">
+          <div class="et-emp">
+            <div class="et-av" style="background:linear-gradient(135deg,#BF5AF2,#FF453A)">RY</div>
+            <div>
+              <div class="et-name">Reza Yanuar <span class="av-dot av-green"></span></div>
+              <div class="et-pos">UI/UX Designer · IDE-2025-005</div>
+            </div>
+          </div>
+          <div><span class="tag tgr">L6 — Staff</span></div>
+          <div>
+            <div style="font-size:12px;font-weight:600">60%</div>
+            <div class="et-alloc-bar"><div class="et-alloc-fill" style="width:60%;background:var(--green)"></div></div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:2px">2 project</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill">Figma</span>
+            <span class="skill">Design System</span>
+          </div>
+          <div><span class="et-rating" style="color:var(--green)">82</span></div>
+          <div style="text-align:right"><button class="btn btn-s" style="font-size:11px;padding:5px 10px">👁</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKLOAD VIEW -->
+    <div class="panel" id="panelWorkload">
+      <div style="background:var(--rl);border:1px solid rgba(255,67,58,.2);border-radius:var(--rm);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🔥</span>
+        <div style="flex:1"><strong>4 karyawan over-allocated (&gt;100%)</strong> — perlu rebalancing sebelum sprint baru. Klik nama untuk re-assign project.</div>
+        <button class="btn btn-p" style="background:var(--red)">Buka Rebalance Tool</button>
+      </div>
+
+      <div class="wl-card" style="border-color:rgba(255,67,58,.3)">
+        <div class="et-av" style="background:linear-gradient(135deg,#FF453A,#C0392B);width:42px;height:42px;font-size:13px">SR</div>
+        <div class="wl-info">
+          <div class="wl-name">Siti Rahayu — 130% <span class="tag tr">Over-allocated</span></div>
+          <div class="wl-meta">Backend Developer · L6 · skor turun ke 62 bulan ini · risk: burnout</div>
+          <div class="wl-bar">
+            <div class="wl-seg" style="width:30%;background:var(--blue)">API Gateway 30%</div>
+            <div class="wl-seg" style="width:35%;background:var(--green)">Portal Internal 35%</div>
+            <div class="wl-seg" style="width:35%;background:var(--purple)">HRIS Bank 35%</div>
+            <div class="wl-seg" style="width:30%;background:var(--red)">+30% OVER</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wl-card" style="border-color:rgba(255,159,10,.3)">
+        <div class="et-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED);width:42px;height:42px;font-size:13px">AF</div>
+        <div class="wl-info">
+          <div class="wl-name">Ahmad Fauzi — 110% <span class="tag to">Borderline</span></div>
+          <div class="wl-meta">Frontend Developer · L6 · 3 project bersamaan</div>
+          <div class="wl-bar">
+            <div class="wl-seg" style="width:35%;background:var(--blue)">API Gateway 35%</div>
+            <div class="wl-seg" style="width:40%;background:var(--green)">Portal Internal 40%</div>
+            <div class="wl-seg" style="width:35%;background:var(--purple)">Mobile App 35%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wl-card" style="border-color:rgba(48,209,88,.3)">
+        <div class="et-av" style="background:linear-gradient(135deg,#007AFF,#34AADC);width:42px;height:42px;font-size:13px">RH</div>
+        <div class="wl-info">
+          <div class="wl-name">Rizky Hanafi — 95% <span class="tag tg">Optimal</span></div>
+          <div class="wl-meta">Lead Developer · L5 · multi-PM role</div>
+          <div class="wl-bar">
+            <div class="wl-seg" style="width:40%;background:var(--blue)">PM: API Gateway 40%</div>
+            <div class="wl-seg" style="width:30%;background:var(--green)">PM: Portal 30%</div>
+            <div class="wl-seg" style="width:25%;background:var(--purple)">Dev: HRIS 25%</div>
+            <div class="wl-seg" style="width:5%;background:var(--bg);color:var(--ink2)">5%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wl-card" style="border-color:rgba(255,159,10,.3)">
+        <div class="et-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00);width:42px;height:42px;font-size:13px">DM</div>
+        <div class="wl-info">
+          <div class="wl-name">Denny Maulana — 40% <span class="tag to">Under-allocated</span></div>
+          <div class="wl-meta">Staff Developer · L6 · status SP1 — direct supervisor monitoring</div>
+          <div class="wl-bar">
+            <div class="wl-seg" style="width:40%;background:var(--blue)">HRIS Bank 40%</div>
+            <div class="wl-seg" style="width:60%;background:var(--bg);color:var(--ink2)">60% available</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATRIX VIEW -->
+    <div class="panel" id="panelMatrix">
+      <div class="emp-table">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:14px;font-weight:700">9-Box Performance × Allocation Matrix</div>
+          <span class="tag tgr">38 karyawan diplot</span>
+        </div>
+        <div style="padding:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <!-- Row: High Allocation -->
+          <div style="background:linear-gradient(135deg,var(--rl),#FFEFEE);border:1px solid rgba(255,67,58,.2);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Over-Loaded · Low Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Burnout risk — rebalance</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#FF453A,#C0392B);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">SR</div>
+            </div>
+          </div>
+          <div style="background:linear-gradient(135deg,var(--ol),#FFF8F0);border:1px solid rgba(255,159,10,.2);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:#C2410C;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Over-Loaded · Mid Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Pertimbangkan release</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#AF52DE,#7C3AED);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">AF</div>
+            </div>
+          </div>
+          <div style="background:linear-gradient(135deg,var(--gl),#F0FBF3);border:1px solid rgba(48,209,88,.2);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.8px">⭐ Over-Loaded · High Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Top performers — promosi candidate</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#34AADC);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">RH</div>
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#34C759,#00C7BE);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">BS</div>
+            </div>
+          </div>
+
+          <!-- Row: Optimal Allocation -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Optimal · Low Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Skill gap? Coaching</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#FF9F0A,#FF6B00);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">DM</div>
+            </div>
+          </div>
+          <div style="background:var(--bl);border:1px solid rgba(0,122,255,.15);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Optimal · Mid Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Steady — pertahankan</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#32D2F2,#007AFF);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">YR</div>
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#BF5AF2,#FF453A);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">RY</div>
+              <span style="font-size:10px;color:var(--ink3);align-self:center">+8 lainnya</span>
+            </div>
+          </div>
+          <div style="background:linear-gradient(135deg,var(--gl),#E5F9EC);border:1px solid rgba(48,209,88,.3);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.8px">⭐ Optimal · High Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Core team — protect</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <span style="font-size:11px;color:var(--green);font-weight:700">12 karyawan</span>
+            </div>
+          </div>
+
+          <!-- Row: Under Allocation -->
+          <div style="background:var(--rl);border:1px solid rgba(255,67,58,.15);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Idle · Low Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">PIP atau review role</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <span style="font-size:11px;color:var(--red);font-weight:700">0 karyawan</span>
+            </div>
+          </div>
+          <div style="background:var(--ol);border:1px solid rgba(255,159,10,.15);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:#C2410C;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Idle · Mid Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Need allocation push</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <span style="font-size:11px;color:#C2410C;font-weight:700">3 karyawan</span>
+            </div>
+          </div>
+          <div style="background:var(--pl);border:1px solid rgba(191,90,242,.15);border-radius:var(--rs);padding:14px;min-height:120px;display:flex;flex-direction:column">
+            <div style="font-size:10px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Idle · High Rating</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">Wasted capacity — assign asap</div>
+            <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:4px">
+              <span style="font-size:11px;color:var(--purple);font-weight:700">2 karyawan</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:14px 20px;background:var(--bg);border-top:1px solid var(--border);font-size:11px;color:var(--ink3);display:flex;justify-content:space-between">
+          <span><strong>X axis:</strong> Rating (Low &lt;60 · Mid 60-79 · High ≥80)</span>
+          <span><strong>Y axis:</strong> Allocation (Idle &lt;50% · Optimal 50-100% · Over &gt;100%)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+function showView(name, btn){
+  document.querySelectorAll('.vb').forEach(v=>v.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('show');
+}
+function selectEmp(el){
+  document.querySelectorAll('.et-row').forEach(r=>r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

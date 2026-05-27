@@ -1,0 +1,236 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>IDEA — P&L & EBITDA Executive</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{width:34px;height:34px;background:rgba(255,255,255,.1);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px;color:#fff}.sb-env{font-size:10px;color:rgba(255,255,255,.4);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.08)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700;color:#fff}.sb-urole{font-size:11px;color:rgba(255,255,255,.4);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:1px}
+.ni:hover{background:rgba(255,255,255,.05);color:#fff}.ni.active{background:rgba(0,122,255,.25);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:rgba(255,255,255,.06)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.tb-bc{font-size:13px;color:var(--ink3)}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
+.btn-p{background:var(--blue);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.content{flex:1;overflow-y:auto;padding:24px}
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden}
+.kpi-dark{background:var(--ink);color:#fff}
+.kpi-light{background:var(--surface);border:1px solid var(--border)}
+.kpi-badge{position:absolute;top:10px;right:12px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.kpi-val{font-size:28px;font-weight:800;letter-spacing:-.8px;margin-bottom:3px;font-family:var(--mono)}
+.kpi-lbl{font-size:12px;opacity:.6;font-weight:500}
+.kpi-trend{font-size:11px;font-weight:600;margin-top:6px}
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700}
+.cb{padding:16px 18px}.cb.np{padding:0}
+/* P&L TABLE */
+.pl-table{width:100%;border-collapse:collapse}
+.pl-table td{padding:8px 16px;font-size:13px;border-bottom:1px solid var(--border2)}
+.pl-table tr:last-child td{border-bottom:none}
+.pl-table td.r{text-align:right;font-family:var(--mono)}
+.pl-table tr.group{background:var(--bg)}
+.pl-table tr.group td{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);padding:6px 16px}
+.pl-table tr.subtotal td{background:rgba(0,0,0,.02);font-weight:700}
+.pl-table tr.total td{background:var(--ink);color:#fff;font-weight:800;font-size:14px}
+.pl-table tr.total td.r{font-size:15px}
+/* BARS */
+.bar-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.bar-item:last-child{border-bottom:none}
+.bar-label{flex:1;color:var(--ink2)}
+.bar-track{width:80px;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.bar-val{width:80px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700}
+/* EBITDA BRIDGE */
+.bridge{display:flex;flex-direction:column;gap:8px;padding:14px 18px}
+.bridge-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border2)}
+.bridge-row:last-child{border-bottom:none;font-weight:800;font-size:14px;background:transparent}
+.bridge-sign{width:20px;text-align:center;flex-shrink:0}
+.bridge-label{flex:1;padding:0 10px}
+.bridge-val{font-family:var(--mono);font-weight:700;width:100px;text-align:right}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}.to{background:var(--ol);color:var(--orange)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head><body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div><div><div class="sb-name">IDEA</div><div class="sb-env">Executive Portal</div></div></div>
+  <div class="sb-user"><div class="sb-av">DS</div><div><div class="sb-uname">Diana Sari</div><div class="sb-urole">Direktur Utama</div></div></div>
+  <div class="sb-sec">Executive Dashboard</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">⊞</div>Overview</div>
+    <div class="ni active"><div class="ni-ic">💹</div>P&amp;L &amp; EBITDA</div>
+    <div class="ni"><div class="ni-ic">🤖</div>AI Summary</div>
+    <div class="ni"><div class="ni-ic">👥</div>People Analytics</div>
+    <div class="ni"><div class="ni-ic">🗂️</div>Project Health</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Executive <span style="color:var(--border)">/</span> <strong>P&amp;L &amp; EBITDA Detail</strong></div>
+    <div class="tb-r">
+      <select style="height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);background:var(--bg);outline:none"><option>Juli 2025</option><option>Q3 2025</option><option>YTD 2025</option><option>2024 Full Year</option></select>
+      <button class="btn btn-s">📊 Export Excel</button>
+      <button class="btn btn-p">📄 Board Report</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi kpi-dark">
+        <div class="kpi-badge" style="background:rgba(48,209,88,.2);color:#30D158">↑ +12%</div>
+        <div class="kpi-val">Rp 1,8M</div>
+        <div class="kpi-lbl">Revenue Bulan Ini</div>
+        <div class="kpi-trend" style="color:#30D158">vs target Rp 1,5M</div>
+      </div>
+      <div class="kpi kpi-light">
+        <div class="kpi-badge" style="background:var(--gl);color:var(--green)">Healthy</div>
+        <div class="kpi-val" style="color:var(--green)">32,4%</div>
+        <div class="kpi-lbl">EBITDA Margin</div>
+        <div class="kpi-trend" style="color:var(--green)">↑ +3,2% vs Jun</div>
+      </div>
+      <div class="kpi kpi-light">
+        <div class="kpi-badge" style="background:var(--bl);color:var(--blue)">Accrual</div>
+        <div class="kpi-val" style="color:var(--blue)">Rp 583jt</div>
+        <div class="kpi-lbl">Gross Profit</div>
+        <div class="kpi-trend" style="color:var(--blue)">GP Margin: 32,4%</div>
+      </div>
+      <div class="kpi kpi-light">
+        <div class="kpi-badge" style="background:var(--ol);color:var(--orange)">Nett</div>
+        <div class="kpi-val" style="color:var(--orange)">Rp 198jt</div>
+        <div class="kpi-lbl">Net Profit</div>
+        <div class="kpi-trend" style="color:var(--orange)">Margin: 11,0%</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div>
+        <!-- P&L Statement -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">📊 Income Statement — Juli 2025</div>
+            <div style="display:flex;gap:6px">
+              <span class="tag tgr">Accrual Basis</span>
+              <span class="tag tgr">IDR</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="pl-table">
+              <tbody>
+                <tr class="group"><td colspan="3">PENDAPATAN</td></tr>
+                <tr><td>Pendapatan Jasa IT Consulting</td><td></td><td class="r" style="color:var(--green)">1.080.000.000</td></tr>
+                <tr><td>Pendapatan Outsourcing</td><td></td><td class="r" style="color:var(--green)">540.000.000</td></tr>
+                <tr><td>Pendapatan Software Development</td><td></td><td class="r" style="color:var(--green)">180.000.000</td></tr>
+                <tr class="subtotal"><td colspan="2">Total Pendapatan</td><td class="r">1.800.000.000</td></tr>
+
+                <tr class="group"><td colspan="3">HPP (HARGA POKOK PENJUALAN)</td></tr>
+                <tr><td>Beban Gaji Langsung</td><td></td><td class="r" style="color:var(--red)">(980.000.000)</td></tr>
+                <tr><td>Beban Subkontraktor</td><td></td><td class="r" style="color:var(--red)">(120.000.000)</td></tr>
+                <tr><td>Beban Proyek Langsung</td><td></td><td class="r" style="color:var(--red)">(117.000.000)</td></tr>
+                <tr class="subtotal"><td colspan="2">Total HPP</td><td class="r" style="color:var(--red)">(1.217.000.000)</td></tr>
+
+                <tr class="subtotal" style="background:var(--gl)"><td colspan="2" style="color:var(--green)">Gross Profit</td><td class="r" style="color:var(--green)">583.000.000</td></tr>
+
+                <tr class="group"><td colspan="3">BEBAN OPERASIONAL</td></tr>
+                <tr><td>Gaji &amp; Tunjangan (Overhead)</td><td></td><td class="r" style="color:var(--red)">(180.000.000)</td></tr>
+                <tr><td>Sewa &amp; Utilitas</td><td></td><td class="r" style="color:var(--red)">(45.000.000)</td></tr>
+                <tr><td>Pemasaran &amp; Sales</td><td></td><td class="r" style="color:var(--red)">(28.000.000)</td></tr>
+                <tr><td>Administrasi &amp; Umum</td><td></td><td class="r" style="color:var(--red)">(18.000.000)</td></tr>
+                <tr class="subtotal"><td colspan="2">Total Opex</td><td class="r" style="color:var(--red)">(271.000.000)</td></tr>
+
+                <tr class="subtotal" style="background:var(--bl)"><td colspan="2" style="color:var(--blue)">EBITDA</td><td class="r" style="color:var(--blue)">312.000.000</td></tr>
+
+                <tr><td>Depresiasi &amp; Amortisasi</td><td></td><td class="r" style="color:var(--red)">(48.000.000)</td></tr>
+                <tr><td>Beban Bunga</td><td></td><td class="r" style="color:var(--red)">(12.000.000)</td></tr>
+                <tr><td>PPh Badan (Estimasi)</td><td></td><td class="r" style="color:var(--red)">(54.000.000)</td></tr>
+
+                <tr class="total"><td colspan="2">NET PROFIT</td><td class="r" style="color:#86EFAC">198.000.000</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <!-- EBITDA Bridge -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">🌉 EBITDA Breakdown</div></div>
+          <div class="bridge">
+            <div class="bridge-row"><span class="bridge-sign" style="color:var(--green)">+</span><span class="bridge-label">Gross Profit</span><span class="bridge-val" style="color:var(--green)">583.000.000</span></div>
+            <div class="bridge-row"><span class="bridge-sign" style="color:var(--red)">-</span><span class="bridge-label">Total Opex</span><span class="bridge-val" style="color:var(--red)">(271.000.000)</span></div>
+            <div class="bridge-row" style="background:var(--bl);border-radius:var(--rs);padding:8px 10px;font-weight:800">
+              <span class="bridge-sign" style="color:var(--blue)">=</span>
+              <span class="bridge-label" style="color:var(--blue)">EBITDA</span>
+              <span class="bridge-val" style="color:var(--blue)">312.000.000</span>
+            </div>
+            <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border2)">
+              <span style="color:var(--ink3)">EBITDA Margin</span>
+              <span style="font-weight:800;color:var(--green)">32,4%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Breakdown -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">🍰 Revenue Mix</div></div>
+          <div class="cb np">
+            ${[
+              {n:'IT Consulting',v:'1.080.000.000',pct:60,c:'var(--blue)'},
+              {n:'Outsourcing',v:'540.000.000',pct:30,c:'var(--purple)'},
+              {n:'Software Dev',v:'180.000.000',pct:10,c:'var(--green)'},
+            ].map(r=>`<div class="bar-item" style="padding:10px 18px">
+              <span class="bar-label" style="color:var(--ink)">${r.n}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${r.pct}%;background:${r.c}"></div></div>
+              <span style="font-size:11px;font-weight:700;color:${r.c};width:32px;text-align:right">${r.pct}%</span>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Monthly Trend Chart -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">📈 Trend EBITDA 2025</div></div>
+          <div class="cb">
+            <div style="display:flex;gap:8px;align-items:flex-end;height:70px;margin-bottom:6px" id="ebitdaBars"></div>
+            <div style="display:flex;gap:8px" id="ebitdaLabels"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul'];
+const ebitda=[18,22,24,26,28,28,32];
+const max=Math.max(...ebitda);
+const bc=document.getElementById('ebitdaBars');
+const bl=document.getElementById('ebitdaLabels');
+months.forEach((m,i)=>{
+  const isLast=i===months.length-1;
+  const pct=ebitda[i]/max*100;
+  const d=document.createElement('div');d.style.cssText='flex:1;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px';
+  d.innerHTML=`<div style="position:absolute;top:-18px;font-size:10px;font-weight:700;color:${isLast?'var(--green)':'var(--ink3)'}">${ebitda[i]}%</div><div style="width:100%;height:${pct}%;background:${isLast?'var(--green)':'rgba(0,122,255,.2)'};border-radius:4px 4px 0 0;min-height:4px"></div>`;
+  bc.appendChild(d);
+  const l=document.createElement('div');l.style.cssText='flex:1;font-size:10px;color:var(--ink3);text-align:center;font-weight:600';l.textContent=m;
+  bl.appendChild(l);
+});
+</script>
+</body></html>

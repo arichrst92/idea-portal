@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Project Management</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#FFF;--off:#F5F5F7;--lg:#E8E8ED;--mg:#C7C7CC;--main:#1D1D1F;--sub:#6E6E73;--muted:#86868B;--blue:#0071E3;--bs:#EBF4FF;--green:#34C759;--gs:#F0FBF3;--orange:#FF9500;--os:#FFF8EC;--red:#FF3B30;--rs:#FFF2F1;--purple:#AF52DE;--ps:#F5EEFA;--font:'Inter',sans-serif;--r:14px;--rxs:8px}
+  html,body{height:100%;font-family:var(--font);background:var(--off);color:var(--main);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;height:100vh;background:var(--white);border-right:1px solid var(--lg);display:flex;flex-direction:column;flex-shrink:0}
+  .sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--lg)}
+  .sb-lm{width:30px;height:30px;background:var(--main);border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .sb-lm svg{width:16px;height:16px}
+  .sb-ln{font-size:15px;font-weight:700;letter-spacing:-.3px}
+  .sb-le{font-size:10px;color:var(--muted)}
+  .sb-user{margin:12px 10px;padding:9px 11px;background:var(--off);border-radius:var(--rxs);display:flex;align-items:center;gap:9px}
+  .sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0071E3,#34AADC);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+  .sb-n{font-size:12px;font-weight:600}.sb-r{font-size:10px;color:var(--muted)}
+  .sb-sec{padding:12px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .sb-nav{padding:0 7px}
+  .ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rxs);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:1px;transition:background .12s}
+  .ni:hover{background:var(--off);color:var(--main)}
+  .ni.active{background:var(--bs);color:var(--blue)}
+  .ni-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sb-div{height:1px;background:var(--lg);margin:7px 11px}
+
+  /* MAIN */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:54px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+  .tb-bc{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .tb-bc span{color:var(--main);font-weight:500}
+  .tb-r{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rxs);font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-p{background:var(--blue);color:white;box-shadow:0 2px 8px rgba(0,113,227,.25)}
+  .btn-p:hover{background:#0077ED}
+  .btn-s{background:var(--white);color:var(--main);border:1px solid var(--lg)}
+  .btn-s:hover{background:var(--off)}
+  .vt{display:flex;background:var(--off);border:1px solid var(--lg);border-radius:var(--rxs);padding:3px;gap:2px}
+  .vb{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:5px}
+  .vb.active{background:var(--white);color:var(--main);box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+  /* PROJECT HEADER */
+  .proj-header{padding:16px 22px;border-bottom:1px solid var(--lg);background:var(--white);flex-shrink:0}
+  .ph-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .ph-title{font-size:17px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+  .ph-meta{display:flex;gap:16px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .ph-meta-item{display:flex;align-items:center;gap:5px}
+  .ph-progress{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .ph-bar{flex:1;height:6px;background:var(--lg);border-radius:3px;overflow:hidden}
+  .ph-bar-fill{height:100%;border-radius:3px;background:var(--blue);transition:width .6s ease}
+  .ph-pct{font-size:12px;font-weight:600;color:var(--blue)}
+
+  /* VIEW PANELS */
+  .panel{flex:1;overflow:hidden;display:none}
+  .panel.show{display:flex}
+
+  /* ── KANBAN ── */
+  .kanban{display:flex;gap:14px;padding:20px;overflow-x:auto;height:100%;align-items:flex-start}
+  .kb-col{width:280px;flex-shrink:0;background:var(--off);border-radius:12px;border:1px solid var(--lg);display:flex;flex-direction:column;max-height:calc(100vh - 200px)}
+  .kb-col-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--lg)}
+  .kb-col-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:7px}
+  .kb-count{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
+  .kb-add{width:24px;height:24px;border-radius:6px;background:transparent;border:1px solid var(--lg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s}
+  .kb-add:hover{background:var(--white);border-color:var(--blue);color:var(--blue)}
+  .kb-cards{padding:10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+  .kb-card{background:var(--white);border:1.5px solid var(--lg);border-radius:10px;padding:12px;cursor:grab;transition:all .15s;position:relative}
+  .kb-card:hover{border-color:var(--mg);box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}
+  .kb-card:active{cursor:grabbing}
+  .kb-card.priority-high::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--orange);border-radius:3px 0 0 3px}
+  .kb-card.priority-critical::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);border-radius:3px 0 0 3px}
+  .kb-card-title{font-size:13px;font-weight:500;line-height:1.4;margin-bottom:8px}
+  .kb-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .kb-tag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px}
+  .kb-due{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;margin-left:auto}
+  .kb-due.late{color:var(--red)}
+  .kb-assignee{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0}
+
+  /* ── GANTT ── */
+  .gantt{display:flex;flex-direction:column;flex:1;overflow:hidden}
+  .gantt-header{display:flex;border-bottom:1px solid var(--lg);flex-shrink:0;background:var(--white)}
+  .gantt-tasks-header{width:280px;flex-shrink:0;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-right:1px solid var(--lg)}
+  .gantt-timeline-header{flex:1;display:flex;overflow:hidden}
+  .gantt-month{flex:1;padding:10px 8px;font-size:11px;font-weight:600;color:var(--muted);border-right:1px solid var(--lg);text-align:center;text-transform:uppercase;letter-spacing:.5px}
+  .gantt-body{flex:1;overflow-y:auto;display:flex}
+  .gantt-tasks-col{width:280px;flex-shrink:0;border-right:1px solid var(--lg)}
+  .gantt-timeline-col{flex:1;position:relative;overflow:hidden}
+  .gantt-row{height:52px;border-bottom:1px solid var(--lg);display:flex;align-items:center;padding:0 14px;gap:10px;transition:background .12s;cursor:pointer}
+  .gantt-row:hover{background:var(--off)}
+  .gantt-row-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .gantt-row-name{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gantt-row-pct{font-size:11px;font-weight:600;color:var(--muted)}
+  .gantt-timeline-row{height:52px;border-bottom:1px solid var(--lg);position:relative}
+  .gantt-bar{position:absolute;top:50%;transform:translateY(-50%);height:22px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;transition:all .2s}
+  .gantt-bar:hover{filter:brightness(1.1);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:.6;z-index:5}
+  .gantt-today::before{content:'TODAY';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--red);background:var(--white);padding:1px 4px;border-radius:3px;white-space:nowrap}
+  .gantt-grid-line{position:absolute;top:0;bottom:0;width:1px;background:var(--lg)}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+  .tag.green{background:var(--gs);color:var(--green)}
+  .tag.blue{background:var(--bs);color:var(--blue)}
+  .tag.orange{background:var(--os);color:var(--orange)}
+  .tag.red{background:var(--rs);color:var(--red)}
+  .tag.gray{background:var(--off);color:var(--muted)}
+  .tag.purple{background:var(--ps);color:var(--purple)}
+
+  ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--lg);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".8"/></svg></div>
+      <div><div class="sb-ln">IDEA</div><div class="sb-le">Employee Portal</div></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av">AW</div>
+      <div><div class="sb-n">Andi Wibowo</div><div class="sb-r">GM · Teknologi</div></div>
+    </div>
+    <div class="sb-sec">Dept. Teknologi</div>
+    <nav class="sb-nav">
+      <div class="ni"><span class="ni-icon">⊞</span> Dashboard</div>
+      <div class="ni active"><span class="ni-icon">🗂️</span> Project Management</div>
+      <div class="ni"><span class="ni-icon">👥</span> Employee</div>
+      <div class="ni"><span class="ni-icon">⭐</span> Penilaian</div>
+      <div class="ni"><span class="ni-icon">📄</span> Laporan</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-bc">Dept. Teknologi <span class="sep" style="color:var(--mg)">/</span> <span>Project Management</span></div>
+      <div class="tb-r">
+        <div class="vt">
+          <button class="vb active" id="vKanban" onclick="switchView('kanban')">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="3" height="10" rx="1" fill="currentColor" opacity=".5"/><rect x="5" y="1" width="3" height="7" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="5" rx="1" fill="currentColor" opacity=".7"/></svg>
+            Kanban
+          </button>
+          <button class="vb" id="vGantt" onclick="switchView('gantt')">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="8" height="2" rx="1" fill="currentColor"/><rect x="3" y="5" width="6" height="2" rx="1" fill="currentColor" opacity=".7"/><rect x="2" y="8" width="9" height="2" rx="1" fill="currentColor" opacity=".5"/></svg>
+            Gantt
+          </button>
+        </div>
+        <button class="btn btn-s" onclick="alert('Filter')">🔍 Filter</button>
+        <button class="btn btn-p" onclick="alert('Task baru')">+ Task Baru</button>
+      </div>
+    </div>
+
+    <!-- Project Header -->
+    <div class="proj-header">
+      <div class="ph-top">
+        <div class="ph-title">
+          <div style="width:12px;height:12px;border-radius:50%;background:var(--blue);flex-shrink:0"></div>
+          API Gateway Integration — PT Telkom Indonesia
+          <span class="tag blue">Active</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select style="height:30px;padding:0 10px;border:1px solid var(--lg);border-radius:var(--rxs);font-size:12px;font-family:var(--font);outline:none;background:var(--off);cursor:pointer">
+            <option>API Gateway — Telkom</option>
+            <option>HRIS — Bank Nusantara</option>
+            <option>Portal Internal IDEA</option>
+          </select>
+        </div>
+      </div>
+      <div class="ph-meta">
+        <div class="ph-meta-item">👤 PM: <strong>Rizky Hanafi</strong></div>
+        <div class="ph-meta-item">🏢 Client: <strong>PT Telkom Indonesia</strong></div>
+        <div class="ph-meta-item">📅 Start: <strong>1 Apr 2025</strong></div>
+        <div class="ph-meta-item">🏁 Due: <strong>15 Okt 2025</strong></div>
+        <div class="ph-meta-item">👥 Tim: <strong>6 orang</strong></div>
+        <span class="tag orange" style="margin-left:auto">⚠️ On Track</span>
+      </div>
+      <div class="ph-progress">
+        <div style="font-size:12px;color:var(--muted)">Progress keseluruhan</div>
+        <div class="ph-bar" style="flex:1"><div class="ph-bar-fill" style="width:45%"></div></div>
+        <div class="ph-pct">45%</div>
+        <div style="font-size:12px;color:var(--muted)">12 / 26 tasks selesai</div>
+      </div>
+
+      <!-- TERMIN & INVOICE STRIP -->
+      <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,var(--bs) 0%,var(--gs) 100%);border:1px solid var(--lg);border-radius:var(--r);display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600">
+          <span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--blue);color:white;align-items:center;justify-content:center">💰</span>
+          Termin & Invoice
+        </div>
+        <div style="display:flex;gap:10px;flex:1;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:2px;padding:6px 10px;background:var(--white);border-radius:var(--rxs);border:1px solid var(--lg);min-width:140px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Termin 1 · Kick-off</div>
+            <div style="font-size:12px;font-weight:600">30% · Rp 150jt</div>
+            <span class="tag green" style="margin-top:2px;align-self:flex-start">✓ Paid 12 Apr</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;padding:6px 10px;background:var(--white);border-radius:var(--rxs);border:1px solid var(--lg);min-width:140px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Termin 2 · MS-2</div>
+            <div style="font-size:12px;font-weight:600">40% · Rp 200jt</div>
+            <span class="tag orange" style="margin-top:2px;align-self:flex-start">⏳ Sent — wait pay</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;padding:6px 10px;background:var(--white);border-radius:var(--rxs);border:1px solid var(--lg);min-width:140px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Termin 3 · Delivery</div>
+            <div style="font-size:12px;font-weight:600">30% · Rp 150jt</div>
+            <span class="tag gray" style="margin-top:2px;align-self:flex-start">⏸ Trigger: MS-3</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div style="font-size:10px;color:var(--muted)">Auto-notif Finance</div>
+          <span class="tag blue" style="font-weight:600">🔔 Active (MS-3 → email Finance)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANBAN VIEW -->
+    <div class="panel show" id="panelKanban">
+      <div class="kanban" id="kanbanBoard">
+
+        <!-- BACKLOG -->
+        <div class="kb-col">
+          <div class="kb-col-header">
+            <div class="kb-col-title">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></div>
+              Backlog
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="kb-count" style="background:var(--off);color:var(--muted)">4</div>
+              <div class="kb-add">+</div>
+            </div>
+          </div>
+          <div class="kb-cards">
+            <div class="kb-card">
+              <div class="kb-card-title">Setup Redis caching layer untuk API responses</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--off);color:var(--muted)">Backend</span>
+                <div class="kb-due">📅 20 Agt</div>
+                <div class="kb-assignee" style="background:var(--blue)">RH</div>
+              </div>
+            </div>
+            <div class="kb-card priority-high">
+              <div class="kb-card-title">Implementasi API rate limiting & throttling</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--os);color:var(--orange)">Security</span>
+                <span class="kb-tag" style="background:var(--off);color:var(--muted)">High</span>
+                <div class="kb-due">📅 15 Agt</div>
+                <div class="kb-assignee" style="background:var(--orange)">SR</div>
+              </div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">Write unit tests untuk authentication module</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--gs);color:var(--green)">Testing</span>
+                <div class="kb-due">📅 22 Agt</div>
+                <div class="kb-assignee" style="background:var(--green)">BS</div>
+              </div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">API versioning strategy documentation</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--bs);color:var(--blue)">Docs</span>
+                <div class="kb-due">📅 1 Sep</div>
+                <div class="kb-assignee" style="background:var(--purple)">DP</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="kb-col">
+          <div class="kb-col-header">
+            <div class="kb-col-title">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div>
+              In Progress
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="kb-count" style="background:var(--bs);color:var(--blue)">5</div>
+              <div class="kb-add">+</div>
+            </div>
+          </div>
+          <div class="kb-cards">
+            <div class="kb-card priority-critical">
+              <div style="font-size:10px;font-weight:600;color:var(--red);margin-bottom:6px;display:flex;align-items:center;gap:4px">
+                <div style="width:6px;height:6px;border-radius:50%;background:var(--red)"></div> CRITICAL · Milestone 2
+              </div>
+              <div class="kb-card-title">Deploy staging environment di GCP</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--rs);color:var(--red)">DevOps</span>
+                <div class="kb-due late">📅 Besok</div>
+                <div class="kb-assignee" style="background:var(--blue)">RH</div>
+              </div>
+              <div style="margin-top:8px;height:4px;background:var(--lg);border-radius:2px;overflow:hidden">
+                <div style="width:70%;height:100%;background:var(--red);border-radius:2px"></div>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">70% selesai</div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">Integrasi OAuth 2.0 dengan Telkom SSO</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--os);color:var(--orange)">Auth</span>
+                <div class="kb-due">📅 10 Agt</div>
+                <div class="kb-assignee" style="background:var(--orange)">SR</div>
+              </div>
+              <div style="margin-top:8px;height:4px;background:var(--lg);border-radius:2px;overflow:hidden">
+                <div style="width:55%;height:100%;background:var(--orange);border-radius:2px"></div>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">55% selesai</div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">Dashboard monitoring API metrics (Grafana)</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--ps);color:var(--purple)">Monitoring</span>
+                <div class="kb-due">📅 12 Agt</div>
+                <div class="kb-assignee" style="background:var(--purple)">DP</div>
+              </div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">Load testing dengan Apache JMeter (10k req/s)</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--gs);color:var(--green)">Testing</span>
+                <div class="kb-due">📅 14 Agt</div>
+                <div class="kb-assignee" style="background:var(--green)">BS</div>
+              </div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">API documentation update (Swagger/OpenAPI 3.0)</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--bs);color:var(--blue)">Docs</span>
+                <div class="kb-due">📅 15 Agt</div>
+                <div class="kb-assignee" style="background:var(--teal='#32ADE6')">AF</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVIEW -->
+        <div class="kb-col">
+          <div class="kb-col-header">
+            <div class="kb-col-title">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></div>
+              Review
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="kb-count" style="background:var(--os);color:var(--orange)">2</div>
+              <div class="kb-add">+</div>
+            </div>
+          </div>
+          <div class="kb-cards">
+            <div class="kb-card">
+              <div class="kb-card-title">API endpoint design review — Milestone 3</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--os);color:var(--orange)">Design</span>
+                <div class="kb-due">📅 8 Agt</div>
+                <div class="kb-assignee" style="background:var(--blue)">RH</div>
+              </div>
+            </div>
+            <div class="kb-card">
+              <div class="kb-card-title">Security audit laporan penetration testing</div>
+              <div class="kb-card-meta">
+                <span class="kb-tag" style="background:var(--rs);color:var(--red)">Security</span>
+                <div class="kb-due">📅 9 Agt</div>
+                <div class="kb-assignee" style="background:var(--orange)">SR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DONE -->
+        <div class="kb-col">
+          <div class="kb-col-header">
+            <div class="kb-col-title">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+              Done
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="kb-count" style="background:var(--gs);color:var(--green)">12</div>
+            </div>
+          </div>
+          <div class="kb-cards">
+            <div class="kb-card" style="opacity:.7">
+              <div style="font-size:10px;color:var(--green);margin-bottom:4px;font-weight:600">✓ Selesai 2 Jul</div>
+              <div class="kb-card-title" style="text-decoration:line-through;color:var(--muted)">Setup CI/CD pipeline (GitHub Actions)</div>
+              <div class="kb-card-meta"><span class="kb-tag" style="background:var(--gs);color:var(--green)">DevOps</span><div class="kb-assignee" style="background:var(--blue)">RH</div></div>
+            </div>
+            <div class="kb-card" style="opacity:.7">
+              <div style="font-size:10px;color:var(--green);margin-bottom:4px;font-weight:600">✓ Selesai 28 Jun</div>
+              <div class="kb-card-title" style="text-decoration:line-through;color:var(--muted)">Database schema design & migration</div>
+              <div class="kb-card-meta"><span class="kb-tag" style="background:var(--gs);color:var(--green)">Backend</span><div class="kb-assignee" style="background:var(--green)">BS</div></div>
+            </div>
+            <div class="kb-card" style="opacity:.7">
+              <div style="font-size:10px;color:var(--green);margin-bottom:4px;font-weight:600">✓ Selesai 20 Jun</div>
+              <div class="kb-card-title" style="text-decoration:line-through;color:var(--muted)">Project kickoff & requirement gathering</div>
+              <div class="kb-card-meta"><span class="kb-tag" style="background:var(--gs);color:var(--green)">Planning</span><div class="kb-assignee" style="background:var(--blue)">RH</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- GANTT VIEW -->
+    <div class="panel" id="panelGantt" style="flex-direction:column">
+      <div class="gantt">
+        <div class="gantt-header">
+          <div class="gantt-tasks-header">Milestone / Task</div>
+          <div class="gantt-timeline-header" id="ganttMonths"></div>
+        </div>
+        <div class="gantt-body">
+          <div class="gantt-tasks-col" id="ganttTasks"></div>
+          <div class="gantt-timeline-col" id="ganttTimeline" style="position:relative;overflow-x:auto;flex:1"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+function switchView(v) {
+  document.getElementById('vKanban').classList.toggle('active', v==='kanban');
+  document.getElementById('vGantt').classList.toggle('active', v==='gantt');
+  document.getElementById('panelKanban').classList.toggle('show', v==='kanban');
+  document.getElementById('panelGantt').classList.toggle('show', v==='gantt');
+  if(v==='gantt') renderGantt();
+}
+
+function renderGantt() {
+  const months = ['Apr','Mei','Jun','Jul','Agt','Sep','Okt'];
+  const mh = document.getElementById('ganttMonths');
+  mh.innerHTML = months.map(m=>`<div class="gantt-month">${m}</div>`).join('');
+
+  const milestones = [
+    {name:'M1: Setup & Infrastruktur', color:'#0071E3', pct:100, start:0, dur:1.5},
+    {name:'M2: Core API Development',  color:'#AF52DE', pct:72,  start:1, dur:2.5},
+    {name:'M3: Authentication & Auth', color:'#FF9500', pct:45,  start:2.5,dur:2},
+    {name:'M4: Integration & Testing', color:'#32ADE6', pct:10,  start:4, dur:2},
+    {name:'M5: Deployment & Handover', color:'#34C759', pct:0,   start:5.5,dur:1},
+  ];
+
+  const tasks = [
+    {name:'Setup CI/CD Pipeline',      color:'#0071E3', pct:100, start:0,   dur:.8, indent:true},
+    {name:'Database Schema & Migration',color:'#0071E3', pct:100, start:.5,  dur:.8, indent:true},
+    {name:'Deploy Staging (GCP)',       color:'#AF52DE', pct:70,  start:1,   dur:1,  indent:true},
+    {name:'OAuth 2.0 Integration',      color:'#FF9500', pct:55,  start:2.5, dur:1.5,indent:true},
+    {name:'API Endpoints Development',  color:'#AF52DE', pct:80,  start:1.5, dur:2,  indent:true},
+    {name:'Load Testing & Security',    color:'#32ADE6', pct:20,  start:4,   dur:1.5,indent:true},
+  ];
+
+  const items = [...milestones.map(m=>({...m,isMilestone:true})), ...tasks];
+  const W = 140; // width per month
+  const totalW = months.length * W;
+
+  const taskCol = document.getElementById('ganttTasks');
+  const timeCol = document.getElementById('ganttTimeline');
+  taskCol.innerHTML=''; timeCol.innerHTML='';
+  timeCol.style.minWidth = totalW+'px';
+
+  // Grid lines & today marker
+  let gridHtml = '';
+  months.forEach((_,i)=>{
+    gridHtml+=`<div class="gantt-grid-line" style="left:${i*W}px"></div>`;
+  });
+  // Today = month 3 (Jul), day 7 ~ 3.23
+  const todayX = 3.23 * W;
+  gridHtml+=`<div class="gantt-today" style="left:${todayX}px"></div>`;
+  timeCol.innerHTML = gridHtml;
+
+  items.forEach(item=>{
+    // Task row
+    const tr = document.createElement('div');
+    tr.className='gantt-row';
+    tr.style.paddingLeft = item.indent ? '28px' : '14px';
+    tr.innerHTML=`
+      <div class="gantt-row-dot" style="background:${item.color};${item.isMilestone?'border-radius:3px;transform:rotate(45deg)':''}"></div>
+      <div class="gantt-row-name" style="${item.isMilestone?'font-weight:600':'font-size:12px;color:var(--sub)'}">${item.name}</div>
+      <div class="gantt-row-pct" style="color:${item.pct===100?'var(--green)':item.color}">${item.pct}%</div>`;
+    taskCol.appendChild(tr);
+
+    // Timeline bar
+    const trow = document.createElement('div');
+    trow.className='gantt-timeline-row';
+    const barLeft = item.start * W;
+    const barW    = item.dur * W;
+    trow.innerHTML=`
+      <div class="gantt-bar" style="left:${barLeft}px;width:${barW}px;background:${item.color};opacity:${item.isMilestone?.9:.7}">
+        ${item.pct}%
+        <div style="position:absolute;left:0;top:0;height:100%;width:${item.pct}%;background:rgba(255,255,255,.2);border-radius:5px"></div>
+      </div>`;
+    timeCol.appendChild(trow);
+  });
+}
+</script>
+</body>
+</html>

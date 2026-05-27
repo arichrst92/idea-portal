@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Proposal Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF9F0A,#FF6B00);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--pl);color:var(--purple)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--purple);font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--purple);color:#fff;box-shadow:0 2px 8px rgba(191,90,242,.3)}.btn-p:hover{background:#A340D9}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow:hidden;display:flex}
+.list-panel{width:280px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+.detail-panel{flex:1;overflow-y:auto;padding:22px;background:var(--bg)}
+.list-header{padding:12px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
+.proposal-item{padding:12px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.proposal-item:hover{background:var(--bg)}.proposal-item.active{background:var(--pl)}
+.pi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.pi-client{font-size:13px;font-weight:700}
+.pi-meta{font-size:11px;color:var(--ink3);font-weight:500;margin-bottom:6px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.cb{padding:16px 18px}.cb.np{padding:0}
+/* VERSION HISTORY */
+.version-item{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s;font-size:13px}
+.version-item:last-child{border-bottom:none}.version-item:hover{background:var(--bg)}.version-item.current{background:var(--pl)}
+.v-num{width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+/* SCOPE ITEMS */
+.scope-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.scope-row:last-child{border-bottom:none}
+.scope-num{width:22px;height:22px;border-radius:50%;background:var(--pl);color:var(--purple);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+/* APPROVAL */
+.appr-step{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.appr-step:last-child{border-bottom:none}
+.appr-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">MS</div><div><div class="sb-uname">Maya Sari</div><div class="sb-urole">Manager · Sales</div></div></div>
+  <div class="sb-sec">Sales & Marketing</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📊</div>Leads Funnel</div>
+    <div class="ni active"><div class="ni-ic">📄</div>Proposal</div>
+    <div class="ni"><div class="ni-ic">🎯</div>Target &amp; Report</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Sales <span style="color:var(--border)">/</span> <strong>Proposal Management</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s">🔍 Filter</button>
+      <button class="btn btn-p" onclick="alert('Buat proposal baru')">+ Proposal Baru</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- LIST -->
+    <div class="list-panel">
+      <div class="list-header">
+        <span style="font-size:12px;font-weight:700;color:var(--ink3)">8 Proposal</span>
+        <select style="height:28px;padding:0 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:var(--font);background:var(--bg);outline:none">
+          <option>Semua Status</option><option>Draft</option><option>Pending Approval</option><option>Approved</option><option>Sent</option>
+        </select>
+      </div>
+      <div class="proposal-item active" onclick="selectProposal(this)">
+        <div class="pi-top"><div class="pi-client">PT Astra International</div><span class="tag tp">Pending</span></div>
+        <div class="pi-meta">IT Consulting · v2 · Rp 780jt</div>
+        <div style="display:flex;gap:5px"><span class="tag tgr" style="font-size:10px">v2 (terbaru)</span><span class="tag tgr" style="font-size:10px">14 Jul</span></div>
+      </div>
+      <div class="proposal-item" onclick="selectProposal(this)">
+        <div class="pi-top"><div class="pi-client">PT Pertamina Digital</div><span class="tag tg">Approved</span></div>
+        <div class="pi-meta">IT Consulting + Outsourcing · v3 · Rp 1,2M</div>
+        <div style="display:flex;gap:5px"><span class="tag tgr" style="font-size:10px">v3</span><span class="tag tgr" style="font-size:10px">10 Jul</span></div>
+      </div>
+      <div class="proposal-item" onclick="selectProposal(this)">
+        <div class="pi-top"><div class="pi-client">PT Indosat Ooredoo</div><span class="tag tgr">Draft</span></div>
+        <div class="pi-meta">Software Dev · v1 · Rp 300jt</div>
+        <div style="display:flex;gap:5px"><span class="tag tgr" style="font-size:10px">v1 (draft)</span></div>
+      </div>
+      <div class="proposal-item" onclick="selectProposal(this)">
+        <div class="pi-top"><div class="pi-client">Bank BRI</div><span class="tag tb">Sent</span></div>
+        <div class="pi-meta">Software Dev · v1 · Rp 280jt</div>
+        <div style="display:flex;gap:5px"><span class="tag tb" style="font-size:10px">Sent 8 Jul</span></div>
+      </div>
+      <div class="proposal-item" onclick="selectProposal(this)">
+        <div class="pi-top"><div class="pi-client">PT Garuda Indonesia</div><span class="tag tgr">Draft</span></div>
+        <div class="pi-meta">IT Consulting · v1 · Rp 350jt</div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="detail-panel">
+      <!-- Proposal Header -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:6px">Proposal · PR-2025-014</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">PT Astra International</div>
+            <div style="font-size:13px;color:var(--ink2);font-weight:500">IT Consulting · PIC: Bapak Hendri Santoso · Sales: Fajar Nugraha</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">Nilai Proposal</div>
+            <div style="font-size:28px;font-weight:800;color:var(--purple);letter-spacing:-.8px">Rp 780jt</div>
+            <span class="tag tp" style="margin-top:6px">⏳ Pending Approval</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:14px">
+        <div>
+          <!-- Version History -->
+          <div class="card">
+            <div class="ch"><div class="ch-title">📚 Riwayat Versi</div><button class="btn btn-p" style="font-size:11px;padding:5px 10px" onclick="alert('Buat revisi baru')">+ Revisi Baru</button></div>
+            <div class="cb np">
+              <div class="version-item current">
+                <div class="v-num" style="background:var(--pl);color:var(--purple)">v2</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700">Revisi — Scope &amp; Harga</div>
+                  <div style="font-size:11px;color:var(--ink3)">14 Jul 2025 · Fajar Nugraha</div>
+                </div>
+                <span class="tag tp">Terbaru</span>
+              </div>
+              <div class="version-item">
+                <div class="v-num" style="background:var(--bg);color:var(--ink3)">v1</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500" style="color:var(--ink2)">Proposal awal</div>
+                  <div style="font-size:11px;color:var(--ink3)">7 Jul 2025 · Fajar Nugraha · Rp 900jt</div>
+                </div>
+                <span class="tag tgr">Lama</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scope of Work -->
+          <div class="card">
+            <div class="ch"><div class="ch-title">📋 Scope of Work — v2</div><button class="btn btn-s" style="font-size:11px;padding:5px 10px" onclick="alert('Edit scope')">✏️ Edit</button></div>
+            <div class="cb np">
+              <div style="padding:12px 18px">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:8px">Deliverable Utama</div>
+                <div class="scope-row"><div class="scope-num">1</div><div style="flex:1"><div style="font-weight:600;margin-bottom:2px">Audit infrastruktur IT existing</div><div style="font-size:12px;color:var(--ink3)">Assessment lengkap sistem, jaringan, dan keamanan</div></div></div>
+                <div class="scope-row"><div class="scope-num">2</div><div style="flex:1"><div style="font-weight:600;margin-bottom:2px">Roadmap transformasi digital 3 tahun</div><div style="font-size:12px;color:var(--ink3)">Rencana migrasi dan modernisasi bertahap</div></div></div>
+                <div class="scope-row"><div class="scope-num">3</div><div style="flex:1"><div style="font-weight:600;margin-bottom:2px">Implementasi fase 1 — Core Systems</div><div style="font-size:12px;color:var(--ink3)">Setup infrastructure cloud + security baseline</div></div></div>
+                <div class="scope-row"><div class="scope-num">4</div><div style="flex:1"><div style="font-weight:600;margin-bottom:2px">Training &amp; knowledge transfer</div><div style="font-size:12px;color:var(--ink3)">4 sesi training untuk tim IT internal Astra</div></div></div>
+              </div>
+              <div style="padding:12px 18px;background:var(--bg);border-top:1px solid var(--border2);display:flex;gap:20px">
+                <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--purple)">6</div><div style="font-size:11px;color:var(--ink3)">bulan</div></div>
+                <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--blue)">3</div><div style="font-size:11px;color:var(--ink3)">deliverable termin</div></div>
+                <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--green)">4</div><div style="font-size:11px;color:var(--ink3)">tim IDEA</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPROVAL + ACTIONS -->
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ch-title">✅ Alur Approval</div></div>
+            <div class="cb np">
+              <div style="padding:0 18px">
+                <div class="appr-step">
+                  <div class="appr-icon" style="background:var(--gl);color:var(--green)">✓</div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:600">Maya Sari</div><div style="font-size:11px;color:var(--ink3)">Manager Sales · Review commercial</div></div>
+                  <span class="tag tg">Approved</span>
+                </div>
+                <div class="appr-step">
+                  <div class="appr-icon" style="background:var(--ol);color:var(--orange)">⏳</div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:600">Diana Sari</div><div style="font-size:11px;color:var(--ink3)">C-Level Sales · Final approval</div></div>
+                  <span class="tag to">Pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="ch"><div class="ch-title">⚡ Aksi</div></div>
+            <div class="cb" style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-p" style="justify-content:center" onclick="alert('Generate PDF proposal')">📄 Generate PDF</button>
+              <button class="btn btn-s" style="justify-content:center" onclick="alert('Kirim email ke client')">📧 Kirim ke Client</button>
+              <button class="btn btn-s" style="justify-content:center" onclick="alert('Duplikasi sebagai versi baru')">📋 Duplikasi sebagai Revisi</button>
+              <button class="btn btn-s" style="justify-content:center;color:var(--red)" onclick="alert('Tandai sebagai Lost')">✕ Tandai Lost</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="ch"><div class="ch-title">💬 Catatan Negosiasi</div></div>
+            <div class="cb">
+              <div style="font-size:13px;color:var(--ink2);line-height:1.5;margin-bottom:10px">v1 ditolak karena harga Rp 900jt terlalu tinggi. Client minta scope dikurangi atau harga diturunkan ke ~Rp 750-800jt.</div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">— Catatan Fajar N., 12 Jul 2025</div>
+              <textarea style="width:100%;height:60px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;resize:none;line-height:1.5" placeholder="Tambah catatan negosiasi..."></textarea>
+              <button class="btn btn-s" style="margin-top:8px;font-size:11px" onclick="alert('Catatan disimpan')">Simpan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function selectProposal(el){document.querySelectorAll('.proposal-item').forEach(i=>i.classList.remove('active'));el.classList.add('active')}
+</script>
+</body>
+</html>

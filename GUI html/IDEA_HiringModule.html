@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Hiring Module</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#FFF;--off:#F5F5F7;--lg:#E8E8ED;--mg:#C7C7CC;--main:#1D1D1F;--sub:#6E6E73;--muted:#86868B;--blue:#0071E3;--bs:#EBF4FF;--green:#34C759;--gs:#F0FBF3;--orange:#FF9500;--os:#FFF8EC;--red:#FF3B30;--rs:#FFF2F1;--purple:#AF52DE;--font:'Inter',sans-serif;--r:14px;--rxs:8px}
+  html,body{height:100%;font-family:var(--font);background:var(--off);color:var(--main);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;height:100vh;background:var(--white);border-right:1px solid var(--lg);display:flex;flex-direction:column;flex-shrink:0}
+  .sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--lg)}
+  .sb-lm{width:30px;height:30px;background:var(--main);border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .sb-lm svg{width:16px;height:16px}
+  .sb-ln{font-size:15px;font-weight:700;letter-spacing:-.3px}
+  .sb-le{font-size:10px;color:var(--muted)}
+  .sb-user{margin:12px 10px;padding:9px 11px;background:var(--off);border-radius:var(--rxs);display:flex;align-items:center;gap:9px}
+  .sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#34C759,#00C7BE);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+  .sb-n{font-size:12px;font-weight:600}.sb-r{font-size:10px;color:var(--muted)}
+  .sb-sec{padding:12px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .sb-nav{padding:0 7px}
+  .ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rxs);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:1px;transition:background .12s}
+  .ni:hover{background:var(--off);color:var(--main)}
+  .ni.active{background:var(--gs);color:var(--green)}
+  .ni-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sb-div{height:1px;background:var(--lg);margin:7px 11px}
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:54px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+  .tb-bc{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .tb-bc span{color:var(--main);font-weight:500}
+  .tb-r{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rxs);font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-p{background:var(--green);color:white;box-shadow:0 2px 8px rgba(52,199,89,.25)}
+  .btn-p:hover{background:#2DB94E}
+  .btn-s{background:var(--white);color:var(--main);border:1px solid var(--lg)}
+  .btn-s:hover{background:var(--off)}
+  .content{flex:1;overflow-y:auto;padding:24px}
+
+  /* KPI */
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+  .kpi{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);padding:16px 18px}
+  .kpi-val{font-size:26px;font-weight:700;letter-spacing:-.8px;margin-bottom:2px}
+  .kpi-lbl{font-size:12px;color:var(--muted)}
+  .kpi-trend{font-size:11px;margin-top:6px}
+
+  /* LAYOUT */
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:18px}
+
+  /* PIPELINE BOARD */
+  .pipeline{display:flex;gap:0;background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+  .stage{flex:1;border-right:1px solid var(--lg);padding:14px}
+  .stage:last-child{border-right:none}
+  .stage-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .stage-name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+  .stage-count{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
+  .candidate-card{background:var(--off);border:1.5px solid var(--lg);border-radius:var(--rxs);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+  .candidate-card:hover{border-color:var(--mg);background:var(--white)}
+  .cc-name{font-size:13px;font-weight:500;margin-bottom:3px}
+  .cc-pos{font-size:11px;color:var(--muted);margin-bottom:6px}
+  .cc-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cc-tag{font-size:10px;font-weight:500;padding:2px 6px;border-radius:20px}
+  .cc-days{font-size:10px;color:var(--muted);margin-left:auto}
+
+  /* REQUEST LIST */
+  .req-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--lg);cursor:pointer;transition:background .12s}
+  .req-item:last-child{border-bottom:none}
+  .req-item:hover{opacity:.8}
+  .req-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .req-body{flex:1}
+  .req-pos{font-size:13px;font-weight:500}
+  .req-dept{font-size:11px;color:var(--muted)}
+  .req-right{text-align:right;flex-shrink:0}
+  .req-status{font-size:11px;font-weight:500}
+  .req-date{font-size:10px;color:var(--muted);margin-top:2px}
+
+  /* DETAIL */
+  .widget{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+  .wh{padding:14px 18px;border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between}
+  .wh-t{font-size:14px;font-weight:600}
+  .wb{padding:16px 18px}
+  .step-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--lg);font-size:13px}
+  .step-item:last-child{border-bottom:none}
+  .step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .step-name{flex:1}
+  .step-status{font-size:11px;font-weight:500}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+  .tag.green{background:var(--gs);color:var(--green)}
+  .tag.blue{background:var(--bs);color:var(--blue)}
+  .tag.orange{background:var(--os);color:var(--orange)}
+  .tag.red{background:var(--rs);color:var(--red)}
+  .tag.gray{background:var(--off);color:var(--muted)}
+
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--lg);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".8"/></svg></div>
+      <div><div class="sb-ln">IDEA</div><div class="sb-le">Employee Portal</div></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av">RW</div>
+      <div><div class="sb-n">Reni Wahyuni</div><div class="sb-r">GM · Operation</div></div>
+    </div>
+    <div class="sb-sec">Dept. Operation</div>
+    <nav class="sb-nav">
+      <div class="ni active"><span class="ni-icon">👥</span> Hiring</div>
+      <div class="ni"><span class="ni-icon">🚪</span> Layoff</div>
+      <div class="ni"><span class="ni-icon">⚠️</span> Surat Peringatan</div>
+      <div class="ni"><span class="ni-icon">🔗</span> Outsource</div>
+      <div class="ni"><span class="ni-icon">💰</span> Payroll</div>
+      <div class="ni"><span class="ni-icon">✅</span> Onboarding</div>
+      <div class="ni"><span class="ni-icon">🔑</span> Assignment Role</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-bc">Operation <span class="sep" style="color:var(--mg)">/</span> <span>Hiring Management</span></div>
+      <div class="tb-r">
+        <button class="btn btn-s">📋 Export</button>
+        <button class="btn btn-p" onclick="alert('Buka form tambah kandidat')">+ Tambah Kandidat</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--blue)">8</div>
+          <div class="kpi-lbl">Request Open</div>
+          <div class="kpi-trend" style="color:var(--orange)">↑ 3 baru minggu ini</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val">23</div>
+          <div class="kpi-lbl">Total Kandidat</div>
+          <div class="kpi-trend" style="color:var(--green)">Pipeline aktif</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--green)">5</div>
+          <div class="kpi-lbl">Offering Terkirim</div>
+          <div class="kpi-trend" style="color:var(--muted)">Menunggu konfirmasi</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--orange)">18 hr</div>
+          <div class="kpi-lbl">Avg. Time to Hire</div>
+          <div class="kpi-trend" style="color:var(--green)">↓ 3 hari vs bulan lalu</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--purple)">72%</div>
+          <div class="kpi-lbl">Fill Rate YTD</div>
+          <div class="kpi-trend" style="color:var(--green)">↑ dari 65%</div>
+        </div>
+      </div>
+
+      <!-- Pipeline Board -->
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        🔄 Pipeline Kandidat
+        <span class="tag blue">23 kandidat aktif</span>
+      </div>
+      <div class="pipeline">
+        <!-- Screening -->
+        <div class="stage">
+          <div class="stage-header">
+            <div class="stage-name" style="color:var(--muted)">Screening</div>
+            <div class="stage-count" style="background:var(--off);color:var(--muted)">7</div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Ahmad Dhani</div>
+            <div class="cc-pos">Senior Backend Dev</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--bs);color:var(--blue)">Teknologi</span>
+              <span class="cc-days">2 hari</span>
+            </div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Bella Putri</div>
+            <div class="cc-pos">HR Specialist</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--gs);color:var(--green)">Operation</span>
+              <span class="cc-days">1 hari</span>
+            </div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Chandra Yoga</div>
+            <div class="cc-pos">Frontend Dev</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--bs);color:var(--blue)">Teknologi</span>
+              <span class="cc-days">3 hari</span>
+            </div>
+          </div>
+        </div>
+        <!-- HR Interview -->
+        <div class="stage">
+          <div class="stage-header">
+            <div class="stage-name" style="color:var(--blue)">HR Interview</div>
+            <div class="stage-count" style="background:var(--bs);color:var(--blue)">6</div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Dewi Ratna</div>
+            <div class="cc-pos">Account Executive</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--os);color:var(--orange)">Sales</span>
+              <span class="cc-days">5 hari</span>
+            </div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Eko Saputra</div>
+            <div class="cc-pos">Tax Specialist</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--ps);color:var(--purple)">Finance</span>
+              <span class="cc-days">4 hari</span>
+            </div>
+          </div>
+        </div>
+        <!-- User Interview -->
+        <div class="stage">
+          <div class="stage-header">
+            <div class="stage-name" style="color:var(--purple)">User Interview</div>
+            <div class="stage-count" style="background:var(--ps);color:var(--purple)">4</div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Fira Natasya</div>
+            <div class="cc-pos">Lead Backend Dev</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--bs);color:var(--blue)">Teknologi</span>
+              <span class="cc-days">8 hari</span>
+            </div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Gilang Purnama</div>
+            <div class="cc-pos">Sales Manager</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--os);color:var(--orange)">Sales</span>
+              <span class="cc-days">7 hari</span>
+            </div>
+          </div>
+        </div>
+        <!-- Offering -->
+        <div class="stage">
+          <div class="stage-header">
+            <div class="stage-name" style="color:var(--orange)">Offering</div>
+            <div class="stage-count" style="background:var(--os);color:var(--orange)">3</div>
+          </div>
+          <div class="candidate-card" style="border-color:var(--orange)">
+            <div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px">⏳ Menunggu 2 hari</div>
+            <div class="cc-name">Hendra Wijaya</div>
+            <div class="cc-pos">Senior Backend Dev</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--bs);color:var(--blue)">Teknologi</span>
+              <span class="cc-days">12 hari</span>
+            </div>
+          </div>
+          <div class="candidate-card">
+            <div class="cc-name">Indah Permata</div>
+            <div class="cc-pos">Finance Staff</div>
+            <div class="cc-meta">
+              <span class="cc-tag" style="background:var(--ps);color:var(--purple)">Finance</span>
+              <span class="cc-days">10 hari</span>
+            </div>
+          </div>
+        </div>
+        <!-- Hired -->
+        <div class="stage">
+          <div class="stage-header">
+            <div class="stage-name" style="color:var(--green)">Hired ✓</div>
+            <div class="stage-count" style="background:var(--gs);color:var(--green)">3</div>
+          </div>
+          <div class="candidate-card" style="opacity:.7;border-color:var(--green)">
+            <div style="font-size:10px;color:var(--green);font-weight:600;margin-bottom:4px">✓ Join 1 Jul</div>
+            <div class="cc-name">Joko Prasetyo</div>
+            <div class="cc-pos">Frontend Dev</div>
+            <div class="cc-meta"><span class="cc-tag" style="background:var(--gs);color:var(--green)">Onboarding</span></div>
+          </div>
+          <div class="candidate-card" style="opacity:.7;border-color:var(--green)">
+            <div style="font-size:10px;color:var(--green);font-weight:600;margin-bottom:4px">✓ Join 15 Jun</div>
+            <div class="cc-name">Kartika Dewi</div>
+            <div class="cc-pos">HR Specialist</div>
+            <div class="cc-meta"><span class="cc-tag" style="background:var(--gs);color:var(--green)">Active</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layout: Requests + Detail -->
+      <div class="layout">
+        <div>
+          <div class="widget">
+            <div class="wh">
+              <div class="wh-t">📋 Hiring Requests</div>
+              <div style="display:flex;gap:6px">
+                <span class="tag orange">5 pending approval</span>
+                <span class="tag green">3 approved</span>
+              </div>
+            </div>
+            <div style="padding:0 18px">
+              ${[
+                {pos:'Senior Backend Developer',dept:'Teknologi',type:'New',status:'In Process',statusC:'blue',date:'1 Jul 2025'},
+                {pos:'Account Executive',dept:'Sales',type:'New',status:'Approved',statusC:'green',date:'28 Jun 2025'},
+                {pos:'Tax Specialist',dept:'Finance',type:'Replacement',status:'Approved',statusC:'green',date:'25 Jun 2025'},
+                {pos:'HR Specialist',dept:'Operation',type:'New',status:'Pending L2',statusC:'orange',date:'5 Jul 2025'},
+                {pos:'Frontend Developer',dept:'Teknologi',type:'New',status:'Pending L1',statusC:'orange',date:'6 Jul 2025'},
+                {pos:'Finance Staff',dept:'Finance',type:'New',status:'Approved',statusC:'green',date:'3 Jul 2025'},
+              ].map(r=>`
+              <div class="req-item">
+                <div class="req-icon" style="background:${r.statusC==='blue'?'var(--bs)':r.statusC==='green'?'var(--gs)':'var(--os)'}">
+                  ${r.type==='New'?'➕':'🔄'}
+                </div>
+                <div class="req-body">
+                  <div class="req-pos">${r.pos}</div>
+                  <div class="req-dept">${r.dept} · ${r.type}</div>
+                </div>
+                <div class="req-right">
+                  <div class="req-status" style="color:var(--${r.statusC})">${r.status}</div>
+                  <div class="req-date">${r.date}</div>
+                </div>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div>
+          <div class="widget">
+            <div class="wh"><div class="wh-t">📄 Detail Kandidat Terpilih</div></div>
+            <div class="wb">
+              <div style="text-align:center;padding:10px 0 16px">
+                <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0071E3,#34AADC);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;margin:0 auto 10px">HW</div>
+                <div style="font-size:16px;font-weight:700;margin-bottom:3px">Hendra Wijaya</div>
+                <div style="font-size:13px;color:var(--sub)">Senior Backend Developer</div>
+                <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+                  <span class="tag blue">Teknologi</span>
+                  <span class="tag orange">Offering Stage</span>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--lg);padding-top:14px">
+                ${[
+                  {l:'Sumber',v:'Referral Internal'},
+                  {l:'Referral dari',v:'Rizky Hanafi'},
+                  {l:'Pengalaman',v:'5 tahun'},
+                  {l:'Ekspektasi Gaji',v:'Rp 15–18jt/bln'},
+                  {l:'Target Join',v:'1 Agustus 2025'},
+                  {l:'Diproses',v:'12 hari'},
+                ].map(r=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--lg);font-size:13px"><span style="color:var(--muted)">${r.l}</span><span style="font-weight:500">${r.v}</span></div>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="widget">
+            <div class="wh"><div class="wh-t">🚦 Tahap Seleksi</div></div>
+            <div style="padding:4px 18px 14px">
+              ${[
+                {n:'Admin Screening',s:'Pass',c:'green'},
+                {n:'HR Interview',s:'Pass',c:'green'},
+                {n:'User Interview',s:'Pass',c:'green'},
+                {n:'Technical Test',s:'Pass',c:'green'},
+                {n:'Offering',s:'Menunggu',c:'orange'},
+              ].map((s,i)=>`
+              <div class="step-item">
+                <div class="step-num" style="background:${s.c==='green'?'var(--gs)':s.c==='orange'?'var(--os)':'var(--off)'};color:${s.c==='green'?'var(--green)':s.c==='orange'?'var(--orange)':'var(--muted)'}">
+                  ${s.c==='green'?'✓':i+1}
+                </div>
+                <div class="step-name">${s.n}</div>
+                <div class="step-status" style="color:${s.c==='green'?'var(--green)':s.c==='orange'?'var(--orange)':'var(--muted)'}">${s.s}</div>
+              </div>`).join('')}
+            </div>
+            <div style="padding:0 18px 16px;display:flex;gap:8px">
+              <button class="btn btn-p" style="flex:1;justify-content:center" onclick="alert('Buat offering letter')">✉️ Buat Offering Letter</button>
+              <button class="btn btn-s" onclick="alert('Reject')">Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

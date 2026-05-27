@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Cuti & Reimburse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--white:#FFF;--off:#F5F5F7;--lg:#E8E8ED;--mg:#C7C7CC;--main:#1D1D1F;--sub:#6E6E73;--muted:#86868B;--blue:#0071E3;--bs:#EBF4FF;--green:#34C759;--gs:#F0FBF3;--orange:#FF9500;--os:#FFF8EC;--red:#FF3B30;--rs:#FFF2F1;--purple:#AF52DE;--ps:#F5EEFA;--teal:#32ADE6;--ts:#EAF6FD;--font:'Inter',sans-serif;--r:14px;--rxs:8px}
+  html,body{height:100%;font-family:var(--font);background:var(--off);color:var(--main);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;height:100vh;background:var(--white);border-right:1px solid var(--lg);display:flex;flex-direction:column;flex-shrink:0}
+  .sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--lg)}
+  .sb-lm{width:30px;height:30px;background:var(--main);border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .sb-lm svg{width:16px;height:16px}
+  .sb-ln{font-size:15px;font-weight:700;letter-spacing:-.3px}.sb-le{font-size:10px;color:var(--muted)}
+  .sb-user{margin:12px 10px;padding:9px 11px;background:var(--off);border-radius:var(--rxs);display:flex;align-items:center;gap:9px}
+  .sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0071E3,#34AADC);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+  .sb-n{font-size:12px;font-weight:600}.sb-r{font-size:10px;color:var(--muted)}
+  .sb-sec{padding:12px 18px 5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .sb-nav{padding:0 7px}
+  .ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rxs);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);margin-bottom:1px;transition:background .12s}
+  .ni:hover{background:var(--off);color:var(--main)}
+  .ni.active{background:var(--bs);color:var(--blue)}
+  .ni-icon{width:16px;height:16px;flex-shrink:0}
+  .sb-div{height:1px;background:var(--lg);margin:7px 11px}
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:54px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+  .tb-bc{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .tb-bc span{color:var(--main);font-weight:500}
+  .tb-r{display:flex;align-items:center;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rxs);font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-p{background:var(--blue);color:white;box-shadow:0 2px 8px rgba(0,113,227,.25)}
+  .btn-p:hover{background:#0077ED}
+  .btn-s{background:var(--white);color:var(--main);border:1px solid var(--lg)}
+  .btn-s:hover{background:var(--off)}
+  .content{flex:1;overflow-y:auto;padding:24px}
+
+  /* PAGE TABS */
+  .page-tabs{display:flex;gap:0;background:var(--white);border:1px solid var(--lg);border-radius:var(--r);margin-bottom:22px;overflow:hidden}
+  .pt{flex:1;padding:14px 20px;text-align:center;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);border-right:1px solid var(--lg);transition:all .15s}
+  .pt:last-child{border-right:none}
+  .pt:hover{background:var(--off);color:var(--main)}
+  .pt.active{background:var(--bs);color:var(--blue);font-weight:600}
+  .pt-icon{font-size:20px;margin-bottom:4px}
+  .pt-label{font-size:13px}
+  .pt-count{font-size:11px;margin-top:3px;opacity:.7}
+
+  /* LEAVE SECTION */
+  .leave-layout{display:grid;grid-template-columns:1fr 320px;gap:18px}
+
+  /* BALANCE CARDS */
+  .balance-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+  .bal-card{background:var(--white);border:1.5px solid var(--lg);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:all .15s}
+  .bal-card:hover{border-color:var(--mg);transform:translateY(-1px)}
+  .bal-card.active-type{border-color:var(--blue);background:var(--bs)}
+  .bal-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+  .bal-count{font-size:32px;font-weight:700;letter-spacing:-1px;line-height:1;margin-bottom:3px}
+  .bal-unit{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .bal-bar{height:5px;background:var(--lg);border-radius:3px;overflow:hidden}
+  .bal-fill{height:100%;border-radius:3px}
+
+  /* FORM CARD */
+  .form-card{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+  .fc-header{padding:14px 18px;border-bottom:1px solid var(--lg);display:flex;align-items:center;justify-content:space-between}
+  .fc-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .fc-body{padding:18px}
+  .field-group{margin-bottom:16px}
+  .field-label{font-size:13px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+  .field-req{color:var(--red)}
+  .field-input,.field-select,.field-textarea{width:100%;height:42px;padding:0 13px;border:1.5px solid var(--lg);border-radius:var(--rxs);font-size:13px;font-family:var(--font);outline:none;background:var(--white);color:var(--main);transition:all .15s;-webkit-appearance:none}
+  .field-input:focus,.field-select:focus,.field-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.08)}
+  .field-textarea{height:80px;padding:10px 13px;resize:vertical;line-height:1.5}
+  .field-select{background-image:url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%2386868B' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field-hint{font-size:12px;color:var(--muted);margin-top:5px}
+
+  /* UPLOAD ZONE */
+  .upload-zone{border:1.5px dashed var(--mg);border-radius:var(--rxs);padding:16px;text-align:center;cursor:pointer;transition:all .15s}
+  .upload-zone:hover{border-color:var(--blue);background:var(--bs)}
+  .upload-zone.uploaded{border-color:var(--green);background:var(--gs);border-style:solid}
+  .upload-icon{font-size:22px;margin-bottom:6px}
+  .upload-text{font-size:13px;font-weight:500;color:var(--main);margin-bottom:2px}
+  .upload-hint{font-size:11px;color:var(--muted)}
+
+  /* CALENDAR */
+  .mini-cal{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .cal-month{font-size:14px;font-weight:600}
+  .cal-nav{display:flex;gap:4px}
+  .cal-nav-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--lg);background:var(--off);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:all .15s}
+  .cal-nav-btn:hover{background:var(--lg)}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-day-label{font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px 0}
+  .cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--main)}
+  .cal-day:hover{background:var(--off)}
+  .cal-day.other-month{color:var(--mg)}
+  .cal-day.today{background:var(--blue);color:white;font-weight:600}
+  .cal-day.selected{background:var(--bs);color:var(--blue);font-weight:600}
+  .cal-day.leave-range{background:var(--bs);color:var(--blue)}
+  .cal-day.leave-start,.cal-day.leave-end{background:var(--blue);color:white;font-weight:700}
+  .cal-day.holiday{color:var(--red);font-weight:600}
+  .cal-day.has-leave{position:relative}
+  .cal-day.has-leave::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--orange)}
+
+  /* HISTORY TABLE */
+  .hist-table{width:100%;border-collapse:collapse}
+  .hist-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:8px 14px;text-align:left;background:var(--off)}
+  .hist-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--lg);transition:background .1s}
+  .hist-table tr:last-child td{border-bottom:none}
+  .hist-table tr:hover td{background:var(--off)}
+
+  /* REIMBURSE */
+  .reimb-layout{display:grid;grid-template-columns:1fr 320px;gap:18px}
+
+  /* AMOUNT INPUT */
+  .amount-input-wrap{position:relative}
+  .amount-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);font-weight:500}
+  .amount-input{padding-left:40px!important}
+
+  /* Receipt preview */
+  .receipt-preview{background:var(--off);border:1px solid var(--lg);border-radius:var(--rxs);padding:12px;display:flex;align-items:center;gap:12px;margin-top:8px}
+  .receipt-icon{font-size:24px}
+  .receipt-name{font-size:13px;font-weight:500}
+  .receipt-size{font-size:11px;color:var(--muted)}
+  .receipt-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;transition:color .15s}
+  .receipt-remove:hover{color:var(--red)}
+
+  /* Summary card */
+  .summary-card{background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden;margin-bottom:14px;position:sticky;top:0}
+  .sc-header{padding:14px 18px;border-bottom:1px solid var(--lg);font-size:14px;font-weight:600}
+  .sc-body{padding:16px 18px}
+  .sc-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--lg);font-size:13px}
+  .sc-row:last-child{border-bottom:none}
+  .sc-label{color:var(--muted)}
+  .sc-val{font-weight:500}
+  .sc-total{padding:12px 18px;background:var(--off);border-top:2px solid var(--lg);display:flex;justify-content:space-between;align-items:center}
+  .sc-total-label{font-size:13px;font-weight:600}
+  .sc-total-val{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--blue)}
+
+  /* APPROVAL FLOW */
+  .approval-flow{display:flex;flex-direction:column;gap:0}
+  .af-step{display:flex;align-items:flex-start;gap:12px;padding:10px 0}
+  .af-step-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;position:relative;z-index:1}
+  .af-line{width:2px;height:20px;background:var(--lg);margin-left:13px;margin-top:-2px;margin-bottom:-2px}
+  .af-body{padding-top:3px}
+  .af-name{font-size:13px;font-weight:500}
+  .af-role{font-size:11px;color:var(--muted)}
+  .af-status{font-size:11px;font-weight:500;margin-top:3px}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+  .tag.green{background:var(--gs);color:var(--green)}
+  .tag.blue{background:var(--bs);color:var(--blue)}
+  .tag.orange{background:var(--os);color:var(--orange)}
+  .tag.red{background:var(--rs);color:var(--red)}
+  .tag.gray{background:var(--off);color:var(--muted)}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1D1D1F;color:white;padding:11px 20px;border-radius:100px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:99;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--lg);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="white" opacity=".8"/></svg></div>
+      <div><div class="sb-ln">IDEA</div><div class="sb-le">Employee Portal</div></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av">RH</div>
+      <div><div class="sb-n">Rizky Hanafi</div><div class="sb-r">Lead · Teknologi</div></div>
+    </div>
+    <div class="sb-sec">Menu Utama</div>
+    <nav class="sb-nav">
+      <div class="ni"><span class="ni-icon">⊞</span> Dashboard</div>
+      <div class="ni"><span class="ni-icon">👤</span> Profil Saya</div>
+      <div class="ni active"><span class="ni-icon">🗓️</span> Cuti & Reimburse</div>
+      <div class="ni"><span class="ni-icon">💰</span> Slip Gaji</div>
+      <div class="ni"><span class="ni-icon">⭐</span> Penilaian</div>
+    </nav>
+    <div class="sb-div"></div>
+    <div class="sb-sec">Perusahaan</div>
+    <nav class="sb-nav">
+      <div class="ni"><span class="ni-icon">⊞</span> Org Chart</div>
+      <div class="ni"><span class="ni-icon">📢</span> Pengumuman</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-bc">Rizky Hanafi <span class="sep" style="color:var(--mg)">/</span> <span>Cuti & Reimburse</span></div>
+      <div class="tb-r">
+        <button class="btn btn-p" id="ajukanBtn" onclick="submitForm()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3.5 3.5 5.5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Ajukan
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Page Tabs -->
+      <div class="page-tabs">
+        <div class="pt active" id="ptCuti" onclick="switchPage('cuti')">
+          <div class="pt-icon">🗓️</div>
+          <div class="pt-label">Ajukan Cuti</div>
+          <div class="pt-count">8 hari tersisa</div>
+        </div>
+        <div class="pt" id="ptReim" onclick="switchPage('reimburse')">
+          <div class="pt-icon">🧾</div>
+          <div class="pt-label">Ajukan Reimburse</div>
+          <div class="pt-count">2 pending</div>
+        </div>
+        <div class="pt" id="ptRiwayat" onclick="switchPage('riwayat')">
+          <div class="pt-icon">📋</div>
+          <div class="pt-label">Riwayat</div>
+          <div class="pt-count">Semua pengajuan</div>
+        </div>
+      </div>
+
+      <!-- ── CUTI PAGE ── -->
+      <div id="pageCuti">
+        <div class="leave-layout">
+          <div>
+            <!-- Balance -->
+            <div class="balance-grid">
+              <div class="bal-card active-type" onclick="selectLeaveType(this,'annual')">
+                <div class="bal-type" style="color:var(--blue)">Cuti Tahunan</div>
+                <div class="bal-count" style="color:var(--blue)">8</div>
+                <div class="bal-unit">hari tersisa (dari 12)</div>
+                <div class="bal-bar"><div class="bal-fill" style="width:66%;background:var(--blue)"></div></div>
+              </div>
+              <div class="bal-card" onclick="selectLeaveType(this,'sick')">
+                <div class="bal-type" style="color:var(--green)">Cuti Sakit</div>
+                <div class="bal-count" style="color:var(--green)">12</div>
+                <div class="bal-unit">hari per tahun</div>
+                <div class="bal-bar"><div class="bal-fill" style="width:100%;background:var(--green)"></div></div>
+              </div>
+              <div class="bal-card" onclick="selectLeaveType(this,'marriage')">
+                <div class="bal-type" style="color:var(--purple)">Cuti Nikah</div>
+                <div class="bal-count" style="color:var(--purple)">3</div>
+                <div class="bal-unit">hari (belum digunakan)</div>
+                <div class="bal-bar"><div class="bal-fill" style="width:100%;background:var(--purple)"></div></div>
+              </div>
+              <div class="bal-card" onclick="selectLeaveType(this,'bereavement')">
+                <div class="bal-type" style="color:var(--orange)">Cuti Duka</div>
+                <div class="bal-count" style="color:var(--orange)">3</div>
+                <div class="bal-unit">hari (belum digunakan)</div>
+                <div class="bal-bar"><div class="bal-fill" style="width:100%;background:var(--orange)"></div></div>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <div class="form-card">
+              <div class="fc-header">
+                <div class="fc-title">📝 Form Pengajuan Cuti</div>
+                <span class="tag blue" id="leaveTypeBadge">Cuti Tahunan</span>
+              </div>
+              <div class="fc-body">
+                <div class="field-grid">
+                  <div class="field-group">
+                    <div class="field-label">Tanggal Mulai <span class="field-req">*</span></div>
+                    <input type="date" class="field-input" id="leaveStart" value="2025-07-14" onchange="calcDays()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Tanggal Selesai <span class="field-req">*</span></div>
+                    <input type="date" class="field-input" id="leaveEnd" value="2025-07-16" onchange="calcDays()">
+                  </div>
+                </div>
+                <div style="padding:12px 14px;background:var(--bs);border-radius:var(--rxs);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:13px;color:var(--sub)">Total hari kerja cuti</span>
+                  <span style="font-size:18px;font-weight:700;color:var(--blue)" id="dayCount">3 hari</span>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Jenis Cuti <span class="field-req">*</span></div>
+                  <select class="field-select" id="leaveTypeSelect" onchange="updateLeaveType(this)">
+                    <option value="annual">Cuti Tahunan</option>
+                    <option value="sick">Cuti Sakit</option>
+                    <option value="marriage">Cuti Pernikahan</option>
+                    <option value="bereavement">Cuti Duka</option>
+                    <option value="maternity">Cuti Melahirkan</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Alasan Cuti <span class="field-req">*</span></div>
+                  <textarea class="field-textarea" placeholder="Jelaskan alasan cuti Anda..."></textarea>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Pengganti Tugas <span style="font-size:11px;color:var(--muted);font-weight:400">(opsional)</span></div>
+                  <select class="field-select">
+                    <option value="">— Tidak ada pengganti —</option>
+                    <option>Andi Wibowo (GM)</option>
+                    <option>Siti Rahayu (Lead Backend)</option>
+                    <option>Ahmad Fauzi (Lead Frontend)</option>
+                  </select>
+                  <div class="field-hint">Karyawan yang akan menggantikan tugas Anda selama cuti</div>
+                </div>
+                <div class="field-group" id="sickDocGroup" style="display:none">
+                  <div class="field-label">Surat Dokter <span class="field-req">*</span></div>
+                  <div class="upload-zone" onclick="document.getElementById('sickDoc').click()">
+                    <div class="upload-icon">🏥</div>
+                    <div class="upload-text">Upload surat dokter</div>
+                    <div class="upload-hint">Wajib untuk cuti sakit lebih dari 2 hari · PDF/JPG maks 5MB</div>
+                    <input type="file" id="sickDoc" style="display:none">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Calendar + Approval -->
+          <div>
+            <div class="mini-cal">
+              <div class="cal-header">
+                <div class="cal-month">Juli 2025</div>
+                <div class="cal-nav">
+                  <div class="cal-nav-btn">‹</div>
+                  <div class="cal-nav-btn">›</div>
+                </div>
+              </div>
+              <div class="cal-grid" id="calGrid"></div>
+            </div>
+
+            <div class="form-card">
+              <div class="fc-header"><div class="fc-title">🔀 Alur Approval</div></div>
+              <div class="fc-body" style="padding:14px 16px">
+                <div class="approval-flow">
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--bs);color:var(--blue)">1</div>
+                    <div class="af-body">
+                      <div class="af-name">Andi Wibowo</div>
+                      <div class="af-role">Atasan Langsung · GM Teknologi</div>
+                      <div class="af-status" style="color:var(--orange)">⏳ Menunggu approval L1</div>
+                    </div>
+                  </div>
+                  <div class="af-line"></div>
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--off);color:var(--muted)">2</div>
+                    <div class="af-body">
+                      <div class="af-name" style="color:var(--muted)">Diana Sari</div>
+                      <div class="af-role">C-Level · Teknologi</div>
+                      <div class="af-status" style="color:var(--muted)">Menunggu L1 selesai</div>
+                    </div>
+                  </div>
+                  <div class="af-line"></div>
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--off);color:var(--muted)">✓</div>
+                    <div class="af-body">
+                      <div class="af-name" style="color:var(--muted)">Notifikasi & Konfirmasi</div>
+                      <div class="af-role">Dikirim ke email & portal</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REIMBURSE PAGE ── -->
+      <div id="pageReim" style="display:none">
+        <div class="reimb-layout">
+          <div>
+            <div class="form-card">
+              <div class="fc-header"><div class="fc-title">🧾 Form Pengajuan Reimburse</div></div>
+              <div class="fc-body">
+                <div class="field-grid">
+                  <div class="field-group">
+                    <div class="field-label">Tanggal Pengeluaran <span class="field-req">*</span></div>
+                    <input type="date" class="field-input" value="2025-07-07">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Kategori <span class="field-req">*</span></div>
+                    <select class="field-select">
+                      <option>Transport & Perjalanan</option>
+                      <option>Makan & Entertaint</option>
+                      <option>Alat Tulis & Supplies</option>
+                      <option>Akomodasi</option>
+                      <option>Software & Subscription</option>
+                      <option>Lainnya</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field-grid">
+                  <div class="field-group">
+                    <div class="field-label">Mata Uang</div>
+                    <select class="field-select" id="currencySel" onchange="updateCurrency()">
+                      <option value="IDR">IDR — Rupiah</option>
+                      <option value="USD">USD — US Dollar</option>
+                      <option value="SGD">SGD — Singapore Dollar</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Jumlah <span class="field-req">*</span></div>
+                    <div class="amount-input-wrap">
+                      <span class="amount-prefix" id="currPrefix">Rp</span>
+                      <input type="text" class="field-input amount-input" id="amountInput" placeholder="0" oninput="formatAmount(this);updateSummary()">
+                    </div>
+                  </div>
+                </div>
+                <div id="exchangeRow" style="display:none;margin-bottom:16px">
+                  <div class="field-group">
+                    <div class="field-label">Kurs ke IDR</div>
+                    <input type="text" class="field-input" id="exchangeRate" placeholder="e.g. 15800" oninput="updateSummary()">
+                    <div class="field-hint" id="idrEquiv"></div>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Keterangan <span class="field-req">*</span></div>
+                  <textarea class="field-textarea" placeholder="Deskripsi pengeluaran, tujuan, dan konteks..."></textarea>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Upload Bukti (Struk/Invoice) <span class="field-req">*</span></div>
+                  <div class="upload-zone" id="receiptZone" onclick="document.getElementById('receiptFile').click()">
+                    <div class="upload-icon">🧾</div>
+                    <div class="upload-text">Upload struk atau invoice</div>
+                    <div class="upload-hint">JPG, PNG, atau PDF · Maks 10MB</div>
+                    <input type="file" id="receiptFile" style="display:none" onchange="handleReceiptUpload(this)">
+                  </div>
+                  <div id="receiptPreview" style="display:none"></div>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Terkait Project <span style="font-size:11px;color:var(--muted);font-weight:400">(opsional)</span></div>
+                  <select class="field-select">
+                    <option value="">— Tidak terkait project —</option>
+                    <option>API Gateway — PT Telkom</option>
+                    <option>HRIS — Bank Nusantara</option>
+                    <option>Portal Internal IDEA</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Summary -->
+          <div>
+            <div class="summary-card">
+              <div class="sc-header">📊 Ringkasan Pengajuan</div>
+              <div class="sc-body">
+                <div class="sc-row"><span class="sc-label">Tanggal</span><span class="sc-val">7 Juli 2025</span></div>
+                <div class="sc-row"><span class="sc-label">Kategori</span><span class="sc-val">Transport</span></div>
+                <div class="sc-row"><span class="sc-label">Mata Uang</span><span class="sc-val" id="summCurrency">IDR</span></div>
+                <div class="sc-row"><span class="sc-label">Jumlah</span><span class="sc-val" id="summAmount">Rp 0</span></div>
+                <div class="sc-row" id="summExchRow" style="display:none"><span class="sc-label">Ekuivalen IDR</span><span class="sc-val" id="summIDR">—</span></div>
+                <div class="sc-row"><span class="sc-label">Status</span><span class="sc-val"><span class="tag orange">Draft</span></span></div>
+              </div>
+              <div class="sc-total">
+                <span class="sc-total-label">Total Klaim</span>
+                <span class="sc-total-val" id="summTotal">Rp 0</span>
+              </div>
+            </div>
+
+            <div class="form-card">
+              <div class="fc-header"><div class="fc-title">🔀 Alur Approval</div></div>
+              <div class="fc-body" style="padding:14px 16px">
+                <div class="approval-flow">
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--bs);color:var(--blue)">1</div>
+                    <div class="af-body"><div class="af-name">Andi Wibowo</div><div class="af-role">Atasan Langsung · L1</div><div class="af-status" style="color:var(--orange)">⏳ Pending</div></div>
+                  </div>
+                  <div class="af-line"></div>
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--off);color:var(--muted)">2</div>
+                    <div class="af-body"><div class="af-name" style="color:var(--muted)">Diana Sari</div><div class="af-role">C-Level · L2</div><div class="af-status" style="color:var(--muted)">Menunggu L1</div></div>
+                  </div>
+                  <div class="af-line"></div>
+                  <div class="af-step">
+                    <div class="af-step-icon" style="background:var(--off);color:var(--muted)">3</div>
+                    <div class="af-body"><div class="af-name" style="color:var(--muted)">Finance</div><div class="af-role">Proses Transfer</div><div class="af-status" style="color:var(--muted)">Transfer terpisah dari payroll</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending reimburse -->
+            <div class="form-card">
+              <div class="fc-header"><div class="fc-title">⏳ Pengajuan Aktif</div><span class="tag orange">2 pending</span></div>
+              <div style="padding:0 16px">
+                ${[
+                  {date:'5 Jul',cat:'Transport',amount:'Rp 450.000',status:'pending_l1'},
+                  {date:'1 Jul',cat:'Makan',amount:'Rp 185.000',status:'pending_l2'},
+                ].map(r=>`
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--lg);font-size:13px">
+                  <div style="width:36px;height:36px;border-radius:9px;background:var(--os);display:flex;align-items:center;justify-content:center;flex-shrink:0;">🧾</div>
+                  <div style="flex:1"><div style="font-weight:500">${r.cat}</div><div style="font-size:11px;color:var(--muted)">${r.date}</div></div>
+                  <div style="text-align:right"><div style="font-weight:600">${r.amount}</div><span class="tag orange" style="font-size:10px">${r.status==='pending_l1'?'L1 review':'L2 review'}</span></div>
+                </div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIWAYAT PAGE ── -->
+      <div id="pageRiwayat" style="display:none">
+        <div style="background:var(--white);border:1px solid var(--lg);border-radius:var(--r);overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--lg);display:flex;align-items:center;gap:10px">
+            <span style="font-size:14px;font-weight:600">📋 Riwayat Pengajuan</span>
+            <span class="tag gray" style="margin-left:auto">2025</span>
+          </div>
+          <table class="hist-table">
+            <tr><th>Tipe</th><th>Keterangan</th><th>Tanggal</th><th>Durasi/Nilai</th><th>Status</th><th>Disetujui oleh</th></tr>
+            ${[
+              {type:'🗓️ Cuti',desc:'Cuti Tahunan',date:'14–16 Jul',val:'3 hari',status:'approved',approver:'Andi W.'},
+              {type:'🧾 Reimburse',desc:'Transport ke klien',date:'5 Jul',val:'Rp 450.000',status:'pending_l1',approver:'—'},
+              {type:'🧾 Reimburse',desc:'Makan working lunch',date:'1 Jul',val:'Rp 185.000',status:'pending_l2',approver:'Andi W.'},
+              {type:'🗓️ Cuti',desc:'Cuti Sakit',date:'20 Jun',val:'1 hari',status:'approved',approver:'Andi W.'},
+              {type:'🧾 Reimburse',desc:'Pulsa & internet',date:'15 Jun',val:'Rp 350.000',status:'paid',approver:'Diana S.'},
+              {type:'🗓️ Cuti',desc:'Cuti Tahunan',date:'2–3 Jun',val:'2 hari',status:'approved',approver:'Andi W.'},
+              {type:'🧾 Reimburse',desc:'Taxi ke meeting PT Telkom',date:'28 Mei',val:'Rp 128.000',status:'paid',approver:'Diana S.'},
+            ].map(r=>`<tr>
+              <td>${r.type}</td>
+              <td>${r.desc}</td>
+              <td style="color:var(--muted)">${r.date}</td>
+              <td style="font-weight:500">${r.val}</td>
+              <td><span class="tag ${r.status==='approved'||r.status==='paid'?'green':r.status.startsWith('pending')?'orange':'blue'}">${r.status==='paid'?'✓ Dibayar':r.status==='approved'?'✓ Disetujui':r.status==='pending_l1'?'L1 Review':'L2 Review'}</span></td>
+              <td style="color:var(--muted)">${r.approver}</td>
+            </tr>`).join('')}
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// TABS
+function switchPage(p) {
+  ['cuti','reimburse','riwayat'].forEach(t => {
+    document.getElementById('pt' + (t==='cuti'?'Cuti':t==='reimburse'?'Reim':'Riwayat')).classList.toggle('active', t===p);
+    document.getElementById('page' + (t==='cuti'?'Cuti':t==='reimburse'?'Reim':'Riwayat')).style.display = t===p ? '' : 'none';
+  });
+  document.getElementById('ajukanBtn').textContent = p==='riwayat' ? '📋 Export' : '✓ Ajukan';
+}
+
+// CALENDAR
+function renderCal() {
+  const grid = document.getElementById('calGrid');
+  const days = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
+  grid.innerHTML = days.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const leaveStart=14, leaveEnd=16;
+  const holidays=[4,11,18,25]; // Fridays example
+  let cells = [];
+  // June overflow
+  for(let i=29;i<=30;i++) cells.push({day:i,other:true});
+  for(let i=1;i<=31;i++) cells.push({day:i});
+  // Aug overflow
+  for(let i=1;i<=2;i++) cells.push({day:i,other:true});
+  cells.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = c.day;
+    if(c.other) el.classList.add('other-month');
+    else if(c.day===7) el.classList.add('today');
+    else if(c.day>=leaveStart && c.day<=leaveEnd) {
+      if(c.day===leaveStart||c.day===leaveEnd) el.classList.add(c.day===leaveStart?'leave-start':'leave-end');
+      else el.classList.add('leave-range');
+    }
+    grid.appendChild(el);
+  });
+}
+renderCal();
+
+// LEAVE
+function selectLeaveType(card, type) {
+  document.querySelectorAll('.bal-card').forEach(c=>c.classList.remove('active-type'));
+  card.classList.add('active-type');
+  document.getElementById('leaveTypeSelect').value = type;
+  updateLeaveType(document.getElementById('leaveTypeSelect'));
+}
+function updateLeaveType(sel) {
+  const labels = {annual:'Cuti Tahunan',sick:'Cuti Sakit',marriage:'Cuti Pernikahan',bereavement:'Cuti Duka',maternity:'Cuti Melahirkan'};
+  document.getElementById('leaveTypeBadge').textContent = labels[sel.value] || sel.value;
+  document.getElementById('sickDocGroup').style.display = sel.value==='sick' ? '' : 'none';
+}
+function calcDays() {
+  const s = new Date(document.getElementById('leaveStart').value);
+  const e = new Date(document.getElementById('leaveEnd').value);
+  if(e>=s) {
+    let days=0;
+    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+      if(d.getDay()!==0&&d.getDay()!==6) days++;
+    }
+    document.getElementById('dayCount').textContent = days+' hari';
+  }
+}
+
+// REIMBURSE
+function updateCurrency() {
+  const c = document.getElementById('currencySel').value;
+  const prefixes = {IDR:'Rp',USD:'$',SGD:'S$'};
+  document.getElementById('currPrefix').textContent = prefixes[c];
+  document.getElementById('exchangeRow').style.display = c==='IDR'?'none':'';
+  document.getElementById('summCurrency').textContent = c;
+  updateSummary();
+}
+function formatAmount(input) {
+  let raw = input.value.replace(/\D/g,'');
+  if(raw) input.value = parseInt(raw).toLocaleString('id-ID');
+  else input.value='';
+}
+function updateSummary() {
+  const rawVal = document.getElementById('amountInput').value.replace(/\D/g,'');
+  const amount = parseInt(rawVal)||0;
+  const currency = document.getElementById('currencySel').value;
+  const prefix = {IDR:'Rp',USD:'$',SGD:'S$'}[currency];
+  document.getElementById('summAmount').textContent = prefix+' '+(amount||0).toLocaleString('id-ID');
+
+  if(currency!=='IDR') {
+    const rate = parseInt(document.getElementById('exchangeRate').value)||0;
+    const idr = amount*rate;
+    document.getElementById('summExchRow').style.display = '';
+    document.getElementById('summIDR').textContent = 'Rp '+idr.toLocaleString('id-ID');
+    document.getElementById('summTotal').textContent = 'Rp '+idr.toLocaleString('id-ID');
+    document.getElementById('idrEquiv').textContent = 'Ekuivalen IDR: Rp '+(amount*rate).toLocaleString('id-ID');
+  } else {
+    document.getElementById('summExchRow').style.display = 'none';
+    document.getElementById('summTotal').textContent = 'Rp '+(amount||0).toLocaleString('id-ID');
+  }
+}
+function handleReceiptUpload(input) {
+  if(!input.files[0]) return;
+  const f = input.files[0];
+  document.getElementById('receiptZone').style.display = 'none';
+  const prev = document.getElementById('receiptPreview');
+  prev.style.display='';
+  prev.innerHTML=`<div class="receipt-preview">
+    <div class="receipt-icon">📄</div>
+    <div><div class="receipt-name">${f.name}</div><div class="receipt-size">${(f.size/1024).toFixed(0)} KB</div></div>
+    <button class="receipt-remove" onclick="removeReceipt()">✕</button>
+  </div>`;
+  document.getElementById('receiptZone').classList.add('uploaded');
+}
+function removeReceipt() {
+  document.getElementById('receiptZone').style.display='';
+  document.getElementById('receiptPreview').style.display='none';
+  document.getElementById('receiptZone').classList.remove('uploaded');
+}
+
+// SUBMIT
+function submitForm() {
+  showToast('✅ Pengajuan berhasil dikirim — menunggu approval L1');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

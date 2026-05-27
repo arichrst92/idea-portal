@@ -1,0 +1,196 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>IDEA — Sales Report & Target</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF9F0A,#FF6B00);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--ol);color:var(--orange)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--orange);font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--orange);color:#fff}.btn-p:hover{background:#E08B00}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+.kpi-val{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-bottom:3px;font-family:var(--mono)}
+.kpi-lbl{font-size:11px;color:var(--ink3);font-weight:500}
+.kpi-trend{font-size:11px;font-weight:600;margin-top:5px;display:flex;align-items:center;gap:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:var(--font)}
+.cb{padding:16px 18px}.cb.np{padding:0}
+/* target bars */
+.target-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border2);font-size:13px}
+.target-row:last-child{border-bottom:none}
+.t-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.t-name{flex:1;font-weight:600}
+.t-bar-wrap{width:120px;flex-shrink:0}
+.t-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.t-bar-fill{height:100%;border-radius:3px}
+.t-pct{font-size:11px;color:var(--ink3)}
+.t-val{width:70px;text-align:right;flex-shrink:0;font-family:var(--mono);font-size:11px;font-weight:600}
+/* win rate donut */
+.wr-wrap{display:flex;align-items:center;gap:16px}
+.wr-ring{position:relative;width:80px;height:80px;flex-shrink:0}
+.wr-ring svg{transform:rotate(-90deg)}
+.wr-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+/* services table */
+.svc-row{display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:1px solid var(--border2);font-size:13px}
+.svc-row:last-child{border-bottom:none}
+.svc-name{flex:1;font-weight:600}
+.svc-bar-track{width:80px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.svc-bar-fill{height:100%;border-radius:3px}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head><body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div><div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div></div>
+  <div class="sb-user"><div class="sb-av">MS</div><div><div class="sb-uname">Maya Sari</div><div class="sb-urole">Manager · Sales</div></div></div>
+  <div class="sb-sec">Sales & Marketing</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📊</div>Leads Funnel</div>
+    <div class="ni"><div class="ni-ic">📄</div>Proposal</div>
+    <div class="ni active"><div class="ni-ic">🎯</div>Target &amp; Report</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Sales <span style="color:var(--border)">/</span> <strong>Report &amp; Target</strong></div>
+    <div class="tb-r">
+      <select style="height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);background:var(--bg);outline:none"><option>Juli 2025</option><option>Q3 2025</option><option>YTD 2025</option></select>
+      <button class="btn btn-s" onclick="alert('Set target baru')">🎯 Set Target</button>
+      <button class="btn btn-p">📊 Export</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-val" style="color:var(--green)">68%</div>
+        <div class="kpi-lbl">Win Rate Bulan Ini</div>
+        <div class="kpi-trend" style="color:var(--green)">↑ +5% vs bulan lalu</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:var(--blue)">Rp 1,8M</div>
+        <div class="kpi-lbl">Revenue Bulan Ini</div>
+        <div class="kpi-trend" style="color:var(--green)">↑ 120% dari target</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:var(--orange)">12</div>
+        <div class="kpi-lbl">Leads Aktif</div>
+        <div class="kpi-trend" style="color:var(--blue)">→ Sama vs bulan lalu</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">Rp 4,2M</div>
+        <div class="kpi-lbl">Pipeline Value</div>
+        <div class="kpi-trend" style="color:var(--green)">↑ +Rp 600jt</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:var(--purple)">18 hr</div>
+        <div class="kpi-lbl">Avg Deal Cycle</div>
+        <div class="kpi-trend" style="color:var(--green)">↓ -3 hari</div>
+      </div>
+    </div>
+
+    <!-- TARGET ALERT -->
+    <div style="background:var(--gl);border:1px solid rgba(48,209,88,.2);border-radius:var(--rm);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:16px">🎉</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--green)">Target Tim sudah tercapai 120%!</div><div style="font-size:12px;color:var(--ink2)">Revenue Juli 2025: Rp 1,8M dari target Rp 1,5M. Pencapaian terbaik 2025.</div></div>
+    </div>
+
+    <div class="grid2">
+      <!-- Individual Target -->
+      <div class="card">
+        <div class="ch"><div class="ch-title">👤 Target Individu — Juli 2025</div><button class="ch-action" onclick="alert('Edit target')">Edit Target →</button></div>
+        <div class="cb np">
+          ${[
+            {n:'Fajar Nugraha',i:'FN',c:'#FF9F0A',target:'Rp 800jt',actual:'Rp 960jt',pct:120,color:'var(--green)'},
+            {n:'Gita Kusuma',i:'GK',c:'#30D158',target:'Rp 400jt',actual:'Rp 520jt',pct:130,color:'var(--green)'},
+            {n:'Hendra S.',i:'HS',c:'#007AFF',target:'Rp 300jt',actual:'Rp 320jt',pct:107,color:'var(--blue)'},
+          ].map(s=>`<div class="target-row">
+            <div class="t-av" style="background:${s.c}">${s.i}</div>
+            <div class="t-name">${s.n}</div>
+            <div class="t-bar-wrap">
+              <div class="t-bar"><div class="t-bar-fill" style="width:${Math.min(s.pct,100)}%;background:${s.color}"></div></div>
+              <div class="t-pct">${s.pct}% dari target</div>
+            </div>
+            <div class="t-val" style="color:${s.color}">${s.actual}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Win Rate by Services -->
+      <div class="card">
+        <div class="ch"><div class="ch-title">🏆 Win Rate per Layanan</div></div>
+        <div class="cb np">
+          ${[
+            {n:'IT Consulting',wr:72,won:8,total:11,c:'var(--blue)'},
+            {n:'Software Dev',wr:60,won:3,total:5,c:'var(--purple)'},
+            {n:'Outsourcing',wr:80,won:4,total:5,c:'var(--green)'},
+          ].map(s=>`<div class="svc-row">
+            <div class="svc-name">${s.n}</div>
+            <div class="svc-bar-track"><div class="svc-bar-fill" style="width:${s.wr}%;background:${s.c}"></div></div>
+            <span style="font-size:13px;font-weight:800;color:${s.c};width:38px;text-align:right">${s.wr}%</span>
+            <span style="font-size:11px;color:var(--ink3);width:50px;text-align:right">${s.won}/${s.total}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Trend -->
+    <div class="card">
+      <div class="ch"><div class="ch-title">📈 Revenue vs Target — 2025</div></div>
+      <div class="cb">
+        <div style="display:flex;gap:12px;align-items:flex-end;height:100px;margin-bottom:8px" id="revBars"></div>
+        <div style="display:flex;gap:8px" id="revLabels"></div>
+        <div style="display:flex;gap:16px;margin-top:10px;font-size:12px">
+          <div style="display:flex;align-items:center;gap:5px;color:var(--ink3)"><div style="width:10px;height:10px;background:var(--green);border-radius:2px"></div>Revenue aktual</div>
+          <div style="display:flex;align-items:center;gap:5px;color:var(--ink3)"><div style="width:10px;height:10px;background:var(--border);border:1px solid var(--border2);border-radius:2px"></div>Target</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<script>
+const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul'];
+const actual=[1.2,1.0,1.4,1.3,1.5,1.6,1.8];
+const target=[1.5,1.5,1.5,1.5,1.5,1.5,1.5];
+const maxV=Math.max(...actual,...target);
+const bars=document.getElementById('revBars');
+const lbls=document.getElementById('revLabels');
+months.forEach((m,i)=>{
+  const g=document.createElement('div');g.style.cssText='flex:1;display:flex;gap:3px;align-items:flex-end';
+  g.innerHTML=`<div style="flex:1;height:${actual[i]/maxV*100}%;background:${i===months.length-1?'var(--green)':'rgba(48,209,88,.4)'};border-radius:3px 3px 0 0;min-height:4px"></div>
+    <div style="flex:1;height:${target[i]/maxV*100}%;background:var(--bg);border:1px solid var(--border2);border-radius:3px 3px 0 0;min-height:4px"></div>`;
+  bars.appendChild(g);
+  const l=document.createElement('div');l.style.cssText='flex:1;font-size:10px;color:var(--ink3);text-align:center;font-weight:600';l.textContent=m;
+  lbls.appendChild(l);
+});
+</script>
+</body></html>

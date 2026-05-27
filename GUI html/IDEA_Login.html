@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Sign In</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white:       #FFFFFF;
+    --off-white:   #F5F5F7;
+    --light-gray:  #E8E8ED;
+    --mid-gray:    #C7C7CC;
+    --text-muted:  #86868B;
+    --text-main:   #1D1D1F;
+    --text-sub:    #6E6E73;
+    --blue:        #0071E3;
+    --blue-hover:  #0077ED;
+    --blue-active: #006EDB;
+    --blue-soft:   #E8F1FB;
+    --red:         #FF3B30;
+    --shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:   0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-lg:   0 20px 60px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+    --radius:      14px;
+    --radius-sm:   10px;
+    --font:        'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font);
+    background: var(--off-white);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── LAYOUT ─────────────────────────────────────────────────────── */
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── LEFT PANEL ─────────────────────────────────────────────────── */
+  .left-panel {
+    position: relative;
+    background: #0A0A0A;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 52px 56px;
+    overflow: hidden;
+  }
+
+  /* Subtle gradient mesh */
+  .left-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0,113,227,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 80%, rgba(0,113,227,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Subtle grid texture */
+  .left-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  .left-top { position: relative; z-index: 1; }
+  .left-middle { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .left-bottom { position: relative; z-index: 1; }
+
+  /* Logo */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-mark {
+    width: 40px;
+    height: 40px;
+    background: var(--white);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .logo-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .logo-tagline {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 400;
+    letter-spacing: 0.2px;
+  }
+
+  /* Headline */
+  .left-headline {
+    margin-bottom: 24px;
+  }
+  .left-eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(0,113,227,0.9);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .left-eyebrow::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 1px;
+    background: rgba(0,113,227,0.7);
+  }
+  .left-title {
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+  .left-title span {
+    background: linear-gradient(135deg, #60A5FA, #0071E3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .left-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+    font-weight: 400;
+    max-width: 340px;
+  }
+
+  /* Feature pills */
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 40px;
+  }
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .feature-text { font-size: 13px; color: rgba(255,255,255,0.55); font-weight: 400; line-height: 1.4; }
+  .feature-text strong { color: rgba(255,255,255,0.85); font-weight: 500; display: block; font-size: 13px; margin-bottom: 1px; }
+
+  /* Bottom bar */
+  .left-footer {
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    display: flex;
+    gap: 20px;
+  }
+
+  /* ── RIGHT PANEL ─────────────────────────────────────────────────── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 48px;
+    background: var(--white);
+    position: relative;
+  }
+
+  .right-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--light-gray) 20%, var(--light-gray) 80%, transparent);
+  }
+
+  .form-container {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  /* Form header */
+  .form-header {
+    margin-bottom: 36px;
+    text-align: center;
+  }
+  .form-welcome {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.8px;
+    margin-bottom: 8px;
+  }
+  .form-sub {
+    font-size: 15px;
+    color: var(--text-sub);
+    font-weight: 400;
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--light-gray);
+  }
+  .divider-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  /* Form fields */
+  .field-group { margin-bottom: 16px; }
+
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    letter-spacing: -0.1px;
+  }
+
+  .field-wrapper {
+    position: relative;
+  }
+
+  .field-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 44px;
+    border: 1.5px solid var(--light-gray);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: var(--font);
+    font-weight: 400;
+    color: var(--text-main);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .field-input::placeholder {
+    color: var(--mid-gray);
+    font-weight: 400;
+  }
+
+  .field-input:hover {
+    border-color: var(--mid-gray);
+  }
+
+  .field-input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(0,113,227,0.10);
+    background: var(--white);
+  }
+
+  .field-input.error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(255,59,48,0.08);
+  }
+
+  .field-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mid-gray);
+    pointer-events: none;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+
+  .field-wrapper:focus-within .field-icon {
+    color: var(--blue);
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .password-toggle:hover {
+    color: var(--text-main);
+    background: var(--off-white);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 6px;
+    display: none;
+    align-items: center;
+    gap: 5px;
+  }
+  .field-error.visible { display: flex; }
+
+  /* Options row */
+  .options-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    margin-top: -4px;
+  }
+
+  .remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--mid-gray);
+    border-radius: 5px;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .checkbox-real {
+    display: none;
+  }
+
+  .checkbox-real:checked + .remember-me .checkbox-custom {
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+
+  .checkbox-label {
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 400;
+  }
+
+  .forgot-link {
+    font-size: 13px;
+    color: var(--blue);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.15s;
+  }
+  .forgot-link:hover { opacity: 0.7; }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    height: 50px;
+    background: var(--blue);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    letter-spacing: -0.2px;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,113,227,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-submit:hover {
+    background: var(--blue-hover);
+    box-shadow: 0 4px 16px rgba(0,113,227,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:active {
+    background: var(--blue-active);
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0,113,227,0.2);
+  }
+
+  .btn-submit.loading {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-submit.loading .spinner { display: block; }
+  .btn-submit.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Alert banner */
+  .alert {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 400;
+    margin-bottom: 20px;
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .alert.visible { display: flex; }
+  .alert-error {
+    background: #FFF2F1;
+    border: 1px solid rgba(255,59,48,0.2);
+    color: #CC1B12;
+  }
+  .alert-icon { flex-shrink: 0; margin-top: 1px; }
+
+  /* SSO hint */
+  .sso-note {
+    margin-top: 28px;
+    padding: 14px 16px;
+    background: var(--off-white);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sso-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  .sso-text { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+  .sso-text strong { color: var(--text-main); font-weight: 500; font-size: 12px; display: block; margin-bottom: 2px; }
+
+  /* Footer */
+  .form-footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .form-footer a { color: var(--blue); text-decoration: none; }
+  .form-footer a:hover { text-decoration: underline; }
+
+  /* Version badge */
+  .version-badge {
+    position: absolute;
+    top: 24px;
+    right: 28px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--off-white);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--light-gray);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+
+  /* ── ANIMATIONS ──────────────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-header   { animation: fadeUp 0.5s ease 0.1s both; }
+  .alert         { animation: fadeUp 0.3s ease both; }
+  .field-group:nth-child(1) { animation: fadeUp 0.5s ease 0.2s both; }
+  .field-group:nth-child(2) { animation: fadeUp 0.5s ease 0.3s both; }
+  .options-row   { animation: fadeUp 0.5s ease 0.35s both; }
+  .btn-submit    { animation: fadeUp 0.5s ease 0.4s both; }
+  .sso-note      { animation: fadeUp 0.5s ease 0.5s both; }
+  .form-footer   { animation: fadeUp 0.5s ease 0.55s both; }
+
+  .left-top      { animation: fadeUp 0.6s ease 0.05s both; }
+  .left-headline { animation: fadeUp 0.6s ease 0.15s both; }
+  .feature-list  { animation: fadeUp 0.6s ease 0.25s both; }
+  .left-footer   { animation: fadeUp 0.6s ease 0.35s both; }
+
+  /* ── RESPONSIVE ──────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; }
+    .left-panel { display: none; }
+    .right-panel { padding: 48px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── LEFT PANEL ──────────────────────────────────────────────── -->
+  <div class="left-panel">
+
+    <div class="left-top">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#0071E3"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#0071E3" opacity="0.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#0071E3" opacity="0.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#0071E3" opacity="0.8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">IDEA</div>
+          <div class="logo-tagline">IT Consultant & Outsourcing</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-middle">
+      <div class="left-headline">
+        <div class="left-eyebrow">Internal Portal</div>
+        <h1 class="left-title">Work smarter,<br><span>together.</span></h1>
+        <p class="left-desc">Satu platform untuk mengelola seluruh operasional IDEA — dari HR, proyek, keuangan, hingga outsourcing.</p>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">👥</div>
+          <div class="feature-text">
+            <strong>Employee & HR Management</strong>
+            Kelola karyawan, penilaian, cuti, dan penggajian dalam satu tempat.
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">
+            <strong>Project & Client Dashboard</strong>
+            Pantau progres proyek, milestone, dan deliverable secara real-time.
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💼</div>
+          <div class="feature-text">
+            <strong>Outsource Monitoring</strong>
+            Timesheet, Berita Acara, dan billing outsource per klien otomatis.
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📈</div>
+          <div class="feature-text">
+            <strong>Executive Intelligence</strong>
+            P&L, EBITDA, dan AI summary laporan untuk pengambilan keputusan.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-bottom">
+      <div class="left-footer">
+        <span>© 2025 IDEA</span>
+        <span>portal.ide.asia</span>
+        <span>v1.0.0</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT PANEL ──────────────────────────────────────────────── -->
+  <div class="right-panel">
+
+    <div class="version-badge">v1.0 · 2025</div>
+
+    <div class="form-container">
+
+      <div class="form-header">
+        <div class="form-welcome">Sign in to IDEA</div>
+        <div class="form-sub">Masukkan NIK dan password Anda</div>
+      </div>
+
+      <!-- Error Alert -->
+      <div class="alert alert-error" id="errorAlert">
+        <svg class="alert-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" fill="#FF3B30" fill-opacity="0.15" stroke="#FF3B30" stroke-width="1.2"/>
+          <path d="M8 5v3.5" stroke="#FF3B30" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="8" cy="11" r="0.8" fill="#FF3B30"/>
+        </svg>
+        <span id="errorText">NIK atau password tidak valid. Silakan coba lagi.</span>
+      </div>
+
+      <form id="loginForm" novalidate>
+
+        <!-- NIK -->
+        <div class="field-group">
+          <label class="field-label" for="nik">NIK Karyawan</label>
+          <div class="field-wrapper">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                <circle cx="8" cy="6.5" r="2" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M4 13c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <input
+              type="text"
+              id="nik"
+              class="field-input"
+              placeholder="Contoh: EMP-001"
+              autocomplete="username"
+              spellcheck="false"
+              inputmode="text"
+              maxlength="20"
+            />
+          </div>
+          <div class="field-error" id="nikError">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" stroke="#FF3B30" stroke-width="1.2"/>
+              <path d="M6 4v2.5" stroke="#FF3B30" stroke-width="1.2" stroke-linecap="round"/>
+              <circle cx="6" cy="8.5" r="0.6" fill="#FF3B30"/>
+            </svg>
+            <span>NIK tidak boleh kosong</span>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group">
+          <label class="field-label" for="password">Password</label>
+          <div class="field-wrapper">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                <circle cx="8" cy="10.5" r="1" fill="currentColor"/>
+              </svg>
+            </span>
+            <input
+              type="password"
+              id="password"
+              class="field-input"
+              placeholder="Password"
+              autocomplete="current-password"
+              style="padding-right: 46px;"
+            />
+            <button type="button" class="password-toggle" id="togglePassword" tabindex="-1" aria-label="Toggle password">
+              <svg id="eyeIcon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.3"/>
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field-error" id="passwordError">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" stroke="#FF3B30" stroke-width="1.2"/>
+              <path d="M6 4v2.5" stroke="#FF3B30" stroke-width="1.2" stroke-linecap="round"/>
+              <circle cx="6" cy="8.5" r="0.6" fill="#FF3B30"/>
+            </svg>
+            <span>Password tidak boleh kosong</span>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="options-row">
+          <label class="remember-me" for="rememberCheck">
+            <input type="checkbox" class="checkbox-real" id="rememberCheck">
+            <div class="checkbox-custom" id="checkBox">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none" id="checkMark" style="display:none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="checkbox-label">Ingat saya</span>
+          </label>
+          <a href="#" class="forgot-link">Lupa password?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <div class="spinner" id="spinner"></div>
+          <span class="btn-text">Masuk</span>
+        </button>
+
+      </form>
+
+      <!-- SSO Note -->
+      <div class="sso-note">
+        <div class="sso-icon">🔐</div>
+        <div class="sso-text">
+          <strong>NIK & password dikonfigurasi oleh IT Admin</strong>
+          Hubungi Dept. Operation jika belum memiliki akun atau lupa password.
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="form-footer">
+        Dengan masuk, Anda menyetujui <a href="#">Kebijakan Privasi</a> dan
+        <a href="#">Ketentuan Penggunaan</a> IDEA.<br>
+        Akses bersifat rahasia dan hanya untuk karyawan aktif.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── CHECKBOX ────────────────────────────────────────────────────
+  const checkInput = document.getElementById('rememberCheck');
+  const checkBox   = document.getElementById('checkBox');
+  const checkMark  = document.getElementById('checkMark');
+
+  checkInput.addEventListener('change', () => {
+    if (checkInput.checked) {
+      checkBox.style.background = '#0071E3';
+      checkBox.style.borderColor = '#0071E3';
+      checkMark.style.display = 'block';
+    } else {
+      checkBox.style.background = '';
+      checkBox.style.borderColor = '';
+      checkMark.style.display = 'none';
+    }
+  });
+
+  // ── PASSWORD TOGGLE ─────────────────────────────────────────────
+  const toggleBtn  = document.getElementById('togglePassword');
+  const pwdInput   = document.getElementById('password');
+  const eyeIcon    = document.getElementById('eyeIcon');
+
+  const eyeOpen  = `<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>`;
+  const eyeClosed = `<path d="M2 2l12 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M6.7 5.8A6.5 6.5 0 0 1 8 5.5c3.5 0 6 3.5 6.5 4.5a7 7 0 0 1-1.7 2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 7.2C2.7 8 1.5 9.5 1.5 10c.5.8 2 2.7 4 3.5M9.3 13.9A6.5 6.5 0 0 1 8 14c-3.5 0-6-3.5-6.5-4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>`;
+
+  let pwdVisible = false;
+  toggleBtn.addEventListener('click', () => {
+    pwdVisible = !pwdVisible;
+    pwdInput.type = pwdVisible ? 'text' : 'password';
+    eyeIcon.innerHTML = pwdVisible ? eyeClosed : eyeOpen;
+  });
+
+  // ── FORM VALIDATION & SUBMIT ────────────────────────────────────
+  const form       = document.getElementById('loginForm');
+  const nikInput   = document.getElementById('nik');
+  const submitBtn  = document.getElementById('submitBtn');
+  const errorAlert = document.getElementById('errorAlert');
+  const nikError   = document.getElementById('nikError');
+  const passwordErr= document.getElementById('passwordError');
+
+  function clearErrors() {
+    errorAlert.classList.remove('visible');
+    nikError.classList.remove('visible');
+    passwordErr.classList.remove('visible');
+    nikInput.classList.remove('error');
+    pwdInput.classList.remove('error');
+  }
+
+  function setLoading(state) {
+    submitBtn.classList.toggle('loading', state);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+
+    const nik      = nikInput.value.trim();
+    const password = pwdInput.value;
+    let valid = true;
+
+    // Validate NIK
+    if (!nik) {
+      nikInput.classList.add('error');
+      nikError.classList.add('visible');
+      valid = false;
+    }
+
+    // Validate password
+    if (!password) {
+      pwdInput.classList.add('error');
+      passwordErr.classList.add('visible');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 1800));
+    setLoading(false);
+
+    // Demo: coba NIK: EMP-001 / password: password
+    if (nik === 'EMP-001' && password === 'password') {
+      submitBtn.style.background = '#34C759';
+      submitBtn.querySelector('.btn-text').textContent = 'Berhasil masuk ✓';
+      setTimeout(() => {
+        submitBtn.style.background = '';
+        submitBtn.querySelector('.btn-text').textContent = 'Masuk';
+      }, 2000);
+    } else {
+      errorAlert.classList.add('visible');
+    }
+  });
+
+  // Clear error on input
+  nikInput.addEventListener('input', () => {
+    if (nikInput.classList.contains('error')) {
+      nikInput.classList.remove('error');
+      nikError.classList.remove('visible');
+      errorAlert.classList.remove('visible');
+    }
+  });
+
+  pwdInput.addEventListener('input', () => {
+    if (pwdInput.classList.contains('error')) {
+      pwdInput.classList.remove('error');
+      passwordErr.classList.remove('visible');
+      errorAlert.classList.remove('visible');
+    }
+  });
+</script>
+
+</body>
+</html>

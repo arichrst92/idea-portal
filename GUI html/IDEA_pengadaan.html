@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>IDEA — Pengadaan Barang</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--ol);color:var(--orange)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--orange)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.tb-bc{font-size:13px;color:var(--ink3)}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
+.btn-p{background:var(--orange);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.content{flex:1;overflow:hidden;display:flex}
+.list-col{width:340px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+.detail-col{flex:1;overflow-y:auto;padding:22px;background:var(--bg)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:12px 14px}
+.kpi-val{font-size:22px;font-weight:800;letter-spacing:-.6px;font-family:var(--mono)}
+.kpi-lbl{font-size:11px;color:var(--ink3)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700}
+.cb{padding:16px 18px}.cb.np{padding:0}
+.pr-item{padding:12px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.pr-item:hover{background:var(--bg)}.pr-item.active{background:var(--ol)}
+.pr-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.pr-title{font-size:13px;font-weight:700}
+.pr-meta{font-size:11px;color:var(--ink3)}
+/* Approval flow */
+.appr-flow{display:flex;align-items:center;gap:0}
+.appr-node{display:flex;flex-direction:column;align-items:center;gap:5px}
+.appr-circle{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.appr-line{flex:1;height:2px;background:var(--border);margin:0 4px;position:relative;top:-10px}
+.appr-line.done{background:var(--green)}
+.appr-label{font-size:10px;color:var(--ink3);text-align:center;width:60px}
+/* item table */
+.it-table{width:100%;border-collapse:collapse}
+.it-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding:8px 14px;text-align:left;background:var(--bg)}
+.it-table th.r{text-align:right}
+.it-table td{padding:9px 14px;font-size:12px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.it-table tr:last-child td{border-bottom:none}
+.it-table td.r{text-align:right;font-family:var(--mono)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head><body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div><div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div></div>
+  <div class="sb-user"><div class="sb-av">IP</div><div><div class="sb-uname">Intan Permata</div><div class="sb-urole">Staff · Finance</div></div></div>
+  <div class="sb-sec">Finance & Accounting</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📝</div>Input Transaksi</div>
+    <div class="ni"><div class="ni-ic">📊</div>Laporan Keuangan</div>
+    <div class="ni"><div class="ni-ic">🧾</div>Invoice &amp; AR</div>
+    <div class="ni active"><div class="ni-ic">🛒</div>Pengadaan</div>
+    <div class="ni"><div class="ni-ic">📂</div>Chart of Accounts</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Finance <span style="color:var(--border)">/</span> <strong>Pengadaan Barang</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s">📥 Import PR</button>
+      <button class="btn btn-p" onclick="alert('Buat Purchase Request')">+ Purchase Request</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- LIST -->
+    <div class="list-col">
+      <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border2)">
+        <input placeholder="Cari PR..." style="width:100%;height:32px;padding:0 10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;background:var(--surface)">
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-s" style="font-size:11px;padding:4px 10px;background:var(--ol);color:var(--orange);border-color:rgba(255,159,10,.2)">Pending (3)</button>
+          <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Approved (5)</button>
+          <button class="btn btn-s" style="font-size:11px;padding:4px 10px">Semua</button>
+        </div>
+      </div>
+      ${[
+        {no:'PR-2025-018',title:'Pembelian Laptop Developer x3',dept:'Teknologi',total:'Rp 54.000.000',status:'Pending Approval',sc:'to'},
+        {no:'PR-2025-017',title:'Pembelian AC Kantor x2',dept:'Umum',total:'Rp 14.000.000',status:'Pending Payment',sc:'tb'},
+        {no:'PR-2025-016',title:'Lisensi Software Adobe x5',dept:'Desain',total:'Rp 8.400.000',status:'Approved',sc:'tg'},
+        {no:'PR-2025-015',title:'Peralatan Jaringan Cisco',dept:'Teknologi',total:'Rp 32.000.000',status:'Approved',sc:'tg'},
+      ].map((p,i)=>`<div class="pr-item ${i===0?'active':''}" onclick="selectPR(this)">
+        <div class="pr-top"><div class="pr-title">${p.title}</div><span class="tag ${p.sc}" style="font-size:10px">${p.status}</span></div>
+        <div class="pr-meta">${p.no} · ${p.dept} · ${p.total}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- DETAIL -->
+    <div class="detail-col">
+      <!-- KPI -->
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val" style="color:var(--orange)">3</div><div class="kpi-lbl">Pending Approval</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--blue)">5</div><div class="kpi-lbl">Approved / Proses</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--green)">Rp 108jt</div><div class="kpi-lbl">Total YTD Pengadaan</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--red)">2</div><div class="kpi-lbl">Overdue Payment</div></div>
+      </div>
+
+      <!-- PR Detail -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:5px">PR-2025-018 · Teknologi</div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:3px">Pembelian Laptop Developer x3</div>
+            <div style="font-size:13px;color:var(--ink3)">Diajukan oleh: Andi Wibowo (GM Teknologi) · 5 Jul 2025</div></div>
+          <div style="text-align:right"><div style="font-size:11px;color:var(--ink3)">Total</div><div style="font-size:24px;font-weight:800;color:var(--orange);font-family:var(--mono)">Rp 54.000.000</div>
+            <span class="tag to" style="margin-top:4px">⏳ Pending Approval</span></div>
+        </div>
+      </div>
+
+      <!-- Approval Flow -->
+      <div class="card">
+        <div class="ch"><div class="ch-title">✅ Alur Persetujuan</div></div>
+        <div class="cb">
+          <div class="appr-flow">
+            <div class="appr-node"><div class="appr-circle" style="background:var(--gl);color:var(--green)">✓</div><div class="appr-label">Andi W. GM Teknologi</div></div>
+            <div class="appr-line done"></div>
+            <div class="appr-node"><div class="appr-circle" style="background:var(--gl);color:var(--green)">✓</div><div class="appr-label">Diana S. C-Level</div></div>
+            <div class="appr-line"></div>
+            <div class="appr-node"><div class="appr-circle" style="background:var(--ol);color:var(--orange)">⏳</div><div class="appr-label">Intan P. Finance</div></div>
+            <div class="appr-line"></div>
+            <div class="appr-node"><div class="appr-circle" style="background:var(--bg);color:var(--ink3)">💳</div><div class="appr-label">Proses Pembayaran</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="card">
+        <div class="ch"><div class="ch-title">📦 Detail Item</div></div>
+        <div style="overflow-x:auto">
+          <table class="it-table">
+            <thead><tr>
+              <th>Item</th><th>Spesifikasi</th><th class="r">Qty</th><th class="r">Harga Satuan</th><th class="r">Total</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Laptop MacBook Pro M3 14"</td><td style="color:var(--ink3)">16GB RAM, 512GB SSD</td><td class="r">2</td><td class="r">12.500.000</td><td class="r" style="font-weight:700">25.000.000</td></tr>
+              <tr><td style="font-weight:600">Laptop ThinkPad X1 Carbon</td><td style="color:var(--ink3)">Intel i7, 16GB, 512GB</td><td class="r">1</td><td class="r">18.000.000</td><td class="r" style="font-weight:700">18.000.000</td></tr>
+              <tr><td style="font-weight:600">Mouse & Keyboard Set</td><td style="color:var(--ink3)">Logitech MX Keys combo</td><td class="r">3</td><td class="r">2.000.000</td><td class="r" style="font-weight:700">6.000.000</td></tr>
+              <tr style="background:var(--bg)"><td colspan="4" style="font-weight:700">Total</td><td class="r" style="font-weight:800;color:var(--orange)">Rp 49.000.000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vendor -->
+      <div class="card">
+        <div class="ch"><div class="ch-title">🏪 Vendor &amp; Pembayaran</div></div>
+        <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:8px">Vendor</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:3px">PT iBox Indonesia</div>
+            <div style="font-size:12px;color:var(--ink3)">Official Apple Reseller</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:3px">invoice@ibox.co.id</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:8px">Pembayaran</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:3px">Transfer Bank BCA</div>
+            <div style="font-size:12px;color:var(--ink3)">Due: 20 Jul 2025</div>
+          </div>
+        </div>
+        <div style="padding:0 16px 14px;display:flex;gap:8px">
+          <button class="btn btn-p" style="flex:1;justify-content:center" onclick="alert('Approve PR')">✓ Approve &amp; Proses</button>
+          <button class="btn btn-s" style="flex:1;justify-content:center;color:var(--red)" onclick="alert('Tolak PR')">✕ Tolak</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>function selectPR(el){document.querySelectorAll('.pr-item').forEach(i=>i.classList.remove('active'));el.classList.add('active')}</script>
+</body></html>

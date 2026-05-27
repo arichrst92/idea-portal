@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDEA — Report per Karyawan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);
+  --ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--ink4:#3C3C4328;
+  --blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;
+  --orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;
+  --purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;
+  --font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:16px;--rm:12px;--rs:8px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}
+.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid var(--border2);transition:background .15s}
+.sb-user:hover{background:var(--border)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg);color:var(--ink)}
+.ni.active{background:var(--bl);color:var(--blue)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--blue);font-size:12px}
+.sb-div{height:1px;background:var(--border2);margin:6px 12px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(0,122,255,.3)}
+.btn-p:hover{background:#0069DB}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.btn-s:hover{background:var(--bg)}
+
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* EMPLOYEE SELECTOR */
+.emp-selector{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.emp-photo{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#BF5AF2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 3px 10px rgba(0,122,255,.3)}
+.emp-info{flex:1}
+.emp-name{font-size:18px;font-weight:800;letter-spacing:-.4px;margin-bottom:3px}
+.emp-meta{font-size:12px;color:var(--ink3);font-weight:500;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.emp-meta span{display:flex;align-items:center;gap:4px}
+.emp-actions{display:flex;gap:8px;flex-shrink:0}
+select.emp-switch{height:36px;padding:0 12px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);outline:none;background:var(--bg);cursor:pointer;font-weight:500}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:transform .2s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi-glow{position:absolute;width:60px;height:60px;border-radius:50%;top:-15px;right:-15px;opacity:.1;filter:blur(15px)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kpi-icon{width:34px;height:34px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:15px}
+.kpi-trend{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.kpi-val{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:3px}
+.kpi-lbl{font-size:11px;color:var(--ink3);font-weight:500}
+
+/* GRID */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px}
+.col-stack{display:flex;flex-direction:column;gap:16px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:var(--font)}
+.cb{padding:18px 20px}
+.cb.np{padding:0}
+
+/* SCORE RING */
+.ring-wrap{position:relative;width:100px;height:100px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--border);stroke-width:8}
+.ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-val{font-size:22px;font-weight:800;letter-spacing:-.8px;line-height:1}
+.ring-sub{font-size:10px;color:var(--ink3);font-weight:500;margin-top:1px}
+
+/* PERF BREAKDOWN */
+.perf-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.perf-row:last-child{border-bottom:none}
+.perf-lbl{flex:1;color:var(--ink2);font-weight:500}
+.perf-bar-track{width:80px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.perf-bar-fill{height:100%;border-radius:3px}
+.perf-score{font-size:13px;font-weight:700;width:30px;text-align:right}
+
+/* HISTORY CHART */
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:80px;margin-bottom:6px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar-body{width:100%;border-radius:4px 4px 0 0;min-height:4px;position:relative;cursor:pointer;transition:opacity .15s}
+.bar-body:hover{opacity:.8}
+.bar-body.current{outline:2px solid var(--blue);outline-offset:1px}
+.bar-label{font-size:9px;color:var(--ink3);font-weight:600}
+.bar-score-tip{position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.bar-body:hover .bar-score-tip{opacity:1}
+
+/* OKR */
+.okr-item{padding:12px 20px;border-bottom:1px solid var(--border2)}
+.okr-item:last-child{border-bottom:none}
+.okr-obj{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.okr-kr{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px}
+.okr-kr-name{flex:1;color:var(--ink2)}
+.okr-kr-bar{width:80px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.okr-kr-fill{height:100%;border-radius:2px}
+.okr-kr-pct{font-size:11px;font-weight:700;width:32px;text-align:right}
+
+/* PROJECT TABLE */
+.proj-row{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.proj-row:last-child{border-bottom:none}
+.proj-row:hover{background:var(--bg)}
+.proj-dot{width:4px;flex-shrink:0;align-self:stretch;border-radius:2px}
+.proj-info{flex:1;min-width:0}
+.proj-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.proj-meta{font-size:11px;color:var(--ink3);font-weight:500}
+.proj-pct{font-size:12px;font-weight:700;margin-bottom:3px;text-align:right}
+.pbar{width:70px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:2px}
+
+/* SP TIMELINE */
+.sp-item{display:flex;gap:12px;padding:10px 20px;border-bottom:1px solid var(--border2);font-size:13px}
+.sp-item:last-child{border-bottom:none}
+.sp-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.sp-body{flex:1}
+.sp-title{font-weight:600;margin-bottom:2px}
+.sp-meta{font-size:11px;color:var(--ink3)}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeUp .4s ease both}
+.kpi:nth-child(1){animation-delay:.04s}.kpi:nth-child(2){animation-delay:.08s}
+.kpi:nth-child(3){animation-delay:.12s}.kpi:nth-child(4){animation-delay:.16s}.kpi:nth-child(5){animation-delay:.20s}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-av">AW</div>
+    <div><div class="sb-uname">Andi Wibowo</div><div class="sb-urole">GM · Teknologi</div></div>
+  </div>
+  <div class="sb-sec">Dept. Teknologi</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">⊞</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🗂️</div>Project Management</div>
+    <div class="ni"><div class="ni-ic">👥</div>Employee Management</div>
+    <div class="ni"><div class="ni-ic">⭐</div>Penilaian</div>
+    <div class="ni active"><div class="ni-ic">📄</div>Report Karyawan</div>
+    <div class="ni"><div class="ni-ic">📁</div>Dokumentasi</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Teknologi <span style="color:var(--border);">/</span> <strong>Report per Karyawan</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s">📤 Export PDF</button>
+      <button class="btn btn-s">📊 Export Excel</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- EMPLOYEE SELECTOR -->
+    <div class="emp-selector">
+      <div class="emp-photo">RH</div>
+      <div class="emp-info">
+        <div class="emp-name">Rizky Hanafi</div>
+        <div class="emp-meta">
+          <span>💼 Lead Developer</span>
+          <span>🏢 Dept. Teknologi</span>
+          <span>📅 Bergabung 12 Mar 2021</span>
+          <span>🆔 EMP-047</span>
+        </div>
+      </div>
+      <div class="emp-actions">
+        <select class="emp-switch" onchange="alert('Ganti karyawan: '+this.value)">
+          <option>Rizky Hanafi</option>
+          <option>Siti Rahayu</option>
+          <option>Ahmad Fauzi</option>
+          <option>Budi Santoso</option>
+          <option>Citra Dewi</option>
+        </select>
+        <select class="emp-switch" onchange="alert('Ganti periode')">
+          <option>Juli 2025</option>
+          <option>Q2 2025</option>
+          <option>YTD 2025</option>
+          <option>2024 (Full Year)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-glow" style="background:var(--blue)"></div>
+        <div class="kpi-top"><div class="kpi-icon" style="background:var(--bl)">📊</div><div class="kpi-trend" style="background:var(--gl);color:var(--green)">↑ 5 pts</div></div>
+        <div class="kpi-val" style="color:var(--blue)">82</div><div class="kpi-lbl">Skor Bulan Ini</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-glow" style="background:var(--green)"></div>
+        <div class="kpi-top"><div class="kpi-icon" style="background:var(--gl)">🗂️</div><div class="kpi-trend" style="background:var(--bl);color:var(--blue)">Aktif</div></div>
+        <div class="kpi-val" style="color:var(--green)">3</div><div class="kpi-lbl">Project Aktif</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-glow" style="background:var(--purple)"></div>
+        <div class="kpi-top"><div class="kpi-icon" style="background:var(--pl)">⭐</div><div class="kpi-trend" style="background:var(--bg);color:var(--ink3)">4 thn</div></div>
+        <div class="kpi-val" style="color:var(--purple)">78.4</div><div class="kpi-lbl">Avg Skor (YTD)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-glow" style="background:var(--orange)"></div>
+        <div class="kpi-top"><div class="kpi-icon" style="background:var(--ol)">🗓️</div><div class="kpi-trend" style="background:var(--bg);color:var(--ink3)">dari 12</div></div>
+        <div class="kpi-val" style="color:var(--orange)">8</div><div class="kpi-lbl">Sisa Cuti</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-glow" style="background:var(--teal)"></div>
+        <div class="kpi-top"><div class="kpi-icon" style="background:var(--tl)">⚠️</div><div class="kpi-trend" style="background:var(--gl);color:var(--green)">Clear</div></div>
+        <div class="kpi-val" style="color:var(--teal)">0</div><div class="kpi-lbl">SP Aktif</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+      <div class="col-stack">
+
+        <!-- Skor & Trend -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">⭐ Skor Kinerja &amp; Trend</div><span class="tag tb">12 Bulan Terakhir</span></div>
+          <div class="cb">
+            <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:16px">
+              <div class="ring-wrap">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle class="ring-track" cx="50" cy="50" r="41"/>
+                  <circle class="ring-fill" cx="50" cy="50" r="41" stroke="var(--blue)" stroke-dasharray="257.61" stroke-dashoffset="257.61" id="scoreRing"/>
+                </svg>
+                <div class="ring-center"><div class="ring-val" style="color:var(--blue)">82</div><div class="ring-sub">/100</div></div>
+              </div>
+              <div style="flex:1">
+                <div class="perf-row"><span class="perf-lbl">OKR Achievement</span><div class="perf-bar-track"><div class="perf-bar-fill" style="width:85%;background:var(--blue)"></div></div><span class="perf-score" style="color:var(--blue)">85</span></div>
+                <div class="perf-row"><span class="perf-lbl">Weighted Score</span><div class="perf-bar-track"><div class="perf-bar-fill" style="width:78%;background:var(--purple)"></div></div><span class="perf-score" style="color:var(--purple)">78</span></div>
+                <div class="perf-row"><span class="perf-lbl">Attitude</span><div class="perf-bar-track"><div class="perf-bar-fill" style="width:90%;background:var(--green)"></div></div><span class="perf-score" style="color:var(--green)">90</span></div>
+                <div class="perf-row"><span class="perf-lbl">Kehadiran</span><div class="perf-bar-track"><div class="perf-bar-fill" style="width:75%;background:var(--orange)"></div></div><span class="perf-score" style="color:var(--orange)">75</span></div>
+                <div class="perf-row"><span class="perf-lbl">Kolaborasi</span><div class="perf-bar-track"><div class="perf-bar-fill" style="width:80%;background:var(--teal)"></div></div><span class="perf-score" style="color:var(--teal)">80</span></div>
+              </div>
+            </div>
+            <!-- 12-month bar chart -->
+            <div style="padding-top:14px;border-top:1px solid var(--border2)">
+              <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:8px">Trend 12 Bulan</div>
+              <div class="chart-bars" id="trendBars"></div>
+              <div style="display:flex;gap:8px" id="trendLabels"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OKR -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">🎯 OKR Progress — Q3 2025</div><span class="tag tg">On Track</span></div>
+          <div class="cb np">
+            <div class="okr-item">
+              <div class="okr-obj"><span style="background:var(--bl);color:var(--blue);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">O1</span>Deliver API Gateway Milestone 2 sesuai timeline</div>
+              <div class="okr-kr"><span class="okr-kr-name">KR1: Deploy staging environment selesai</span><div class="okr-kr-bar"><div class="okr-kr-fill" style="width:70%;background:var(--orange)"></div></div><span class="okr-kr-pct" style="color:var(--orange)">70%</span></div>
+              <div class="okr-kr"><span class="okr-kr-name">KR2: Semua endpoint authentication tested</span><div class="okr-kr-bar"><div class="okr-kr-fill" style="width:55%;background:var(--orange)"></div></div><span class="okr-kr-pct" style="color:var(--orange)">55%</span></div>
+              <div class="okr-kr"><span class="okr-kr-name">KR3: Load test 10k req/s passed</span><div class="okr-kr-bar"><div class="okr-kr-fill" style="width:20%;background:var(--red)"></div></div><span class="okr-kr-pct" style="color:var(--red)">20%</span></div>
+            </div>
+            <div class="okr-item">
+              <div class="okr-obj"><span style="background:var(--gl);color:var(--green);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">O2</span>Improve code quality & review coverage</div>
+              <div class="okr-kr"><span class="okr-kr-name">KR1: Code coverage ≥ 80% di semua module</span><div class="okr-kr-bar"><div class="okr-kr-fill" style="width:88%;background:var(--green)"></div></div><span class="okr-kr-pct" style="color:var(--green)">88%</span></div>
+              <div class="okr-kr"><span class="okr-kr-name">KR2: PR review turnaround &lt; 24 jam</span><div class="okr-kr-bar"><div class="okr-kr-fill" style="width:95%;background:var(--green)"></div></div><span class="okr-kr-pct" style="color:var(--green)">95%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Involvement -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">🗂️ Keterlibatan Project</div><button class="ch-action">Detail →</button></div>
+          <div class="cb np">
+            <div class="proj-row"><div class="proj-dot" style="background:var(--blue)"></div><div class="proj-info"><div class="proj-name">API Gateway Integration — PT Telkom</div><div class="proj-meta">PM · Client Project · Due 15 Okt 2025</div></div><div><div class="proj-pct" style="color:var(--blue)">45%</div><div class="pbar"><div class="pbar-fill" style="width:45%;background:var(--blue)"></div></div></div></div>
+            <div class="proj-row"><div class="proj-dot" style="background:var(--green)"></div><div class="proj-info"><div class="proj-name">HRIS Modernisasi — Bank Nusantara</div><div class="proj-meta">Member · Client Project · Due 31 Agt 2025</div></div><div><div class="proj-pct" style="color:var(--green)">72%</div><div class="pbar"><div class="pbar-fill" style="width:72%;background:var(--green)"></div></div></div></div>
+            <div class="proj-row"><div class="proj-dot" style="background:var(--purple)"></div><div class="proj-info"><div class="proj-name">Portal Internal IDEA (R&amp;D)</div><div class="proj-meta">Member · Internal · Due 1 Jan 2026</div></div><div><div class="proj-pct" style="color:var(--purple)">28%</div><div class="pbar"><div class="pbar-fill" style="width:28%;background:var(--purple)"></div></div></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col-stack">
+
+        <!-- Profile Card -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">👤 Info Karyawan</div></div>
+          <div class="cb">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px"><span style="color:var(--ink3)">Status</span><span class="tag tg">Aktif</span></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px"><span style="color:var(--ink3)">Kontrak</span><span style="font-weight:600">PKWTT</span></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px"><span style="color:var(--ink3)">Masa Kerja</span><span style="font-weight:600">4 thn 3 bln</span></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px"><span style="color:var(--ink3)">Atasan</span><span style="font-weight:600">Andi Wibowo</span></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px"><span style="color:var(--ink3)">Level</span><span style="font-weight:600">Lead (L5)</span></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span style="color:var(--ink3)">Cuti dipakai YTD</span><span style="font-weight:600">4 hari</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SP History -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">⚠️ Riwayat SP</div><span class="tag tg">Bersih</span></div>
+          <div class="cb np">
+            <div style="padding:24px 20px;text-align:center">
+              <div style="font-size:32px;margin-bottom:8px">✅</div>
+              <div style="font-size:13px;font-weight:600;color:var(--ink2)">Tidak ada SP aktif</div>
+              <div style="font-size:12px;color:var(--ink3);margin-top:4px">Karyawan ini tidak pernah menerima Surat Peringatan</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Scores Table -->
+        <div class="card">
+          <div class="ch"><div class="ch-title">📅 Skor Bulanan 2025</div></div>
+          <div class="cb np">
+            ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul'].map((m,i)=>{
+              const scores=[72,68,74,76,75,77,82];
+              const score=scores[i];
+              const color=score>=80?'var(--green)':score>=70?'var(--blue)':score>=60?'var(--orange)':'var(--red)';
+              const isLast=i===6;
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 20px;border-bottom:1px solid var(--border2);font-size:13px;${isLast?'background:var(--bl);':''}">
+                <span style="font-weight:${isLast?'700':'500'}">${m} 2025${isLast?' (terkini)':''}</span>
+                <span style="font-weight:800;color:${color};font-family:var(--mono)">${score}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+// Ring animation
+window.addEventListener('load',()=>{
+  const ring=document.getElementById('scoreRing');
+  const circ=257.61;
+  ring.style.strokeDashoffset=circ;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    ring.style.transition='stroke-dashoffset 1.3s cubic-bezier(.4,0,.2,1)';
+    ring.style.strokeDashoffset=circ-(82/100)*circ;
+  }));
+});
+// Trend bars
+const months=['Agt','Sep','Okt','Nov','Des','Jan','Feb','Mar','Apr','Mei','Jun','Jul'];
+const scores=[68,71,69,73,70,72,68,74,76,75,77,82];
+const maxS=Math.max(...scores);
+const bars=document.getElementById('trendBars');
+const lbls=document.getElementById('trendLabels');
+months.forEach((m,i)=>{
+  const isLast=i===months.length-1;
+  const pct=scores[i]/maxS*100;
+  const color=scores[i]>=80?'var(--green)':scores[i]>=70?'var(--blue)':'var(--orange)';
+  const col=document.createElement('div');col.className='bar-col';
+  col.innerHTML=`<div class="bar-body${isLast?' current':''}" style="height:${pct}%;background:${isLast?'var(--blue)':'var(--border)'};${isLast?'':'border:1px solid var(--border2)'}">
+    <div class="bar-score-tip">${scores[i]}</div>
+  </div>`;
+  bars.appendChild(col);
+  const l=document.createElement('div');l.style.cssText='flex:1;font-size:9px;color:var(--ink3);text-align:center;font-weight:600';l.textContent=m;
+  lbls.appendChild(l);
+});
+</script>
+</body>
+</html>

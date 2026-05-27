@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Payroll Processing</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#30D158,#00C7BE);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--gl);color:var(--green)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--green);font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(48,209,88,.3)}.btn-p:hover{background:#28C44E}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* PROGRESS BAR */
+.progress-steps{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
+.step{flex:1;padding:14px 16px;display:flex;align-items:center;gap:10px;border-right:1px solid var(--border);cursor:pointer;transition:all .15s}
+.step:last-child{border-right:none}
+.step.done{background:var(--gl)}.step.active{background:var(--bl)}.step.pending{background:var(--surface)}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step.done .step-num{background:var(--green);color:#fff}
+.step.active .step-num{background:var(--blue);color:#fff}
+.step.pending .step-num{background:var(--bg);color:var(--ink3)}
+.step-body{flex:1}
+.step-title{font-size:12px;font-weight:700}
+.step-meta{font-size:10px;color:var(--ink3);font-weight:500;margin-top:1px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.kpi-val{font-size:26px;font-weight:800;letter-spacing:-.8px;margin-bottom:3px;font-family:var(--mono)}
+.kpi-lbl{font-size:12px;color:var(--ink3);font-weight:500}
+
+/* GRID */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:var(--font)}
+.cb{padding:16px 18px}.cb.np{padding:0}
+
+/* EMPLOYEE PAYROLL TABLE */
+.proll-table{width:100%;border-collapse:collapse}
+.proll-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);padding:9px 14px;text-align:left;background:var(--bg);white-space:nowrap}
+.proll-table th.num{text-align:right}
+.proll-table td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border2);vertical-align:middle;transition:background .1s}
+.proll-table tr:hover td{background:var(--bg)}
+.proll-table tr:last-child td{border-bottom:none}
+.proll-table td.num{text-align:right;font-family:var(--mono);font-size:11px}
+.proll-table td.positive{color:var(--green);font-weight:700}
+.proll-table td.negative{color:var(--red);font-weight:700}
+.emp-cell{display:flex;align-items:center;gap:8px}
+.emp-mini-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.proll-table tr.total-row td{background:var(--ink);color:#fff;font-weight:700}
+.proll-table tr.total-row td.num{font-size:12px}
+
+/* VARIABLE INPUT */
+.var-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.var-item:last-child{border-bottom:none}
+.var-label{flex:1;font-weight:500}
+.var-input{width:120px;height:32px;padding:0 10px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--mono);outline:none;text-align:right;transition:border-color .15s}
+.var-input:focus{border-color:var(--blue)}
+
+/* STATUS BADGE */
+.st-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">RW</div><div><div class="sb-uname">Reni Wahyuni</div><div class="sb-urole">GM · Operation</div></div></div>
+  <div class="sb-sec">Dept. Operation</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">👥</div>Hiring</div>
+    <div class="ni"><div class="ni-ic">🚪</div>Layoff &amp; Resign</div>
+    <div class="ni"><div class="ni-ic">⚠️</div>Surat Peringatan</div>
+    <div class="ni"><div class="ni-ic">🔗</div>Outsource</div>
+    <div class="ni active"><div class="ni-ic">💰</div>Payroll</div>
+    <div class="ni"><div class="ni-ic">✅</div>Onboarding</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Operation <span style="color:var(--border)">/</span> <strong>Payroll Processing</strong></div>
+    <div class="tb-r">
+      <div style="background:var(--ol);border:1px solid rgba(255,159,10,.2);border-radius:var(--rs);padding:5px 12px;font-size:12px;font-weight:600;color:var(--orange)">⏰ Deadline Submit: 28 Jul 2025</div>
+      <select style="height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:var(--font);background:var(--bg);outline:none">
+        <option>Juli 2025</option><option>Juni 2025</option>
+      </select>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- STEP PROGRESS -->
+    <div class="progress-steps">
+      <div class="step done" onclick="alert('Step 1 sudah selesai')">
+        <div class="step-num">✓</div>
+        <div class="step-body"><div class="step-title">Data Absensi &amp; Cuti</div><div class="step-meta">Auto-pulled ✓</div></div>
+      </div>
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-body"><div class="step-title">Input Lembur</div><div class="step-meta">Selesai 23 Jul</div></div>
+      </div>
+      <div class="step active">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="step-title" style="color:var(--blue)">Input Variable</div><div class="step-meta" style="color:var(--blue)">Sedang dikerjakan</div></div>
+      </div>
+      <div class="step pending">
+        <div class="step-num">4</div>
+        <div class="step-body"><div class="step-title" style="color:var(--ink3)">Review &amp; Submit</div><div class="step-meta">Menunggu step 3</div></div>
+      </div>
+      <div class="step pending">
+        <div class="step-num">5</div>
+        <div class="step-body"><div class="step-title" style="color:var(--ink3)">Proses Finance</div><div class="step-meta">Setelah disubmit</div></div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" style="color:var(--blue)">25</div><div class="kpi-lbl">Total Karyawan</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">Rp 312jt</div><div class="kpi-lbl">Estimasi Total Payroll</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">3</div><div class="kpi-lbl">Penilaian Belum Submit</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">Rp 8,4jt</div><div class="kpi-lbl">Total Lembur Bulan Ini</div></div>
+    </div>
+
+    <!-- WARNING: Atasan yang belum submit penilaian -->
+    <div style="background:var(--ol);border:1px solid rgba(255,159,10,.2);border-radius:var(--rm);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:16px">⚠️</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--orange)">3 atasan belum submit penilaian — payroll ditahan</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:2px">Payroll untuk bawahan mereka tidak dapat diproses sampai penilaian bulan Juli disubmit.</div>
+      </div>
+      <button class="btn btn-s" onclick="alert('Kirim reminder ke atasan')">📧 Kirim Reminder</button>
+    </div>
+
+    <div class="main-grid">
+      <div>
+        <!-- Payroll Table -->
+        <div class="card">
+          <div class="ch">
+            <div class="ch-title">📋 Rekap Payroll Juli 2025</div>
+            <div style="display:flex;gap:6px">
+              <span class="tag tg">22 siap proses</span>
+              <span class="tag to">3 ditahan</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="proll-table">
+              <thead>
+                <tr>
+                  <th>Karyawan</th>
+                  <th>Dept</th>
+                  <th class="num">Gaji Pokok</th>
+                  <th class="num">Lembur</th>
+                  <th class="num">Bonus</th>
+                  <th class="num">Potongan</th>
+                  <th class="num">Take Home</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${[
+                  {n:'Rizky Hanafi',i:'RH',c:'#007AFF',d:'Teknologi',gp:'12.500.000',lm:'800.000',bn:'0',pt:'1.875.000',th:'11.425.000',s:'ready'},
+                  {n:'Andi Wibowo',i:'AW',c:'#30D158',d:'Teknologi',gp:'18.000.000',lm:'0',bn:'2.000.000',pt:'3.000.000',th:'17.000.000',s:'ready'},
+                  {n:'Fajar Nugraha',i:'FN',c:'#FF9F0A',d:'Sales',gp:'10.000.000',lm:'0',bn:'3.500.000',pt:'2.025.000',th:'11.475.000',s:'ready'},
+                  {n:'Maya Sari',i:'MS',c:'#BF5AF2',d:'Sales',gp:'14.000.000',lm:'0',bn:'0',pt:'2.100.000',th:'11.900.000',s:'hold'},
+                  {n:'Intan Permata',i:'IP',c:'#32D2F2',d:'Finance',gp:'13.000.000',lm:'0',bn:'0',pt:'1.950.000',th:'11.050.000',s:'ready'},
+                  {n:'Budi Santoso',i:'BS',c:'#FF453A',d:'Teknologi',gp:'11.000.000',lm:'1.200.000',bn:'0',pt:'1.830.000',th:'10.370.000',s:'hold'},
+                ].map(e=>`<tr>
+                  <td><div class="emp-cell"><div class="emp-mini-av" style="background:${e.c}">${e.i}</div><span style="font-weight:600">${e.n}</span></div></td>
+                  <td style="color:var(--ink3);font-size:12px">${e.d}</td>
+                  <td class="num">${e.gp}</td>
+                  <td class="num ${e.lm!=='0'?'positive':''}">${e.lm!=='0'?'+'+e.lm:'—'}</td>
+                  <td class="num ${e.bn!=='0'?'positive':''}">${e.bn!=='0'?'+'+e.bn:'—'}</td>
+                  <td class="num negative">-${e.pt}</td>
+                  <td class="num" style="font-weight:700;color:var(--ink)">${e.th}</td>
+                  <td><span class="tag ${e.s==='ready'?'tg':'to'}">${e.s==='ready'?'✓ Siap':'⏸ Ditahan'}</span></td>
+                </tr>`).join('')}
+                <tr class="total-row">
+                  <td colspan="6" style="font-size:13px">Total Payroll Juli 2025 (22 karyawan siap)</td>
+                  <td class="num" style="color:#86EFAC;font-family:var(--mono)">Rp 312.450.000</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Variable Input -->
+      <div>
+        <div class="card">
+          <div class="ch"><div class="ch-title">⚡ Input Variable — Fajar Nugraha</div></div>
+          <div class="cb">
+            <div style="font-size:11px;color:var(--ink3);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px">Komponen Tambahan</div>
+            <div class="var-item">
+              <span class="var-label">Lembur (jam)</span>
+              <input type="number" class="var-input" value="0" placeholder="0" oninput="recalc()">
+            </div>
+            <div class="var-item">
+              <span class="var-label">Komisi Sales</span>
+              <input type="text" class="var-input" value="3,500,000" placeholder="0" oninput="recalc()">
+            </div>
+            <div class="var-item">
+              <span class="var-label">Bonus Target</span>
+              <input type="text" class="var-input" value="0" placeholder="0" oninput="recalc()">
+            </div>
+            <div class="var-item">
+              <span class="var-label">Potongan Custom</span>
+              <input type="text" class="var-input" value="0" placeholder="0" oninput="recalc()">
+            </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:2px solid var(--border);display:flex;flex-direction:column;gap:6px;font-size:13px">
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--ink3)">Gaji Pokok</span><span style="font-family:var(--mono)">10.000.000</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">+ Komisi</span><span style="font-family:var(--mono);color:var(--green)">3.500.000</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">- BPJS + PPh21</span><span style="font-family:var(--mono);color:var(--red)">-2.025.000</span></div>
+              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;padding-top:6px;border-top:1px solid var(--border2)"><span>Take Home</span><span style="font-family:var(--mono);color:var(--blue)">Rp 11.475.000</span></div>
+            </div>
+            <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center" onclick="alert('Komponen disimpan')">💾 Simpan Komponen</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><div class="ch-title">📤 Submit ke Finance</div></div>
+          <div class="cb">
+            <div style="font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px">Setelah semua komponen payroll diverifikasi, submit rekap ke Finance untuk diproses.</div>
+            <div style="background:var(--bg);border-radius:var(--rs);padding:12px;margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:var(--ink3)">Karyawan siap proses</span><span style="font-weight:700;color:var(--green)">22 / 25</span></div>
+              <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:88%;height:100%;background:var(--green);border-radius:3px"></div></div>
+            </div>
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="alert('Rekap payroll dikirim ke Finance')">📤 Submit Rekap ke Finance</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function recalc(){
+  // simple demo recalc
+  const komisi=parseInt((document.querySelectorAll('.var-input')[1].value||'0').replace(/\D/g,''))||0;
+  const bonus=parseInt((document.querySelectorAll('.var-input')[2].value||'0').replace(/\D/g,''))||0;
+  const base=10000000;
+  const total=base+komisi+bonus;
+  const pot=Math.round(total*0.162);
+  const thp=total-pot;
+  const rows=document.querySelectorAll('.var-item~div div');
+  // just alert for demo
+}
+</script>
+</body>
+</html>

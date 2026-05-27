@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — People Analytics (Executive)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:#0A0A0F;color:#fff;display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{width:34px;height:34px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:rgba(255,255,255,.5);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:var(--rm);display:flex;align-items:center;gap:10px;cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#BF5AF2,#FF453A);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:rgba(255,255,255,.55);font-weight:500}
+.sb-persona{margin:6px 12px 12px;padding:6px 10px;background:linear-gradient(135deg,#BF5AF2,#7C3AED);border-radius:var(--rs);font-size:10px;font-weight:700;text-align:center;letter-spacing:.5px}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.4)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:rgba(255,255,255,.05);color:#fff}
+.ni.active{background:rgba(191,90,242,.18);color:#BF5AF2}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:rgba(255,255,255,.06)}
+.ni.active .ni-ic{background:#BF5AF2;color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.tb-r{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:#0A0A0F;color:#fff}.btn-p:hover{background:#1A1A20}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-purple{background:var(--purple);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* PERIOD SELECTOR */
+.period-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.pb-left{display:flex;align-items:center;gap:14px}
+.pb-title{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.pb-tags{display:flex;gap:6px}
+.period-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2)}
+.period-pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* HEADLINE STATS */
+.headline-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.hl{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+.hl-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.hl-lbl{font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.hl-trend{font-size:11px;font-weight:700;font-family:var(--mono);padding:2px 7px;border-radius:20px}
+.hl-trend.up{background:var(--gl);color:var(--green)}
+.hl-trend.down{background:var(--rl);color:var(--red)}
+.hl-trend.flat{background:var(--bg);color:var(--ink3)}
+.hl-val{font-size:30px;font-weight:800;letter-spacing:-.8px;font-family:var(--mono);line-height:1}
+.hl-sub{font-size:11px;color:var(--ink3);margin-top:5px}
+
+/* MAIN GRID */
+.grid-main{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ch{padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ch-action{font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--font)}
+.cb{padding:18px 20px}
+
+/* BELL CURVE */
+.bell-wrap{padding:0 4px}
+.bell-chart{height:240px;display:flex;align-items:flex-end;gap:4px;padding:0 8px;position:relative;border-bottom:1px solid var(--border)}
+.bell-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bell-rect{width:100%;border-radius:4px 4px 0 0;transition:all .3s;cursor:pointer;position:relative}
+.bell-rect:hover{filter:brightness(1.1)}
+.bell-count{font-size:11px;font-weight:800;color:var(--ink);margin-bottom:4px;font-family:var(--mono)}
+.bell-xaxis{display:flex;gap:4px;padding:8px;font-size:10px;color:var(--ink3);font-weight:600}
+.bell-xaxis>div{flex:1;text-align:center}
+.bell-mark{position:absolute;width:2px;background:var(--red);opacity:.6}
+.bell-mark::before{content:attr(data-label);position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--red);font-weight:700;background:var(--surface);padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+/* HEATMAP */
+.heatmap-grid{display:grid;grid-template-columns:120px repeat(6,1fr);gap:4px;font-size:11px}
+.hm-header{font-size:10px;color:var(--ink3);font-weight:700;text-align:center;padding:6px 0;text-transform:uppercase;letter-spacing:.5px}
+.hm-row-label{padding:8px 0;font-weight:700;font-size:12px;color:var(--ink)}
+.hm-cell{padding:10px 6px;text-align:center;border-radius:5px;font-weight:700;font-family:var(--mono);color:#fff;font-size:12px;cursor:pointer;transition:transform .12s}
+.hm-cell:hover{transform:scale(1.05)}
+
+/* PERFORMER LIST */
+.perf-list{display:flex;flex-direction:column;gap:0}
+.perf-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.perf-row:last-child{border-bottom:none}
+.perf-rank{width:24px;height:24px;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:var(--mono);flex-shrink:0}
+.perf-rank.gold{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff}
+.perf-rank.silver{background:linear-gradient(135deg,#C0C0C0,#808080);color:#fff}
+.perf-rank.bronze{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
+.perf-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.perf-info{flex:1;min-width:0}
+.perf-name{font-size:12px;font-weight:700;letter-spacing:-.1px}
+.perf-meta{font-size:10px;color:var(--ink3)}
+.perf-score{font-size:14px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px}
+.perf-trend{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;font-family:var(--mono)}
+
+/* TREND CHART */
+.trend-chart{padding:0 8px;height:160px;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid var(--border);position:relative}
+.tc-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;position:relative}
+.tc-bars{display:flex;gap:2px;align-items:flex-end;width:100%;height:calc(100% - 18px)}
+.tc-bar{flex:1;border-radius:3px 3px 0 0;transition:all .2s;cursor:pointer}
+.tc-bar:hover{filter:brightness(1.1)}
+.tc-label{font-size:9px;color:var(--ink3);font-weight:600;margin-top:5px}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;padding:10px 20px;background:var(--bg);font-size:11px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:6px;color:var(--ink2);font-weight:500}
+.leg-dot{width:10px;height:10px;border-radius:3px}
+
+/* DEPT COMPARE */
+.dept-cmp-row{display:grid;grid-template-columns:1fr 60px 1fr 1fr 1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2);align-items:center;font-size:12px}
+.dept-cmp-row:last-child{border-bottom:none}
+.dept-name{font-weight:700;display:flex;align-items:center;gap:8px}
+.dept-color{width:8px;height:24px;border-radius:2px}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="#0A0A0F"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="#0A0A0F" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Executive Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">SH</div><div><div class="sb-uname">Siti Hartono</div><div class="sb-urole">Wakil Direktur Utama</div></div></div>
+  <div class="sb-persona">🎭 Persona: Wakil Direktur Utama</div>
+  <div class="sb-sec">Executive Suite</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">📊</div>Overview Dashboard</div>
+    <div class="ni"><div class="ni-ic">💼</div>P&amp;L &amp; EBITDA</div>
+    <div class="ni"><div class="ni-ic">🤖</div>AI Summary</div>
+    <div class="ni active"><div class="ni-ic">👥</div>People Analytics</div>
+    <div class="ni"><div class="ni-ic">📋</div>Project Health</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Executive <span style="color:var(--border)">/</span> <strong>People Analytics</strong></div>
+    <div class="tb-r">
+      <button class="btn btn-s">🤖 AI Insight</button>
+      <button class="btn btn-s">📥 Export PDF</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PERIOD BAR -->
+    <div class="period-bar">
+      <div class="pb-left">
+        <div class="pb-title">People Analytics</div>
+        <div class="pb-tags">
+          <span class="tag tp">🎭 Wakil Direktur view</span>
+          <span class="tag tgr">All 4 dept</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="period-pill">Bulan ini</button>
+        <button class="period-pill active">YTD 2026</button>
+        <button class="period-pill">12 bulan</button>
+        <button class="period-pill">Custom</button>
+      </div>
+    </div>
+
+    <!-- HEADLINE STATS -->
+    <div class="headline-row">
+      <div class="hl">
+        <div class="hl-top">
+          <div class="hl-lbl">Total Headcount</div>
+          <div class="hl-trend up">↑ +8</div>
+        </div>
+        <div class="hl-val">156</div>
+        <div class="hl-sub">vs 148 awal Jan</div>
+      </div>
+      <div class="hl">
+        <div class="hl-top">
+          <div class="hl-lbl">Avg Rating</div>
+          <div class="hl-trend up">↑ +1.2</div>
+        </div>
+        <div class="hl-val" style="color:var(--green)">79.4</div>
+        <div class="hl-sub">target: 75 · achieved</div>
+      </div>
+      <div class="hl">
+        <div class="hl-top">
+          <div class="hl-lbl">Turnover Rate</div>
+          <div class="hl-trend down">↓ -0.8%</div>
+        </div>
+        <div class="hl-val">4.2<span style="font-size:18px">%</span></div>
+        <div class="hl-sub">YTD · industry avg 7%</div>
+      </div>
+      <div class="hl">
+        <div class="hl-top">
+          <div class="hl-lbl">SP Aktif</div>
+          <div class="hl-trend up">↑ +1</div>
+        </div>
+        <div class="hl-val" style="color:var(--orange)">5</div>
+        <div class="hl-sub">3 Internal · 2 Outsource</div>
+      </div>
+      <div class="hl">
+        <div class="hl-top">
+          <div class="hl-lbl">Promosi YTD</div>
+          <div class="hl-trend flat">→ 0</div>
+        </div>
+        <div class="hl-val" style="color:var(--blue)">12</div>
+        <div class="hl-sub">target 2026: 24</div>
+      </div>
+    </div>
+
+    <!-- ROW 1: BELL CURVE + TOP PERFORMERS -->
+    <div class="grid-main">
+      <!-- BELL CURVE -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">📊 Rating Distribution (Bell Curve)</div>
+          <span class="tag tgr">Mei 2026 · n=156</span>
+        </div>
+        <div class="cb bell-wrap">
+          <div class="bell-chart">
+            <!-- Threshold marker -->
+            <div class="bell-mark" style="left:20%;height:100%" data-label="SP threshold (60)"></div>
+            <!-- Bars: <50, 50-59, 60-69, 70-79, 80-89, 90-100 -->
+            <div class="bell-bar">
+              <div class="bell-count">3</div>
+              <div class="bell-rect" style="height:12%;background:linear-gradient(180deg,#FF453A,#C0392B)" title="3 karyawan"></div>
+            </div>
+            <div class="bell-bar">
+              <div class="bell-count">8</div>
+              <div class="bell-rect" style="height:25%;background:linear-gradient(180deg,#FF9F0A,#FF6B00)" title="8 karyawan"></div>
+            </div>
+            <div class="bell-bar">
+              <div class="bell-count">22</div>
+              <div class="bell-rect" style="height:55%;background:linear-gradient(180deg,#FFC940,#FF9F0A)" title="22 karyawan"></div>
+            </div>
+            <div class="bell-bar">
+              <div class="bell-count">68</div>
+              <div class="bell-rect" style="height:95%;background:linear-gradient(180deg,#007AFF,#0064CC)" title="68 karyawan · median 78"></div>
+            </div>
+            <div class="bell-bar">
+              <div class="bell-count">42</div>
+              <div class="bell-rect" style="height:75%;background:linear-gradient(180deg,#30D158,#28b549)" title="42 karyawan"></div>
+            </div>
+            <div class="bell-bar">
+              <div class="bell-count">13</div>
+              <div class="bell-rect" style="height:35%;background:linear-gradient(180deg,#BF5AF2,#7C3AED)" title="13 top performer"></div>
+            </div>
+          </div>
+          <div class="bell-xaxis">
+            <div>&lt; 50</div>
+            <div>50–59</div>
+            <div>60–69</div>
+            <div>70–79</div>
+            <div>80–89</div>
+            <div>90–100</div>
+          </div>
+
+          <!-- Quick stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2)">
+            <div style="text-align:center"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--red)">11</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Below Threshold</div></div>
+            <div style="text-align:center"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--blue)">78.4</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Median</div></div>
+            <div style="text-align:center"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--green)">35%</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">High Perf (80+)</div></div>
+            <div style="text-align:center"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--purple)">13</div><div style="font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase">Top 10% (90+)</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP PERFORMERS -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">⭐ Top Performers (Mei)</div>
+          <button class="ch-action">Lihat semua →</button>
+        </div>
+        <div class="cb">
+          <div class="perf-list">
+            <div class="perf-row">
+              <div class="perf-rank gold">1</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>
+              <div class="perf-info">
+                <div class="perf-name">Budi Santoso</div>
+                <div class="perf-meta">Senior Developer · Teknologi</div>
+              </div>
+              <div class="perf-score" style="color:var(--green)">92</div>
+              <div class="perf-trend" style="background:var(--gl);color:var(--green)">↑ +4</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank silver">2</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">RH</div>
+              <div class="perf-info">
+                <div class="perf-name">Rizky Hanafi</div>
+                <div class="perf-meta">Lead Developer · Teknologi</div>
+              </div>
+              <div class="perf-score" style="color:var(--green)">91</div>
+              <div class="perf-trend" style="background:var(--gl);color:var(--green)">↑ +2</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank bronze">3</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">DA</div>
+              <div class="perf-info">
+                <div class="perf-name">Dewi Anggraini</div>
+                <div class="perf-meta">Lead Marketing · Sales</div>
+              </div>
+              <div class="perf-score" style="color:var(--green)">90</div>
+              <div class="perf-trend" style="background:var(--gl);color:var(--green)">↑ +5</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank">4</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#BF5AF2,#7C3AED)">FK</div>
+              <div class="perf-info">
+                <div class="perf-name">Fitri Kusuma</div>
+                <div class="perf-meta">Finance Manager · Finance</div>
+              </div>
+              <div class="perf-score" style="color:var(--green)">88</div>
+              <div class="perf-trend" style="background:var(--bg);color:var(--ink3)">→ 0</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank">5</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#32D2F2,#007AFF)">PA</div>
+              <div class="perf-info">
+                <div class="perf-name">Putri Andini</div>
+                <div class="perf-meta">QA Lead · Teknologi</div>
+              </div>
+              <div class="perf-score" style="color:var(--green)">88</div>
+              <div class="perf-trend" style="background:var(--gl);color:var(--green)">↑ +3</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding:10px 12px;background:var(--gl);border-radius:var(--rs);font-size:11px;color:var(--green);display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px">💡</span>
+            <strong>Pertimbangkan promosi</strong> — 3 dari 5 top performer di level L4–L5, potensial untuk advancement.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: UNDER PERFORMERS + DEPT COMPARE -->
+    <div class="grid-main">
+      <!-- UNDER PERFORMERS -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">🚨 Under Performers — Perlu Perhatian</div>
+          <span class="tag tr">11 karyawan</span>
+        </div>
+        <div class="cb">
+          <div class="perf-list">
+            <div class="perf-row">
+              <div class="perf-rank" style="background:var(--rl);color:var(--red)">!</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#FF453A,#C0392B)">DM</div>
+              <div class="perf-info">
+                <div class="perf-name">Denny Maulana <span class="tag tr" style="margin-left:4px">SP1</span></div>
+                <div class="perf-meta">Staff Developer · Teknologi · 3 bln &lt;60</div>
+              </div>
+              <div class="perf-score" style="color:var(--red)">52</div>
+              <div class="perf-trend" style="background:var(--rl);color:var(--red)">↓ -3</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank" style="background:var(--rl);color:var(--red)">!</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">IP</div>
+              <div class="perf-info">
+                <div class="perf-name">Indra Pratama <span class="tag tr" style="margin-left:4px">SP2</span></div>
+                <div class="perf-meta">Sales Staff · 6 bln dibawah target</div>
+              </div>
+              <div class="perf-score" style="color:var(--red)">48</div>
+              <div class="perf-trend" style="background:var(--rl);color:var(--red)">↓ -7</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank" style="background:var(--ol);color:var(--orange)">⚠</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#FF453A,#7C3AED)">SR</div>
+              <div class="perf-info">
+                <div class="perf-name">Siti Ramadhani <span class="tag to" style="margin-left:4px">Flag Oranye</span></div>
+                <div class="perf-meta">Backend Dev · 2 bln &lt;60 berturut</div>
+              </div>
+              <div class="perf-score" style="color:var(--orange)">58</div>
+              <div class="perf-trend" style="background:var(--rl);color:var(--red)">↓ -4</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank" style="background:var(--ol);color:var(--orange)">⚠</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">AK</div>
+              <div class="perf-info">
+                <div class="perf-name">Andi Kurniawan <span class="tag to" style="margin-left:4px">Flag Oranye</span></div>
+                <div class="perf-meta">Sales Staff · Mutasi pending</div>
+              </div>
+              <div class="perf-score" style="color:var(--orange)">58</div>
+              <div class="perf-trend" style="background:var(--ol);color:var(--orange)">↓ -2</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-rank" style="background:#FFFAEB;color:#B45309">⚠</div>
+              <div class="perf-av" style="background:linear-gradient(135deg,#32D2F2,#007AFF)">JN</div>
+              <div class="perf-info">
+                <div class="perf-name">Joko Nugroho <span class="tag to" style="margin-left:4px">Flag Kuning</span></div>
+                <div class="perf-meta">Finance Staff · 1 bln &lt;60</div>
+              </div>
+              <div class="perf-score" style="color:var(--orange)">59</div>
+              <div class="perf-trend" style="background:var(--rl);color:var(--red)">↓ -8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPT COMPARE -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-title">🏢 Comparison per Dept</div>
+        </div>
+        <div class="cb">
+          <div class="dept-cmp-row" style="border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;color:var(--ink3);font-weight:700;letter-spacing:.5px">
+            <div>Departemen</div>
+            <div style="text-align:center">HC</div>
+            <div style="text-align:center">Avg</div>
+            <div style="text-align:center">Top</div>
+            <div style="text-align:center">SP</div>
+            <div style="text-align:center">Trend</div>
+          </div>
+          <div class="dept-cmp-row">
+            <div class="dept-name"><div class="dept-color" style="background:var(--blue)"></div>Teknologi</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">38</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--green)">82.4</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">7</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--red)">1</div>
+            <div style="text-align:center"><span class="tag tg">↑</span></div>
+          </div>
+          <div class="dept-cmp-row">
+            <div class="dept-name"><div class="dept-color" style="background:var(--orange)"></div>Operation</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">28</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--green)">81.2</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">3</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">0</div>
+            <div style="text-align:center"><span class="tag tg">↑</span></div>
+          </div>
+          <div class="dept-cmp-row">
+            <div class="dept-name"><div class="dept-color" style="background:var(--green)"></div>Finance</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">22</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">78.8</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">2</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">0</div>
+            <div style="text-align:center"><span class="tag tgr">→</span></div>
+          </div>
+          <div class="dept-cmp-row">
+            <div class="dept-name"><div class="dept-color" style="background:var(--red)"></div>Sales</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">26</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--orange)">72.5</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">1</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--red)">2</div>
+            <div style="text-align:center"><span class="tag tr">↓</span></div>
+          </div>
+          <div class="dept-cmp-row">
+            <div class="dept-name"><div class="dept-color" style="background:var(--purple)"></div>Outsource</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">42</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">76.8</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700">—</div>
+            <div style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--orange)">2 SP-O</div>
+            <div style="text-align:center"><span class="tag tgr">→</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: TREND CHART -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch">
+        <div class="ch-title">📈 Trend — Hire vs Resign vs Layoff (12 bulan)</div>
+        <span class="tag tg">Net +14 YoY</span>
+      </div>
+      <div class="cb">
+        <div class="trend-chart">
+          <!-- Each month has 3 bars: hire/resign/layoff -->
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:60%"></div><div class="tc-bar" style="background:var(--orange);height:25%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Jun</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:75%"></div><div class="tc-bar" style="background:var(--orange);height:30%"></div><div class="tc-bar" style="background:var(--red);height:10%"></div></div><div class="tc-label">Jul</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:50%"></div><div class="tc-bar" style="background:var(--orange);height:20%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Agt</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:65%"></div><div class="tc-bar" style="background:var(--orange);height:15%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Sep</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:55%"></div><div class="tc-bar" style="background:var(--orange);height:35%"></div><div class="tc-bar" style="background:var(--red);height:10%"></div></div><div class="tc-label">Okt</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:80%"></div><div class="tc-bar" style="background:var(--orange);height:25%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Nov</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:90%"></div><div class="tc-bar" style="background:var(--orange);height:40%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Des</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:95%"></div><div class="tc-bar" style="background:var(--orange);height:30%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Jan</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:70%"></div><div class="tc-bar" style="background:var(--orange);height:20%"></div><div class="tc-bar" style="background:var(--red);height:5%"></div></div><div class="tc-label">Feb</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:60%"></div><div class="tc-bar" style="background:var(--orange);height:25%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Mar</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:85%"></div><div class="tc-bar" style="background:var(--orange);height:15%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label">Apr</div></div>
+          <div class="tc-bar-group"><div class="tc-bars" style="height:140px"><div class="tc-bar" style="background:var(--green);height:75%"></div><div class="tc-bar" style="background:var(--orange);height:20%"></div><div class="tc-bar" style="background:var(--red);height:0%"></div></div><div class="tc-label" style="color:var(--ink);font-weight:700">Mei (ini)</div></div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Hire</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div>Resign</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>Layoff</div>
+      </div>
+    </div>
+
+    <!-- ROW 4: HEATMAP -->
+    <div class="card">
+      <div class="ch">
+        <div class="ch-title">🌡️ Rating Heatmap — Dept × Level</div>
+        <span class="tag tgr">Avg score per cell</span>
+      </div>
+      <div class="cb">
+        <div class="heatmap-grid">
+          <div></div>
+          <div class="hm-header">L1 Dirut</div>
+          <div class="hm-header">L2 C-Lvl</div>
+          <div class="hm-header">L3 GM</div>
+          <div class="hm-header">L4 Mgr</div>
+          <div class="hm-header">L5 Lead</div>
+          <div class="hm-header">L6 Staff</div>
+
+          <div class="hm-row-label">Teknologi</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#30D158">88</div>
+          <div class="hm-cell" style="background:#30D158">85</div>
+          <div class="hm-cell" style="background:#30D158">87</div>
+          <div class="hm-cell" style="background:#34C759">84</div>
+          <div class="hm-cell" style="background:#FF9F0A">76</div>
+
+          <div class="hm-row-label">Operation</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#30D158">86</div>
+          <div class="hm-cell" style="background:#30D158">84</div>
+          <div class="hm-cell" style="background:#34C759">82</div>
+          <div class="hm-cell" style="background:#34C759">81</div>
+          <div class="hm-cell" style="background:#34C759">79</div>
+
+          <div class="hm-row-label">Finance</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#30D158">85</div>
+          <div class="hm-cell" style="background:#34C759">82</div>
+          <div class="hm-cell" style="background:#34C759">80</div>
+          <div class="hm-cell" style="background:#007AFF">76</div>
+          <div class="hm-cell" style="background:#FF9F0A">73</div>
+
+          <div class="hm-row-label">Sales</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#30D158">84</div>
+          <div class="hm-cell" style="background:#34C759">79</div>
+          <div class="hm-cell" style="background:#FF9F0A">73</div>
+          <div class="hm-cell" style="background:#FF9F0A">70</div>
+          <div class="hm-cell" style="background:#FF453A">65</div>
+
+          <div class="hm-row-label">Direksi</div>
+          <div class="hm-cell" style="background:#30D158">95</div>
+          <div class="hm-cell" style="background:#30D158">92</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+          <div class="hm-cell" style="background:#86868B">—</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);font-size:11px;color:var(--ink3)">
+          <span>Color scale:</span>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#FF453A;border-radius:3px"></div>&lt; 70</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#FF9F0A;border-radius:3px"></div>70–74</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#007AFF;border-radius:3px"></div>75–79</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#34C759;border-radius:3px"></div>80–84</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#30D158;border-radius:3px"></div>85+</div>
+        </div>
+
+        <div style="margin-top:14px;padding:12px;background:var(--pl);border:1px solid rgba(191,90,242,.2);border-radius:var(--rs);display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:16px">🤖</span>
+          <div style="flex:1;font-size:12px;color:var(--ink2);line-height:1.6">
+            <strong style="color:var(--purple)">AI Insight:</strong> Sales L6 menjadi cluster paling under-performing (avg 65). Korelasi dengan target tidak tercapai 4 bulan berturut. Pertimbangkan upskilling atau review hiring criteria untuk Sales L6. <span style="color:var(--ink3)">— Generated 24 Mei 2026 09:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>

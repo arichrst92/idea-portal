@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Event Perusahaan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--pl);color:var(--purple)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--purple);color:#fff;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--purple);color:#fff}.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-green{background:var(--green);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.toolbar-l{display:flex;gap:14px;align-items:center}
+.t-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.view-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px}
+.vb{padding:6px 12px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink3);font-family:var(--font);transition:all .15s}
+.vb.active{background:var(--purple);color:#fff;box-shadow:0 1px 3px rgba(191,90,242,.3)}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.kpi-val{font-size:24px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px}
+.kpi-lbl{font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+
+/* PANEL */
+.panel{display:none}.panel.show{display:block}
+
+/* EVENT GRID */
+.event-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.event{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .15s;display:flex}
+.event:hover{border-color:rgba(191,90,242,.3);box-shadow:0 4px 12px rgba(0,0,0,.05);transform:translateY(-2px)}
+.event-date{width:90px;flex-shrink:0;background:linear-gradient(135deg,#BF5AF2,#7C3AED);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px}
+.event-date.green{background:linear-gradient(135deg,#30D158,#00C7BE)}
+.event-date.orange{background:linear-gradient(135deg,#FF9F0A,#FF6B00)}
+.event-date.blue{background:linear-gradient(135deg,#007AFF,#34AADC)}
+.event-date.gray{background:linear-gradient(135deg,#86868B,#5C5C61);opacity:.7}
+.ed-month{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.85}
+.ed-day{font-size:32px;font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1}
+.ed-time{font-size:10px;margin-top:5px;opacity:.85}
+.event-body{flex:1;padding:14px 16px;display:flex;flex-direction:column;min-width:0}
+.event-tags{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.event-title{font-size:15px;font-weight:800;letter-spacing:-.3px;margin-bottom:5px;line-height:1.3}
+.event-loc{font-size:11px;color:var(--ink3);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.event-desc{font-size:12px;color:var(--ink2);line-height:1.5;margin-bottom:auto}
+.event-footer{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border2);margin-top:10px}
+.attendee-stack{display:flex;align-items:center}
+.att-av{width:24px;height:24px;border-radius:50%;border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;margin-left:-6px}
+.att-av:first-child{margin-left:0}
+.att-count{font-size:11px;color:var(--ink3);margin-left:8px;font-weight:600}
+.event-rsvp{display:flex;gap:5px}
+.r-btn{padding:5px 10px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2);font-family:var(--font)}
+.r-btn.yes{background:var(--green);color:#fff;border-color:var(--green)}
+.r-btn.maybe{background:var(--ol);color:var(--orange);border-color:rgba(255,159,10,.3)}
+
+/* CALENDAR VIEW */
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.cal-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.cal-month-title{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.cal-nav{display:flex;gap:6px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-day-head{padding:10px;text-align:center;font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);border-right:1px solid var(--border2)}
+.cal-day-head:last-child{border-right:none}
+.cal-day{min-height:100px;padding:8px;border-bottom:1px solid var(--border2);border-right:1px solid var(--border2);font-size:11px;cursor:pointer;transition:background .12s;position:relative}
+.cal-day:hover{background:var(--bg)}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day-num{font-weight:700;font-size:13px;margin-bottom:4px}
+.cal-day.today .cal-day-num{background:var(--purple);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cal-day.other-month{color:var(--ink3);opacity:.4}
+.cal-event-chip{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tp{background:var(--pl);color:var(--purple)}.tgr{background:var(--bg);color:var(--ink3)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📢</div>Pengumuman</div>
+    <div class="ni active"><div class="ni-ic">🎉</div>Event</div>
+    <div class="ni"><div class="ni-ic">📚</div>Info Perusahaan</div>
+  </nav>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Event Perusahaan</strong></div>
+    <div><button class="btn btn-p">+ Buat Event</button></div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div class="toolbar-l">
+        <div class="t-title">Event Perusahaan</div>
+        <div class="view-toggle">
+          <button class="vb active" onclick="showView('list', this)">📋 List</button>
+          <button class="vb" onclick="showView('cal', this)">📅 Kalender</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-s">📍 Upcoming</button>
+        <button class="btn btn-s">✓ Saya RSVP</button>
+        <button class="btn btn-s">📜 Past</button>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" style="color:var(--purple)">7</div><div class="kpi-lbl">Upcoming 30 Hari</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">4</div><div class="kpi-lbl">Saya Confirmed</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--orange)">2</div><div class="kpi-lbl">Need RSVP</div></div>
+      <div class="kpi"><div class="kpi-val">28</div><div class="kpi-lbl">Past 12 Bulan</div></div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div class="panel show" id="panelList">
+      <div class="event-grid">
+        <!-- ALL HANDS -->
+        <div class="event">
+          <div class="event-date orange">
+            <div class="ed-month">Mei</div>
+            <div class="ed-day">30</div>
+            <div class="ed-time">10:00 WIB</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tp">All-Hands</span><span class="tag tr">RSVP Required</span></div>
+            <div class="event-title">All-Hands Meeting Q2 2026</div>
+            <div class="event-loc">📍 Auditorium Lt.5 · Hybrid (Zoom)</div>
+            <div class="event-desc">Review pencapaian Q1, target Q2, announcement strategic initiative dari Direksi.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-av" style="background:linear-gradient(135deg,#0A0A0F,#3C3C43)">RA</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#BF5AF2,#FF453A)">SH</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">IW</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#30D158,#00C7BE)">RW</div>
+                <div class="att-count">+ 98 RSVP</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn">✗ Skip</button>
+                <button class="r-btn maybe">Mungkin</button>
+                <button class="r-btn yes">✓ Hadir</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TECH TALK -->
+        <div class="event">
+          <div class="event-date blue">
+            <div class="ed-month">Mei</div>
+            <div class="ed-day">28</div>
+            <div class="ed-time">14:00 WIB</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tb">Tech Talk</span><span class="tag tg">RSVP'd</span></div>
+            <div class="event-title">AI in Production — Sharing Tim R&amp;D</div>
+            <div class="event-loc">📍 Ruang Kolaborasi Lt.3 · Snacks tersedia</div>
+            <div class="event-desc">Deployment ML model, prompt engineering best practice, evaluasi LLM untuk code review.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">AC</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#34C759,#00C7BE)">BS</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#AF52DE,#7C3AED)">AF</div>
+                <div class="att-count">+ 25 hadir</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn yes">✓ Confirmed</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAINING -->
+        <div class="event">
+          <div class="event-date green">
+            <div class="ed-month">Jun</div>
+            <div class="ed-day">05</div>
+            <div class="ed-time">09:00 WIB</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tg">Training</span><span class="tag tgr">Optional</span></div>
+            <div class="event-title">Workshop: Effective 1-on-1 untuk Manager</div>
+            <div class="event-loc">📍 Online · Zoom · 2 jam</div>
+            <div class="event-desc">External trainer. Khusus L4 (Manager) keatas. Limit 30 peserta.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-av" style="background:linear-gradient(135deg,#30D158,#00C7BE)">RW</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#007AFF,#34AADC)">IW</div>
+                <div class="att-count">14 / 30</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn">RSVP</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOWN HALL -->
+        <div class="event">
+          <div class="event-date orange">
+            <div class="ed-month">Jun</div>
+            <div class="ed-day">10</div>
+            <div class="ed-time">14:00 WIB</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tp">Town Hall</span></div>
+            <div class="event-title">Town Hall Q2 — Open Discussion</div>
+            <div class="event-loc">📍 Auditorium Lt.5 + Zoom</div>
+            <div class="event-desc">Direct Q&amp;A dengan Direksi. Submit pertanyaan via portal (anonim diperbolehkan) sebelum 8 Jun.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-av" style="background:linear-gradient(135deg,#0A0A0F,#3C3C43)">RA</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#BF5AF2,#FF453A)">SH</div>
+                <div class="att-count">+ 78 RSVP</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn">RSVP</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIRTHDAY -->
+        <div class="event">
+          <div class="event-date">
+            <div class="ed-month">Jun</div>
+            <div class="ed-day">15</div>
+            <div class="ed-time">17:00 WIB</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tp">🎂 Sosial</span></div>
+            <div class="event-title">Monthly Birthday Bash — Juni 2026</div>
+            <div class="event-loc">📍 Pantry Lt.2 · Cake + games</div>
+            <div class="event-desc">Celebrate karyawan dengan ulang tahun Juni. 8 orang akan dirayakan.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-av" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00)">HR</div>
+                <div class="att-av" style="background:linear-gradient(135deg,#32D2F2,#007AFF)">YR</div>
+                <div class="att-count">+ 45 hadir</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn yes">✓ Hadir</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OFFSITE -->
+        <div class="event">
+          <div class="event-date green">
+            <div class="ed-month">Jul</div>
+            <div class="ed-day">12</div>
+            <div class="ed-time">All-day</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tp">🏖️ Offsite</span><span class="tag tr">Save the date</span></div>
+            <div class="event-title">Company Outing 2026 — Bandung</div>
+            <div class="event-loc">📍 Bandung · 2 hari 1 malam · Lembang Resort</div>
+            <div class="event-desc">Team building, fun activity, makan malam BBQ. Travel disediakan dari kantor. RSVP buka 1 Juni.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-count">RSVP belum dibuka</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn">🔔 Remind me</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAST EVENT -->
+        <div class="event" style="opacity:.6">
+          <div class="event-date gray">
+            <div class="ed-month">Mei</div>
+            <div class="ed-day">15</div>
+            <div class="ed-time">Past</div>
+          </div>
+          <div class="event-body">
+            <div class="event-tags"><span class="tag tgr">Past Event</span><span class="tag tg">Hadir</span></div>
+            <div class="event-title">Lunch &amp; Learn — Compliance Q2</div>
+            <div class="event-loc">📍 Ruang Kolaborasi Lt.3</div>
+            <div class="event-desc">Sharing dari Legal team tentang update regulasi data privacy.</div>
+            <div class="event-footer">
+              <div class="attendee-stack">
+                <div class="att-count">35 hadir</div>
+              </div>
+              <div class="event-rsvp">
+                <button class="r-btn">📥 Recap</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR VIEW -->
+    <div class="panel" id="panelCal">
+      <div class="cal-wrap">
+        <div class="cal-head">
+          <div class="cal-nav">
+            <button class="btn btn-s">‹</button>
+            <button class="btn btn-s">Today</button>
+            <button class="btn btn-s">›</button>
+          </div>
+          <div class="cal-month-title">Mei 2026</div>
+          <button class="btn btn-s">📤 Sync Google Calendar</button>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-day-head">Min</div>
+          <div class="cal-day-head">Sen</div>
+          <div class="cal-day-head">Sel</div>
+          <div class="cal-day-head">Rab</div>
+          <div class="cal-day-head">Kam</div>
+          <div class="cal-day-head">Jum</div>
+          <div class="cal-day-head">Sab</div>
+
+          <!-- Week 1 -->
+          <div class="cal-day other-month"><div class="cal-day-num">27</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">28</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">29</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">30</div></div>
+          <div class="cal-day"><div class="cal-day-num">1</div><div style="font-size:9px;color:var(--ink3)">Libur Buruh</div></div>
+          <div class="cal-day"><div class="cal-day-num">2</div></div>
+          <div class="cal-day"><div class="cal-day-num">3</div></div>
+
+          <!-- Week 2 -->
+          <div class="cal-day"><div class="cal-day-num">4</div></div>
+          <div class="cal-day"><div class="cal-day-num">5</div></div>
+          <div class="cal-day"><div class="cal-day-num">6</div></div>
+          <div class="cal-day"><div class="cal-day-num">7</div></div>
+          <div class="cal-day"><div class="cal-day-num">8</div></div>
+          <div class="cal-day"><div class="cal-day-num">9</div></div>
+          <div class="cal-day"><div class="cal-day-num">10</div></div>
+
+          <!-- Week 3 -->
+          <div class="cal-day"><div class="cal-day-num">11</div></div>
+          <div class="cal-day"><div class="cal-day-num">12</div></div>
+          <div class="cal-day"><div class="cal-day-num">13</div></div>
+          <div class="cal-day"><div class="cal-day-num">14</div></div>
+          <div class="cal-day"><div class="cal-day-num">15</div><div class="cal-event-chip" style="background:#86868B">Lunch &amp; Learn</div></div>
+          <div class="cal-day"><div class="cal-day-num">16</div></div>
+          <div class="cal-day"><div class="cal-day-num">17</div></div>
+
+          <!-- Week 4 -->
+          <div class="cal-day"><div class="cal-day-num">18</div></div>
+          <div class="cal-day"><div class="cal-day-num">19</div></div>
+          <div class="cal-day"><div class="cal-day-num">20</div></div>
+          <div class="cal-day"><div class="cal-day-num">21</div></div>
+          <div class="cal-day"><div class="cal-day-num">22</div></div>
+          <div class="cal-day"><div class="cal-day-num">23</div></div>
+          <div class="cal-day"><div class="cal-day-num">24</div></div>
+
+          <!-- Week 5 -->
+          <div class="cal-day"><div class="cal-day-num">25</div></div>
+          <div class="cal-day today"><div class="cal-day-num">26</div></div>
+          <div class="cal-day"><div class="cal-day-num">27</div></div>
+          <div class="cal-day"><div class="cal-day-num">28</div><div class="cal-event-chip" style="background:var(--blue)">14:00 Tech Talk AI</div></div>
+          <div class="cal-day"><div class="cal-day-num">29</div></div>
+          <div class="cal-day"><div class="cal-day-num">30</div><div class="cal-event-chip" style="background:var(--orange)">10:00 All-Hands Q2</div></div>
+          <div class="cal-day"><div class="cal-day-num">31</div></div>
+
+          <!-- Week 6 -->
+          <div class="cal-day other-month"><div class="cal-day-num">1</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">2</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">3</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">4</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">5</div><div class="cal-event-chip" style="background:var(--green)">09:00 Training Mgr</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">6</div></div>
+          <div class="cal-day other-month"><div class="cal-day-num">7</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<script>
+function showView(name, btn){
+  document.querySelectorAll('.vb').forEach(v=>v.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('show');
+}
+</script>
+</body>
+</html>

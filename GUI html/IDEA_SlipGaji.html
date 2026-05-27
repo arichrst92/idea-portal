@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IDEA — Slip Gaji & Riwayat Payroll</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F2F2F7;--surface:#FFF;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.04);--ink:#0A0A0F;--ink2:#3C3C4399;--ink3:#3C3C4360;--blue:#007AFF;--bl:#E8F1FF;--green:#30D158;--gl:#E5F9EC;--orange:#FF9F0A;--ol:#FFF3E0;--red:#FF453A;--rl:#FFECEB;--purple:#BF5AF2;--pl:#F5EEFE;--teal:#32D2F2;--tl:#E5F9FE;--font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;--r:16px;--rm:12px;--rs:8px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2)}
+.sb-logo{width:34px;height:34px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.sb-logo svg{width:17px;height:17px}
+.sb-name{font-size:16px;font-weight:800;letter-spacing:-.4px}.sb-env{font-size:10px;color:var(--ink3);font-weight:500}
+.sb-user{margin:12px 12px 6px;padding:10px 12px;background:var(--bg);border-radius:var(--rm);display:flex;align-items:center;gap:10px;border:1px solid var(--border2);cursor:pointer}
+.sb-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#32D2F2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700}.sb-urole{font-size:11px;color:var(--ink3);font-weight:500}
+.sb-sec{padding:14px 18px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3)}
+.sb-nav{padding:2px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:1px;transition:all .12s}
+.ni:hover{background:var(--bg)}.ni.active{background:var(--ol);color:var(--orange)}
+.ni-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--bg)}
+.ni.active .ni-ic{background:var(--orange);color:#fff;font-size:12px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:54px;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.tb-bc{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px}.tb-bc strong{color:var(--ink);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#0064CC}
+.btn-s{background:var(--surface);color:var(--ink);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.btn-green{background:var(--green);color:#fff}
+.content{flex:1;overflow:hidden;display:flex}
+
+/* LEFT HISTORY LIST */
+.history-pane{width:300px;flex-shrink:0;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto}
+.hp-header{padding:16px 18px;border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--surface);z-index:5}
+.hp-title{font-size:16px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px}
+.hp-filter{display:flex;gap:6px;flex-wrap:wrap}
+.hp-fbtn{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2);font-family:var(--font)}
+.hp-fbtn.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.hp-list{padding:0}
+.hp-year{padding:10px 18px 6px;font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:1px;background:var(--bg)}
+.hp-item{padding:14px 18px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hp-item:hover{background:var(--bg)}
+.hp-item.active{background:var(--ol);border-left:3px solid var(--orange);padding-left:15px}
+.hp-month{font-size:13px;font-weight:700}
+.hp-thp{font-size:11px;font-family:var(--mono);color:var(--ink3)}
+.hp-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+
+/* MAIN SLIP VIEW */
+.slip-pane{flex:1;overflow-y:auto;padding:24px 32px;background:var(--bg)}
+.slip-paper{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.03);max-width:880px;margin:0 auto;overflow:hidden}
+
+/* SLIP HEADER */
+.slip-head{padding:24px 28px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.slip-co{display:flex;align-items:center;gap:12px}
+.slip-co-logo{width:48px;height:48px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.slip-co-logo svg{width:24px;height:24px}
+.slip-co-name{font-size:18px;font-weight:800;letter-spacing:-.4px}
+.slip-co-sub{font-size:11px;color:var(--ink3);font-weight:500}
+.slip-title{text-align:right}
+.slip-title-h1{font-size:20px;font-weight:800;letter-spacing:-.4px;color:var(--orange)}
+.slip-title-period{font-size:13px;font-weight:600;color:var(--ink2);margin-top:2px}
+.slip-title-no{font-size:11px;color:var(--ink3);font-family:var(--mono);margin-top:3px}
+
+/* SLIP EMPLOYEE INFO */
+.slip-emp{padding:18px 28px;background:var(--bg);display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+.slip-emp-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0}
+.slip-emp-label{color:var(--ink3);font-weight:500}
+.slip-emp-val{font-weight:700}
+.slip-emp-val.mono{font-family:var(--mono);font-size:12px}
+
+/* SLIP BODY (TABLE) */
+.slip-body{padding:24px 28px}
+.slip-section{margin-bottom:24px}
+.slip-sec-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border2)}
+.slip-line{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px}
+.slip-line-label{color:var(--ink2)}
+.slip-line-val{font-family:var(--mono);font-weight:600}
+.slip-line.subtotal{border-top:1px solid var(--border);padding-top:10px;font-weight:700;margin-top:6px}
+.slip-line.subtotal .slip-line-val{font-size:14px}
+.slip-line.deduction .slip-line-val{color:var(--red)}
+.slip-line.income .slip-line-val{color:var(--green)}
+.slip-line .badge{font-size:9px;padding:1px 6px;border-radius:20px;background:var(--bl);color:var(--blue);margin-left:6px;font-weight:700}
+
+/* THP BAR (BIG NUMBER) */
+.slip-thp{padding:20px 28px;background:linear-gradient(135deg,var(--green) 0%,#00C7BE 100%);color:#fff;display:flex;justify-content:space-between;align-items:center}
+.slip-thp-lbl{font-size:13px;font-weight:600;opacity:.9;text-transform:uppercase;letter-spacing:1px}
+.slip-thp-val{font-size:32px;font-weight:800;font-family:var(--mono);letter-spacing:-.8px}
+
+/* SLIP FOOTER */
+.slip-foot{padding:18px 28px;background:var(--bg);font-size:11px;color:var(--ink3);display:flex;justify-content:space-between;align-items:center}
+.slip-foot-actions{display:flex;gap:8px}
+
+/* TOOLBAR */
+.slip-toolbar{max-width:880px;margin:0 auto 16px;display:flex;justify-content:space-between;align-items:center}
+.slip-toolbar h2{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.toolbar-actions{display:flex;gap:8px}
+
+/* STAT STRIP */
+.stat-strip{max-width:880px;margin:0 auto 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:12px 14px}
+.stat-lbl{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.stat-val{font-size:16px;font-weight:800;font-family:var(--mono);letter-spacing:-.3px}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.tg{background:var(--gl);color:var(--green)}.tb{background:var(--bl);color:var(--blue)}
+.to{background:var(--ol);color:var(--orange)}.tr{background:var(--rl);color:var(--red)}
+.tgr{background:var(--bg);color:var(--ink3)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+    <div><div class="sb-name">IDEA</div><div class="sb-env">Employee Portal</div></div>
+  </div>
+  <div class="sb-user"><div class="sb-av">AC</div><div><div class="sb-uname">Ari Christian</div><div class="sb-urole">Manager · Teknologi</div></div></div>
+  <div class="sb-sec">Workspace</div>
+  <nav class="sb-nav">
+    <div class="ni"><div class="ni-ic">🏠</div>Dashboard</div>
+    <div class="ni"><div class="ni-ic">🔔</div>Notifikasi</div>
+    <div class="ni"><div class="ni-ic">👤</div>Profil Saya</div>
+    <div class="ni"><div class="ni-ic">📋</div>Project</div>
+    <div class="ni"><div class="ni-ic">💼</div>Cuti &amp; Reimburse</div>
+    <div class="ni active"><div class="ni-ic">💰</div>Slip Gaji</div>
+    <div class="ni"><div class="ni-ic">📊</div>Penilaian Saya</div>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-bc">Workspace <span style="color:var(--border)">/</span> <strong>Slip Gaji &amp; Riwayat Payroll</strong></div>
+    <div class="toolbar-actions">
+      <button class="btn btn-s">📅 Filter Tahun</button>
+      <button class="btn btn-p">📥 Download Slip PDF</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- HISTORY PANE -->
+    <aside class="history-pane">
+      <div class="hp-header">
+        <div class="hp-title">Riwayat Slip Gaji</div>
+        <div class="hp-filter">
+          <button class="hp-fbtn active">Semua</button>
+          <button class="hp-fbtn">2026</button>
+          <button class="hp-fbtn">2025</button>
+          <button class="hp-fbtn">2024</button>
+        </div>
+      </div>
+
+      <div class="hp-list">
+        <div class="hp-year">2026</div>
+
+        <div class="hp-item active" onclick="selectSlip(this, 'Mei 2026')">
+          <div>
+            <div class="hp-month">Mei 2026</div>
+            <div class="hp-thp">Rp 18.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'April 2026')">
+          <div>
+            <div class="hp-month">April 2026</div>
+            <div class="hp-thp">Rp 17.950.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Maret 2026')">
+          <div>
+            <div class="hp-month">Maret 2026</div>
+            <div class="hp-thp">Rp 17.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Februari 2026')">
+          <div>
+            <div class="hp-month">Februari 2026</div>
+            <div class="hp-thp">Rp 17.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Januari 2026')">
+          <div>
+            <div class="hp-month">Januari 2026</div>
+            <div class="hp-thp">Rp 23.450.000 <span class="tag to" style="margin-left:4px">+ THR</span></div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-year">2025</div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Desember 2025')">
+          <div>
+            <div class="hp-month">Desember 2025</div>
+            <div class="hp-thp">Rp 16.950.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'November 2025')">
+          <div>
+            <div class="hp-month">November 2025</div>
+            <div class="hp-thp">Rp 16.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Oktober 2025')">
+          <div>
+            <div class="hp-month">Oktober 2025</div>
+            <div class="hp-thp">Rp 16.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'September 2025')">
+          <div>
+            <div class="hp-month">September 2025</div>
+            <div class="hp-thp">Rp 16.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Agustus 2025')">
+          <div>
+            <div class="hp-month">Agustus 2025</div>
+            <div class="hp-thp">Rp 16.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Juli 2025')">
+          <div>
+            <div class="hp-month">Juli 2025</div>
+            <div class="hp-thp">Rp 16.450.000</div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div class="hp-item" onclick="selectSlip(this, 'Juni 2025')">
+          <div>
+            <div class="hp-month">Juni 2025</div>
+            <div class="hp-thp">Rp 19.950.000 <span class="tag to" style="margin-left:4px">+ THR</span></div>
+          </div>
+          <span class="hp-status" style="background:var(--gl);color:var(--green)">✓ Paid</span>
+        </div>
+
+        <div style="padding:14px 18px;font-size:11px;color:var(--ink3);text-align:center;border-top:1px solid var(--border2)">
+          + 30 slip lainnya · sejak Mar 2022
+        </div>
+      </div>
+    </aside>
+
+    <!-- SLIP DETAIL PANE -->
+    <main class="slip-pane">
+      <div class="slip-toolbar">
+        <h2>Slip Gaji — Mei 2026</h2>
+        <div class="toolbar-actions">
+          <button class="btn btn-s">🖨️ Print</button>
+          <button class="btn btn-s">📧 Email ke saya</button>
+          <button class="btn btn-p">📥 Download PDF</button>
+        </div>
+      </div>
+
+      <!-- YTD STATS -->
+      <div class="stat-strip">
+        <div class="stat"><div class="stat-lbl">YTD Penghasilan</div><div class="stat-val">Rp 94.750.000</div></div>
+        <div class="stat"><div class="stat-lbl">YTD Potongan</div><div class="stat-val" style="color:var(--red)">Rp 10.250.000</div></div>
+        <div class="stat"><div class="stat-lbl">YTD Take Home</div><div class="stat-val" style="color:var(--green)">Rp 84.500.000</div></div>
+        <div class="stat"><div class="stat-lbl">PPh21 Akumulasi</div><div class="stat-val" style="color:var(--orange)">Rp 6.180.000</div></div>
+      </div>
+
+      <!-- SLIP PAPER -->
+      <div class="slip-paper">
+        <!-- Header -->
+        <div class="slip-head">
+          <div class="slip-co">
+            <div class="slip-co-logo"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.8" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.8" fill="white" opacity=".85"/></svg></div>
+            <div>
+              <div class="slip-co-name">PT. Solusi Inovasi Bangsa</div>
+              <div class="slip-co-sub">IDE Asia · Jl. Senopati No. 12, Jakarta Selatan</div>
+            </div>
+          </div>
+          <div class="slip-title">
+            <div class="slip-title-h1">SLIP GAJI</div>
+            <div class="slip-title-period">Periode Mei 2026</div>
+            <div class="slip-title-no">No. SLIP-2026-05-IDE-005</div>
+          </div>
+        </div>
+
+        <!-- Employee Info -->
+        <div class="slip-emp">
+          <div>
+            <div class="slip-emp-row"><span class="slip-emp-label">NIK</span><span class="slip-emp-val mono">IDE-2022-005</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Nama</span><span class="slip-emp-val">Ari Christian</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Posisi</span><span class="slip-emp-val">Manager · Backend Engineering</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Departemen</span><span class="slip-emp-val">Teknologi</span></div>
+          </div>
+          <div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Status Kontrak</span><span class="slip-emp-val">PKWTT (Permanen)</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Tanggal Bayar</span><span class="slip-emp-val">25 Mei 2026</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">Bank</span><span class="slip-emp-val mono">BCA · ***** 4521</span></div>
+            <div class="slip-emp-row"><span class="slip-emp-label">NPWP</span><span class="slip-emp-val mono">12.345.***.0-021.000</span></div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="slip-body">
+          <!-- Penghasilan -->
+          <div class="slip-section">
+            <div class="slip-sec-title">A. Penghasilan</div>
+            <div class="slip-line income">
+              <span class="slip-line-label">Gaji Pokok</span>
+              <span class="slip-line-val">Rp 16.000.000</span>
+            </div>
+            <div class="slip-line income">
+              <span class="slip-line-label">Tunjangan Jabatan</span>
+              <span class="slip-line-val">Rp 2.000.000</span>
+            </div>
+            <div class="slip-line income">
+              <span class="slip-line-label">Tunjangan Transport</span>
+              <span class="slip-line-val">Rp 1.000.000</span>
+            </div>
+            <div class="slip-line income">
+              <span class="slip-line-label">Lembur (8 jam) <span class="badge">Variable</span></span>
+              <span class="slip-line-val">Rp 800.000</span>
+            </div>
+            <div class="slip-line income">
+              <span class="slip-line-label">Bonus Performa <span class="badge">Variable</span></span>
+              <span class="slip-line-val">Rp 700.000</span>
+            </div>
+            <div class="slip-line subtotal">
+              <span class="slip-line-label">Subtotal Penghasilan</span>
+              <span class="slip-line-val" style="color:var(--green)">Rp 20.500.000</span>
+            </div>
+          </div>
+
+          <!-- Potongan -->
+          <div class="slip-section">
+            <div class="slip-sec-title">B. Potongan</div>
+            <div class="slip-line deduction">
+              <span class="slip-line-label">BPJS Kesehatan (1%)</span>
+              <span class="slip-line-val">Rp 200.000</span>
+            </div>
+            <div class="slip-line deduction">
+              <span class="slip-line-label">BPJS Ketenagakerjaan (2%)</span>
+              <span class="slip-line-val">Rp 400.000</span>
+            </div>
+            <div class="slip-line deduction">
+              <span class="slip-line-label">PPh 21 (Pasal 21)</span>
+              <span class="slip-line-val">Rp 1.250.000</span>
+            </div>
+            <div class="slip-line deduction">
+              <span class="slip-line-label">Pinjaman Karyawan (cicilan 3/12)</span>
+              <span class="slip-line-val">Rp 200.000</span>
+            </div>
+            <div class="slip-line subtotal">
+              <span class="slip-line-label">Subtotal Potongan</span>
+              <span class="slip-line-val" style="color:var(--red)">Rp 2.050.000</span>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div style="padding:12px 14px;background:var(--bl);border-radius:var(--rs);font-size:11px;color:var(--blue);display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+            <span style="font-size:14px;line-height:1">ℹ</span>
+            <div>
+              <strong>Catatan:</strong> Reimbursement transport <strong>Rp 450.000</strong> sudah di-approve dan akan ditransfer terpisah pada 27 Mei (bukan via payroll, sesuai aturan).
+            </div>
+          </div>
+        </div>
+
+        <!-- THP -->
+        <div class="slip-thp">
+          <div class="slip-thp-lbl">Take Home Pay</div>
+          <div class="slip-thp-val">Rp 18.450.000</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="slip-foot">
+          <div>
+            Generated otomatis · 24 Mei 2026 09:15 WIB · Approved by GM HR (Reni Wahyuni)
+          </div>
+          <div class="slip-foot-actions">
+            <button class="btn btn-s" style="font-size:11px;padding:5px 10px">🔒 Verify QR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TREND CARD -->
+      <div style="max-width:880px;margin:18px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:700">📈 Tren Take Home Pay 12 Bulan Terakhir</div>
+          <span class="tag tg">↑ +12% YoY</span>
+        </div>
+        <!-- Mini bar chart -->
+        <div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:0 4px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:60%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Jun '25</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:48%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Jul</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:50%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Agt</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:50%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Sep</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:50%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Okt</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:50%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Nov</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:52%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Des</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:78%;background:linear-gradient(180deg,var(--orange),var(--bl));border-radius:4px 4px 0 0;position:relative">
+              <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--orange);font-weight:700">THR</div>
+            </div>
+            <div style="font-size:9px;color:var(--ink3)">Jan '26</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:54%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Feb</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:54%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Mar</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:56%;background:var(--bl);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--ink3)">Apr</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:100%;height:60%;background:linear-gradient(180deg,var(--green),var(--gl));border-radius:4px 4px 0 0;position:relative">
+              <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--green);font-weight:700">●</div>
+            </div>
+            <div style="font-size:9px;color:var(--ink);font-weight:700">Mei (ini)</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</div>
+
+<script>
+function selectSlip(el, label){
+  document.querySelectorAll('.hp-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector('.slip-toolbar h2').textContent = 'Slip Gaji — ' + label;
+  document.querySelector('.slip-title-period').textContent = 'Periode ' + label;
+}
+</script>
+</body>
+</html>
