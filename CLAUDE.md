@@ -202,6 +202,11 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-26 | Wakil Direktur Utama = role terpisah di RBAC (bukan inherit dari Direktur) | Audit clarity — persona name harus eksplisit |
 | 2026-05-26 | SP-O (Outsource SP) flow terpisah dari SP internal | Trigger berbeda: client complaint vs score penilaian |
 | 2026-05-26 | TSK-110 dihapus (duplikat TSK-148 untuk SP-O) | Cleanup task backlog |
+| 2026-05-27 | UUID v4 primary key untuk semua tabel | Distributed-system safe, no leaking sequential info, FK cleaner |
+| 2026-05-27 | Soft delete via `deleted_at` (TimestampMixin + SoftDeleteMixin) | Per NC-SYS-001-06: financial-linked records harus archive, bukan hard delete |
+| 2026-05-27 | JWT HS256 dengan token type claim (`access` vs `refresh`) | Cegah refresh token dipakai sebagai access (security hardening) |
+| 2026-05-27 | Refresh token rotation di TSK-002 tanpa blacklist | Simple — blacklist akan ditambah di TSK-005 dengan Redis store |
+| 2026-05-27 | Frontend axios interceptor: queue concurrent 401 saat refresh in-flight | Cegah refresh storm; semua pending requests retry sekaligus setelah refresh sukses |
 
 Tambah row baru saat ada keputusan signifikan.
 
