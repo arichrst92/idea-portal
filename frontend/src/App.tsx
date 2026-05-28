@@ -47,7 +47,23 @@ function App() {
               <Text>
                 Hi, <strong>{user.nik}</strong> ({user.roles[0]?.name ?? '—'})
               </Text>
-              <Button onClick={() => { clearAuth(); window.location.href = '/login'; }}>
+              <Button
+                onClick={async () => {
+                  const { logout } = await import('./api/auth');
+                  const { broadcastLogout } = await import('./lib/sessionBroadcast');
+                  const refreshToken = useAuthStore.getState().refreshToken;
+                  if (refreshToken) {
+                    try {
+                      await logout(refreshToken);
+                    } catch {
+                      // Best-effort — backend mungkin gak reachable
+                    }
+                  }
+                  clearAuth();
+                  broadcastLogout('user');
+                  window.location.href = '/login';
+                }}
+              >
                 Logout
               </Button>
             </Space>

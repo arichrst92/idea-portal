@@ -71,3 +71,15 @@ export async function getCurrentUser(): Promise<User> {
   const response = await apiClient.get<User>('/api/v1/auth/me');
   return response.data;
 }
+
+/**
+ * POST /api/v1/auth/logout
+ * Revoke refresh token. Butuh valid access token (current user).
+ */
+export async function logout(refreshToken: string): Promise<{ success: boolean; revoked: boolean }> {
+  const response = await apiClient.post<{ success: boolean; revoked: boolean }>(
+    '/api/v1/auth/logout',
+    { refresh_token: refreshToken },
+  );
+  return response.data;
+}

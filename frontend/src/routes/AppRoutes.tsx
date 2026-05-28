@@ -8,6 +8,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import LoginPage from '@/features/auth/LoginPage';
+import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
 
 import App from '../App';
@@ -25,18 +26,21 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <App />
-          </RequireAuth>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <SessionManager />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <App />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 
