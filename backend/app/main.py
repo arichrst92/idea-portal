@@ -22,7 +22,10 @@ async def lifespan(app: FastAPI) -> Any:
     # Startup
     print(f"🚀 {settings.app_name} v{__version__} starting in {settings.app_env}")
     yield
-    # Shutdown
+    # Shutdown — close Redis connection
+    from app.core.redis_client import close_redis
+
+    await close_redis()
     print(f"👋 {settings.app_name} shutting down")
 
 

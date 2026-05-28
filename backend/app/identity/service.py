@@ -3,6 +3,7 @@
 TSK-001: authenticate(nik, password)
 TSK-002: issue_token_pair + refresh_token_pair (JWT rotation)
 TSK-003: RBAC helpers (user_has_permission, is_executive, get_persona_name)
+TSK-005: refresh_token_pair sekarang check blacklist + revoke old token
 """
 
 from datetime import UTC, datetime, timedelta
@@ -20,7 +21,8 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.identity.models import Permission, Role, User, UserRole
+from app.identity import blacklist
+from app.identity.models import Role, User, UserRole
 
 settings = get_settings()
 
@@ -81,7 +83,19 @@ def issue_token_pair(user: User) -> tuple[str, str]:
 async def refresh_token_pair(
     session: AsyncSession, refresh_token: str
 ) -> tuple[User, str, str]:
-    """Rotate refresh token — validate + issue new pair."""
+    """Rotate refresh token — validate + check blacklist + revoke old + issue new pair.
+
+    TSK-005 changes:
+    - Check blacklist before accepting refresh token
+    - Revoke old refresh token after issuing new pair (rotation enforcement)
+    """
+    # Check blacklist first (cheap Redis lookup)
+    if await blacklist.is_revoked(refresh_token):
+        raise AuthenticationError(
+            "Refresh token sudah di-revoke. Silakan login ulang.",
+            code="REFRESH_TOKEN_REVOKED",
+        )
+
     payload = decode_token(refresh_token, expected_type=TokenType.REFRESH)
     if payload is None:
         raise AuthenticationError(
@@ -107,8 +121,15 @@ async def refresh_token_pair(
             code="ACCOUNT_INACTIVE",
         )
 
+    # Issue new pair, revoke old
     access, refresh = issue_token_pair(user)
+    await blacklist.revoke_refresh_token(refresh_token)
     return user, access, refresh
+
+
+async def logout(refresh_token: str) -> bool:
+    """Revoke refresh token at logout. Returns True kalau berhasil."""
+    return await blacklist.revoke_refresh_token(refresh_token)
 
 
 # ─── Authentication ──────────────────────────────────────────────
@@ -175,11 +196,7 @@ def get_user_role_codes(user: User) -> set[str]:
 
 
 def get_user_permissions(user: User) -> set[str]:
-    """Compute set semua permissions dari semua roles user.
-
-    Asumsi: user.roles → UserRole.role → Role.permissions sudah eagerly loaded
-    (lihat get_user_by_nik / get_user_by_id).
-    """
+    """Compute set semua permissions dari semua roles user."""
     perms: set[str] = set()
     for ur in user.roles:
         for p in ur.role.permissions:
@@ -188,7 +205,7 @@ def get_user_permissions(user: User) -> set[str]:
 
 
 def user_has_permission(user: User, permission_code: str) -> bool:
-    """Cek apakah user punya permission tertentu (resource.action)."""
+    """Cek apakah user punya permission tertentu."""
     return permission_code in get_user_permissions(user)
 
 
@@ -203,28 +220,15 @@ def user_has_role(user: User, role_codes: str | set[str] | list[str]) -> bool:
 
 
 def is_executive(user: User) -> bool:
-    """Cek apakah user termasuk Executive (Direktur Utama atau Wakil Direktur Utama).
-
-    Per knowledge.md sec.2: kedua role setara dengan permission identik.
-    Wakil Direktur = ROLE TERPISAH (NC-EX-005) tapi punya akses Executive Portal.
-    """
+    """True untuk Direktur Utama atau Wakil Direktur Utama."""
     return user_has_role(user, {"DIREKTUR_UTAMA", "WAKIL_DIREKTUR_UTAMA"})
 
 
 def get_min_user_level(user: User) -> int:
-    """Return hierarchy level terendah (= jabatan tertinggi) dari roles user.
-
-    Untuk Wakil Direktur Utama (level 11), return 1 karena setara Direktur Utama
-    di sisi authority — meskipun encoded sebagai 11 untuk identification.
-    """
+    """Lower number = higher authority. Wakil (level 11) treated as level 1."""
     if not user.roles:
-        return 99  # No role = lowest authority
-
-    levels = []
-    for ur in user.roles:
-        # Wakil Direktur Utama (level 11) = treat as level 1 untuk hierarchy check
-        levels.append(1 if ur.role.level == 11 else ur.role.level)
-
+        return 99
+    levels = [1 if ur.role.level == 11 else ur.role.level for ur in user.roles]
     return min(levels)
 
 
@@ -232,33 +236,21 @@ def get_persona_name(user: User) -> str:
     """Get persona name eksplisit untuk audit log (NC-EX-005 critical).
 
     Format: "Nama Lengkap (Role)" — wajib eksplisit untuk Wakil Direktur.
-
-    Contoh:
-    - "Rudi Atmadja (Direktur Utama)" — bukan generic "Direktur"
-    - "Siti Hartono (Wakil Direktur Utama)" — wajib eksplisit
-    - "Ari Christian (Manager · Teknologi)" — untuk staff
-
-    Asumsi: user.employee eagerly loaded jika ada (untuk dapat full_name).
-    Fallback ke NIK kalau employee record belum ada.
     """
-    # Get top role (lowest level number)
     top_role: Role | None = None
     for ur in user.roles:
         if top_role is None or ur.role.level < top_role.level:
             top_role = ur.role
-        # Wakil Direktur (level 11) treat as priority equal to Direktur Utama
         if ur.role.code == "WAKIL_DIREKTUR_UTAMA":
             top_role = ur.role
             break
 
     role_name = top_role.name if top_role else "—"
 
-    # Try get employee.full_name (loaded via relationship)
-    # Fallback to NIK kalau employee record belum ada
     try:
         if user.employee is not None and user.employee.full_name:
             return f"{user.employee.full_name} ({role_name})"
     except Exception:
-        pass  # Relationship not loaded
+        pass
 
     return f"{user.nik} ({role_name})"
