@@ -1,0 +1,156 @@
+/**
+ * IDEA Portal — Design Tokens
+ *
+ * Source of truth visual: GUI html/*.html mockup files.
+ * Port langsung dari IDEA_EmployeeMgmtTK.html (M1.2 mockup primary).
+ *
+ * Strategi: tokens.css di-load di main.tsx supaya semua halaman M1.2+
+ * bisa reference --ide-blue, --ide-bg, dll. Tidak conflict dengan AntD
+ * tokens (prefix --ide- untuk hindari overlap).
+ *
+ * Per decision log 2026-05-28: UI polish per epic, mockup HTML =
+ * visual source of truth.
+ */
+
+:root {
+  /* ─── Colors ─────────────────────────────────────────────────── */
+  --ide-bg: #F2F2F7;
+  --ide-surface: #FFFFFF;
+  --ide-border: rgba(0, 0, 0, 0.07);
+  --ide-border2: rgba(0, 0, 0, 0.04);
+
+  /* Text */
+  --ide-ink: #0A0A0F;
+  --ide-ink2: #3C3C4399; /* secondary text (semi) */
+  --ide-ink3: #3C3C4360; /* tertiary/muted text */
+
+  /* Brand */
+  --ide-blue: #007AFF;
+  --ide-blue-soft: #E8F1FF;
+  --ide-blue-hover: #0064CC;
+
+  /* Status colors (dengan soft variant untuk background) */
+  --ide-green: #30D158;
+  --ide-green-soft: #E5F9EC;
+  --ide-orange: #FF9F0A;
+  --ide-orange-soft: #FFF3E0;
+  --ide-red: #FF453A;
+  --ide-red-soft: #FFECEB;
+  --ide-purple: #BF5AF2;
+  --ide-purple-soft: #F5EEFE;
+  --ide-teal: #32D2F2;
+  --ide-teal-soft: #E5F9FE;
+
+  /* ─── Fonts ──────────────────────────────────────────────────── */
+  --ide-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ide-font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* ─── Radius ─────────────────────────────────────────────────── */
+  --ide-r: 16px; /* large card */
+  --ide-rm: 12px; /* medium */
+  --ide-rs: 8px;  /* small button/input */
+
+  /* ─── Shadow ─────────────────────────────────────────────────── */
+  --ide-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ide-shadow-md: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --ide-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Blue glow untuk active button */
+  --ide-shadow-blue: 0 1px 3px rgba(0, 122, 255, 0.3);
+
+  /* ─── Spacing scale ──────────────────────────────────────────── */
+  --ide-sp-xs: 4px;
+  --ide-sp-sm: 8px;
+  --ide-sp-md: 14px;
+  --ide-sp-lg: 20px;
+  --ide-sp-xl: 24px;
+}
+
+/* ─── Dark mode override (sync dengan AntD darkAlgorithm) ──── */
+[data-theme='dark'] {
+  --ide-bg: #1C1C1E;
+  --ide-surface: #2C2C2E;
+  --ide-border: rgba(255, 255, 255, 0.10);
+  --ide-border2: rgba(255, 255, 255, 0.05);
+
+  --ide-ink: #FFFFFF;
+  --ide-ink2: #EBEBF599;
+  --ide-ink3: #EBEBF560;
+
+  --ide-blue-soft: rgba(0, 122, 255, 0.15);
+  --ide-green-soft: rgba(48, 209, 88, 0.15);
+  --ide-orange-soft: rgba(255, 159, 10, 0.15);
+  --ide-red-soft: rgba(255, 69, 58, 0.15);
+  --ide-purple-soft: rgba(191, 90, 242, 0.15);
+  --ide-teal-soft: rgba(50, 210, 242, 0.15);
+}
+
+/* ─── Reusable utility classes ──────────────────────────────────
+ * Selectively used by components yang port dari mockup. Hindari
+ * abuse — prefer CSS modules / styled per komponen kalau bisa.
+ */
+
+/* KPI card — sering muncul di mockup */
+.ide-kpi {
+  background: var(--ide-surface);
+  border: 1px solid var(--ide-border);
+  border-radius: var(--ide-r);
+  padding: 14px 16px;
+}
+
+.ide-kpi-val {
+  font-family: var(--ide-font-mono);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+  color: var(--ide-ink);
+}
+
+.ide-kpi-lbl {
+  font-size: 10px;
+  color: var(--ide-ink3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Tag pills (status badges) */
+.ide-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.ide-tag-green { background: var(--ide-green-soft); color: var(--ide-green); }
+.ide-tag-blue { background: var(--ide-blue-soft); color: var(--ide-blue); }
+.ide-tag-orange { background: var(--ide-orange-soft); color: var(--ide-orange); }
+.ide-tag-red { background: var(--ide-red-soft); color: var(--ide-red); }
+.ide-tag-purple { background: var(--ide-purple-soft); color: var(--ide-purple); }
+.ide-tag-gray { background: var(--ide-bg); color: var(--ide-ink3); }
+
+/* Avatar circle dengan initial */
+.ide-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.ide-avatar-sm { width: 28px; height: 28px; font-size: 10px; }
+.ide-avatar-md { width: 34px; height: 34px; font-size: 11px; }
+.ide-avatar-lg { width: 48px; height: 48px; font-size: 14px; }
+
+/* Apply font family to root */
+.ide-font {
+  font-family: var(--ide-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

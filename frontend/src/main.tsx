@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import AppRoutes from './routes/AppRoutes';
 import './index.css';
+import './styles/tokens.css';  // M1.2+ design tokens (port dari GUI html/)
 
 const queryClient = new QueryClient({
   defaultOptions: {
