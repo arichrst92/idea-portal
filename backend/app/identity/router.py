@@ -41,7 +41,7 @@ from app.identity.schemas import (
     RolePublic,
     UserPublic,
 )
-from app.identity import password_reset
+from app.identity import password_reset, search
 from app.core.security import hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -473,3 +473,28 @@ async def executive_ping(
         "persona": service.get_persona_name(current_user),
         "nik": current_user.nik,
     }
+
+
+# ─── Global search (TSK-012) ─────────────────────────────────────
+
+
+@router.get(
+    "/search",
+    status_code=status.HTTP_200_OK,
+    summary="Global search across users, employees, projects",
+    description=(
+        "Permission-aware fuzzy search. Query min 2 karakter. "
+        "Returns max 10 hasil per type. "
+        "Result format: list of {type, id, title, subtitle, url}."
+    ),
+)
+async def global_search_endpoint(
+    q: str,
+    session: DBSession,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, object]:
+    """GET /api/v1/auth/search?q=... — global search dengan permission filter."""
+    if len(q.strip()) < 2:
+        return {"query": q, "results": [], "total": 0}
+    results = await search.global_search(session, q, current_user)
+    return {"query": q, "results": results, "total": len(results)}
