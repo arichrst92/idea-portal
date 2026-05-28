@@ -207,6 +207,10 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-27 | JWT HS256 dengan token type claim (`access` vs `refresh`) | Cegah refresh token dipakai sebagai access (security hardening) |
 | 2026-05-27 | Refresh token rotation di TSK-002 tanpa blacklist | Simple — blacklist akan ditambah di TSK-005 dengan Redis store |
 | 2026-05-27 | Frontend axios interceptor: queue concurrent 401 saat refresh in-flight | Cegah refresh storm; semua pending requests retry sekaligus setelah refresh sukses |
+| 2026-05-27 | Theme tokens via CSS variables di document.documentElement | Non-AntD components bisa reference --blue/--bg langsung; sync dengan AntD ConfigProvider |
+| 2026-05-27 | Breakpoint: mobile <768px, tablet 768-1024px, desktop >1024px | Sesuai AntD default; useResponsive hook untuk component-level branch |
+| 2026-05-27 | Global search permission-aware di backend (Staff hanya self) | Cegah unauthorized user enumeration; lihat search.py |
+| 2026-05-27 | M1.1 Auth & RBAC: 76 pts complete dalam 7 sesi (avg 10-13 pts/sesi) | Velocity solo+AI lebih tinggi dari estimasi 12-18 pts/sprint; bisa accelerate ke Skenario A roadmap |
 
 Tambah row baru saat ada keputusan signifikan.
 
