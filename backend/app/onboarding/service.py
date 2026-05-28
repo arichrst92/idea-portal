@@ -241,7 +241,11 @@ async def list_assignments(
 
     stmt = (
         base.options(
-            selectinload(OnboardingAssignment.template),
+            # Eager load template.tasks juga supaya calculate_progress
+            # tidak trigger lazy load di async context (crash di FastAPI)
+            selectinload(OnboardingAssignment.template).selectinload(
+                OnboardingTemplate.tasks
+            ),
             selectinload(OnboardingAssignment.completions),
         )
         .order_by(OnboardingAssignment.started_at.desc())
