@@ -262,3 +262,35 @@ class BulkImportResult(BaseModel):
     error_count: int
     errors: list[dict] = Field(default_factory=list)
     created_niks: list[str] = Field(default_factory=list)
+
+
+# ─── Org Chart (TSK-014) ───────────────────────────────────────────
+
+
+class OrgChartNode(BaseModel):
+    """Single node di org chart — employee dengan children.
+
+    Built recursively: setiap employee bisa punya direct reports (employees
+    yang supervisor_id-nya = node.id).
+    """
+
+    id: UUID
+    nik: str
+    full_name: str
+    photo_url: str | None = None
+    position_name: str | None = None
+    position_level: int | None = None
+    department_name: str | None = None
+    employee_type: EmployeeType
+    status: EmployeeStatus
+    direct_reports_count: int = 0
+    children: list["OrgChartNode"] = Field(default_factory=list)
+
+
+class OrgChartResponse(BaseModel):
+    """Org chart response — list of root nodes (employee tanpa supervisor)."""
+
+    roots: list[OrgChartNode]
+    total_employees: int
+    department_id: UUID | None = None
+    department_name: str | None = None

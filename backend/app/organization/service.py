@@ -559,3 +559,99 @@ def calc_total_pages(total: int, page_size: int) -> int:
     if total == 0:
         return 0
     return math.ceil(total / page_size)
+
+
+# ─── Org Chart tree builder (TSK-014) ──────────────────────────────
+
+
+async def build_org_chart(
+    session: AsyncSession, department_id: UUID | None = None
+) -> tuple[list[dict], int, str | None]:
+    """Build nested org chart tree dari employee.supervisor_id.
+
+    Returns: (roots, total_count, dept_name)
+    - roots: list of dict yang siap di-serialize ke OrgChartNode
+    - root = employee tanpa supervisor (top of hierarchy)
+    - children built recursively via supervisor_id lookup
+
+    Args:
+        session: AsyncSession
+        department_id: filter ke dept tertentu (None = all dept)
+    """
+    # Fetch semua employee (single query, eager load) + filter optional
+    stmt = (
+        select(Employee)
+        .where(Employee.deleted_at.is_(None))
+        .options(
+            selectinload(Employee.user),
+            selectinload(Employee.department),
+            selectinload(Employee.position),
+        )
+    )
+    if department_id is not None:
+        stmt = stmt.where(Employee.department_id == department_id)
+
+    result = await session.execute(stmt)
+    employees = list(result.scalars().all())
+
+    if not employees:
+        return [], 0, None
+
+    # Build node lookup: id → dict
+    nodes: dict[UUID, dict] = {}
+    for emp in employees:
+        nodes[emp.id] = {
+            "id": emp.id,
+            "nik": emp.user.nik if emp.user else "",
+            "full_name": emp.full_name,
+            "photo_url": emp.photo_url,
+            "position_name": emp.position.name if emp.position else None,
+            "position_level": emp.position.level if emp.position else None,
+            "department_name": emp.department.name if emp.department else None,
+            "employee_type": emp.employee_type,
+            "status": emp.status,
+            "direct_reports_count": 0,
+            "children": [],
+            "_supervisor_id": emp.supervisor_id,  # internal, dihapus sebelum return
+        }
+
+    # Wire children → parent
+    roots: list[dict] = []
+    for emp_id, node in nodes.items():
+        sup_id = node["_supervisor_id"]
+        if sup_id is not None and sup_id in nodes:
+            parent = nodes[sup_id]
+            parent["children"].append(node)
+            parent["direct_reports_count"] += 1
+        else:
+            # No supervisor (atau supervisor di luar dept filter) → root
+            roots.append(node)
+
+    # Sort children by position level (lower = higher rank, di-atas)
+    def _sort_recursive(node: dict) -> None:
+        node["children"].sort(
+            key=lambda n: (n.get("position_level") or 99, n["full_name"])
+        )
+        for child in node["children"]:
+            _sort_recursive(child)
+
+    for root in roots:
+        _sort_recursive(root)
+    roots.sort(key=lambda n: (n.get("position_level") or 99, n["full_name"]))
+
+    # Cleanup internal field
+    def _cleanup(node: dict) -> None:
+        node.pop("_supervisor_id", None)
+        for child in node["children"]:
+            _cleanup(child)
+
+    for root in roots:
+        _cleanup(root)
+
+    # Resolve dept name
+    dept_name = None
+    if department_id is not None:
+        dept = await get_department(session, department_id)
+        dept_name = dept.name
+
+    return roots, len(employees), dept_name

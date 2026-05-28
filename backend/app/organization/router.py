@@ -43,6 +43,7 @@ from app.organization.schemas import (
     EmployeePromote,
     EmployeeUpdate,
     OrgChangeOut,
+    OrgChartResponse,
     PositionCreate,
     PositionOut,
     PositionUpdate,
@@ -566,4 +567,30 @@ async def update_position_endpoint(
         salary_range_max=pos.salary_range_max,
         created_at=pos.created_at,
         department_name=pos.department.name if pos.department else None,
+    )
+
+
+# ─── Org Chart (TSK-014) ───────────────────────────────────────────
+
+
+@router.get("/org-chart", response_model=OrgChartResponse)
+async def org_chart_endpoint(
+    session: DBSession,
+    _user= Depends(require_permission("employee.view")),
+    department_id: UUID | None = Query(
+        None, description="Filter ke dept tertentu. None = all dept."
+    ),
+) -> OrgChartResponse:
+    """Build org chart tree.
+
+    Tree dibangun dari Employee.supervisor_id relationship. Root = employee
+    tanpa supervisor (top hierarchy seperti CEO/Direktur Utama). Children
+    di-sort by position level (lower number = higher rank → di atas).
+    """
+    roots, total, dept_name = await service.build_org_chart(session, department_id)
+    return OrgChartResponse(
+        roots=roots,
+        total_employees=total,
+        department_id=department_id,
+        department_name=dept_name,
     )
