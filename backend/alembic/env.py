@@ -77,6 +77,11 @@ from app.sales.models import (  # noqa: F401  — Sales (7)
     SalesCommission,
     SalesTarget,
 )
+from app.hiring.models import (  # noqa: F401  — Hiring (3) TSK-015
+    Interview,
+    JobApplication,
+    JobOpening,
+)
 
 config = context.config
 
