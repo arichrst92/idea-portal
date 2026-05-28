@@ -211,6 +211,11 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-27 | Breakpoint: mobile <768px, tablet 768-1024px, desktop >1024px | Sesuai AntD default; useResponsive hook untuk component-level branch |
 | 2026-05-27 | Global search permission-aware di backend (Staff hanya self) | Cegah unauthorized user enumeration; lihat search.py |
 | 2026-05-27 | M1.1 Auth & RBAC: 76 pts complete dalam 7 sesi (avg 10-13 pts/sesi) | Velocity solo+AI lebih tinggi dari estimasi 12-18 pts/sprint; bisa accelerate ke Skenario A roadmap |
+| 2026-05-28 | Register semua domain models di `app/main.py` (identity, organization, assessment, project, outsource, payroll, sales) | SQLAlchemy mapper config butuh resolve cross-domain relationship saat first query (User.employee → Employee). Tanpa eager import muncul `InvalidRequestError: 'Employee' failed to locate a name`. Pattern: import semua di app entry point. |
+| 2026-05-28 | `User.roles` relationship butuh `foreign_keys="UserRole.user_id"` eksplisit | `user_roles` table punya 2 FK ke `users.id` (user_id PK + assigned_by_user_id audit). SQLAlchemy ambiguous tanpa hint. |
+| 2026-05-28 | Pin `bcrypt>=4.0.0,<4.1.0` di pyproject | bcrypt 5.x hapus `__about__` attribute yang dipakai passlib untuk version detection. passlib gagal init dan crash semua password hashing. Pin sampai passlib release fix atau migrate ke bcrypt direct. |
+| 2026-05-28 | Docker postgres → port 5433 (bukan 5432) | Mac mini punya postgres native di 5432 yang shadow Docker. Untuk hindari kill postgres user (mungkin dipakai project lain), Docker IDEA Portal pakai 5433. Update di docker-compose.yml + backend/.env. |
+| 2026-05-28 | UI polish per epic, BUKAN dedicated sprint UI | M1.1 frontend dibangun pakai AntD bare-bones tanpa visual port dari `GUI html/*.html`. Setiap port halaman baru di milestone berikutnya WAJIB ambil styling (colors, typography, layout, shadows, gradient mesh) langsung dari mockup HTML. Halaman M1.1 yang sudah ada (Login, AppShell, Settings, PermissionMatrix, GlobalSearch) di-polish belakangan saat ada kapasitas. Mockup HTML = source of truth visual. |
 
 Tambah row baru saat ada keputusan signifikan.
 

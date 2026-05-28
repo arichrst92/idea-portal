@@ -149,3 +149,8 @@ $RECYCLE.BIN/
 ~$*.xlsx
 ~$*.pptx
 .~lock.*
+
+# ─────────────────────────────────────────────
+# One-time commit helper scripts
+# ─────────────────────────────────────────────
+tsk_*_commit.sh
