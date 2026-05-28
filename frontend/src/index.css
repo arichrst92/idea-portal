@@ -13,11 +13,89 @@ body,
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f2f2f7;
-  color: #0a0a0f;
+  background: var(--bg, #f2f2f7);
+  color: var(--ink, #0a0a0f);
+  transition: background-color 0.2s, color 0.2s;
 }
 
 code,
 .mono {
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ─── Accessibility: focus styles ────────────────────────────────── */
+
+/* Keyboard focus indicator — visible & contrast-safe */
+*:focus-visible {
+  outline: 2px solid var(--blue, #007AFF);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hide outline saat mouse click (only show on keyboard nav) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Skip-to-content link untuk screen readers ─────────────────── */
+
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 9999;
+  background: var(--blue, #007AFF);
+  color: #ffffff;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+  top: 8px;
+}
+
+/* ─── Reduced motion (system preference + manual toggle) ──────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode subtle scrollbar */
+[data-theme='dark'] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #1c1c1f;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #3c3c43;
+  border-radius: 4px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #5c5c63;
+}
+
+/* ─── ARIA live region untuk announcements ────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

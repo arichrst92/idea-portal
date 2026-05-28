@@ -21,7 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Alert, Button, Form, Input, Typography } from 'antd';
 import type { AxiosError } from 'axios';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -42,6 +42,19 @@ function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [lockoutRemaining, setLockoutRemaining] = useState<number | null>(null);
+
+  // Countdown timer untuk lockout (TSK-006)
+  useEffect(() => {
+    if (lockoutRemaining === null || lockoutRemaining <= 0) return;
+    const interval = window.setInterval(() => {
+      setLockoutRemaining((prev) => {
+        if (prev === null || prev <= 1) return null;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [lockoutRemaining]);
 
   const {
     control,
@@ -63,6 +76,10 @@ function LoginPage() {
       const detail = error.response?.data?.detail;
       if (detail?.message) {
         setServerError(detail.message);
+        // TSK-006: capture lockout countdown
+        if (detail.code === 'ACCOUNT_LOCKED' && detail.remaining_seconds) {
+          setLockoutRemaining(detail.remaining_seconds);
+        }
       } else if (error.message) {
         setServerError(`Koneksi error: ${error.message}`);
       } else {
@@ -129,14 +146,35 @@ function LoginPage() {
             <Alert
               type="error"
               message={serverError}
+              description={
+                lockoutRemaining !== null && lockoutRemaining > 0 ? (
+                  <Text>
+                    Akun di-unlock otomatis dalam{' '}
+                    <strong>
+                      {Math.floor(lockoutRemaining / 60)}:{String(lockoutRemaining % 60).padStart(2, '0')}
+                    </strong>
+                    . Atau hubungi Operation untuk unlock manual.
+                  </Text>
+                ) : undefined
+              }
               showIcon
               style={{ marginBottom: 16 }}
               closable
-              onClose={() => setServerError(null)}
+              onClose={() => {
+                setServerError(null);
+                setLockoutRemaining(null);
+              }}
+              role="alert"
+              aria-live="assertive"
             />
           )}
 
-          <Form layout="vertical" onFinish={handleSubmit(onSubmit)} autoComplete="on">
+          <Form
+            layout="vertical"
+            onFinish={handleSubmit(onSubmit)}
+            autoComplete="on"
+            aria-label="Login form"
+          >
             <Form.Item
               label="NIK Karyawan"
               validateStatus={errors.nik ? 'error' : ''}
@@ -150,9 +188,12 @@ function LoginPage() {
                     {...field}
                     size="large"
                     placeholder="Contoh: EMP-001"
-                    prefix={<UserOutlined style={{ color: '#86868B' }} />}
+                    prefix={<UserOutlined style={{ color: '#86868B' }} aria-hidden="true" />}
                     autoFocus
                     autoComplete="username"
+                    aria-label="NIK Karyawan"
+                    aria-required="true"
+                    aria-invalid={errors.nik ? 'true' : 'false'}
                   />
                 )}
               />
@@ -171,8 +212,11 @@ function LoginPage() {
                     {...field}
                     size="large"
                     placeholder="Password"
-                    prefix={<LockOutlined style={{ color: '#86868B' }} />}
+                    prefix={<LockOutlined style={{ color: '#86868B' }} aria-hidden="true" />}
                     autoComplete="current-password"
+                    aria-label="Password"
+                    aria-required="true"
+                    aria-invalid={errors.password ? 'true' : 'false'}
                   />
                 )}
               />

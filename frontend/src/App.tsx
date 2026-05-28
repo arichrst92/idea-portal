@@ -116,6 +116,10 @@ function App() {
         <Card title="Quick Links">
           <Space direction="vertical">
             <Text>
+              <a href="/settings">⚙️ Pengaturan</a>{' '}
+              <Text type="secondary" style={{ fontSize: 11 }}>(Theme, font, password)</Text>
+            </Text>
+            <Text>
               <a href="/admin/permissions">🔐 Permission Matrix</a>{' '}
               <Text type="secondary" style={{ fontSize: 11 }}>(Executive only)</Text>
             </Text>

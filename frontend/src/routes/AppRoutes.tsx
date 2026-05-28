@@ -11,6 +11,7 @@ import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
 
@@ -48,6 +49,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <PermissionMatrixPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
             </RequireAuth>
           }
         />
