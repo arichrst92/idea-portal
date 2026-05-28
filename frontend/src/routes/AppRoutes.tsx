@@ -13,6 +13,8 @@ import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import EmployeeCreatePage from '@/features/employees/EmployeeCreatePage';
+import EmployeeDetailPage from '@/features/employees/EmployeeDetailPage';
 import EmployeeListPage from '@/features/employees/EmployeeListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
@@ -69,6 +71,22 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><EmployeeListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/employees/new"
+          element={
+            <RequireAuth>
+              <AppShell><EmployeeCreatePage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/employees/:nik"
+          element={
+            <RequireAuth>
+              <AppShell><EmployeeDetailPage /></AppShell>
             </RequireAuth>
           }
         />
