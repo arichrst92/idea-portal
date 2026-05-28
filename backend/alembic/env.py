@@ -88,6 +88,9 @@ from app.onboarding.models import (  # noqa: F401  — Onboarding (4) TSK-016
     OnboardingTemplate,
     TaskCompletion,
 )
+from app.separation.models import (  # noqa: F401  — Separation (1) TSK-017
+    EmployeeSeparation,
+)
 
 config = context.config
 
