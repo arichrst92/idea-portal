@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Card, Space, Spin, Typography } from 'antd';
+import { Alert, Card, Space, Spin, Typography } from 'antd';
 
 import { apiClient } from './api/client';
 import { useAuthStore } from './store/auth';
@@ -19,7 +19,6 @@ interface RootResponse {
 
 function App() {
   const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const { data: health, isLoading, error } = useQuery<HealthResponse>({
     queryKey: ['health'],
@@ -38,40 +37,20 @@ function App() {
   });
 
   return (
-    <div style={{ padding: '40px', maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ padding: '24px 32px', maxWidth: 1024, margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
           <Title level={1} style={{ margin: 0 }}>🚀 IDEA Portal</Title>
           {user && (
-            <Space>
-              <Text>
-                Hi, <strong>{user.nik}</strong> ({user.roles[0]?.name ?? '—'})
-              </Text>
-              <Button
-                onClick={async () => {
-                  const { logout } = await import('./api/auth');
-                  const { broadcastLogout } = await import('./lib/sessionBroadcast');
-                  const refreshToken = useAuthStore.getState().refreshToken;
-                  if (refreshToken) {
-                    try {
-                      await logout(refreshToken);
-                    } catch {
-                      // Best-effort — backend mungkin gak reachable
-                    }
-                  }
-                  clearAuth();
-                  broadcastLogout('user');
-                  window.location.href = '/login';
-                }}
-              >
-                Logout
-              </Button>
-            </Space>
+            <Paragraph style={{ marginTop: 8, marginBottom: 0 }}>
+              Selamat datang, <strong>{user.nik}</strong>{' '}
+              <Text type="secondary">({user.roles[0]?.name ?? '—'})</Text>
+            </Paragraph>
           )}
         </div>
         <Paragraph>
-          Sprint 1 — TSK-001 Login Portal Setup ✓<br />
-          Anda berhasil login. Selamat datang di IDEA Portal.
+          Sprint 1 — M1.1 Auth & RBAC sedang berjalan. Tekan{' '}
+          <Text keyboard>⌘ K</Text> untuk global search atau gunakan menu di sebelah kiri.
         </Paragraph>
 
         <Card title="Backend Health Check">

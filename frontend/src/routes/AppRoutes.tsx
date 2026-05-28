@@ -7,6 +7,8 @@
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { AppShell } from '@/components/AppShell';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
@@ -32,6 +34,7 @@ function AppRoutes() {
   return (
     <>
       <SessionManager />
+      <GlobalSearch />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -40,7 +43,7 @@ function AppRoutes() {
           path="/"
           element={
             <RequireAuth>
-              <App />
+              <AppShell><App /></AppShell>
             </RequireAuth>
           }
         />
@@ -48,7 +51,7 @@ function AppRoutes() {
           path="/admin/permissions"
           element={
             <RequireAuth>
-              <PermissionMatrixPage />
+              <AppShell><PermissionMatrixPage /></AppShell>
             </RequireAuth>
           }
         />
@@ -56,7 +59,7 @@ function AppRoutes() {
           path="/settings"
           element={
             <RequireAuth>
-              <SettingsPage />
+              <AppShell><SettingsPage /></AppShell>
             </RequireAuth>
           }
         />
