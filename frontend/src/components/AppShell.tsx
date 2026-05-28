@@ -21,6 +21,7 @@ import {
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
+  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Space, Typography } from 'antd';
@@ -45,6 +46,7 @@ interface AppShellProps {
 function getMenuItems(isExecutive: boolean) {
   const items = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
 
