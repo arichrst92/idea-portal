@@ -20,6 +20,7 @@ import {
   LockOutlined,
   LogoutOutlined,
   MenuOutlined,
+  PoweroffOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -53,6 +54,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/org-chart', icon: <ApartmentOutlined />, label: 'Org Chart' },
     { key: '/hiring', icon: <SolutionOutlined />, label: 'Hiring' },
     { key: '/onboarding', icon: <CheckSquareOutlined />, label: 'Onboarding' },
+    { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
 
