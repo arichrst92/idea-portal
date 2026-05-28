@@ -17,6 +17,9 @@ import EmployeeCreatePage from '@/features/employees/EmployeeCreatePage';
 import EmployeeDetailPage from '@/features/employees/EmployeeDetailPage';
 import EmployeeListPage from '@/features/employees/EmployeeListPage';
 import OrgChartPage from '@/features/employees/OrgChartPage';
+import JobOpeningCreatePage from '@/features/hiring/JobOpeningCreatePage';
+import JobOpeningDetailPage from '@/features/hiring/JobOpeningDetailPage';
+import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
@@ -96,6 +99,30 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><OrgChartPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/hiring"
+          element={
+            <RequireAuth>
+              <AppShell><JobOpeningListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/hiring/new"
+          element={
+            <RequireAuth>
+              <AppShell><JobOpeningCreatePage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/hiring/:id"
+          element={
+            <RequireAuth>
+              <AppShell><JobOpeningDetailPage /></AppShell>
             </RequireAuth>
           }
         />

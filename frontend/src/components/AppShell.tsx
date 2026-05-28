@@ -22,6 +22,7 @@ import {
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
+  SolutionOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -49,6 +50,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
     { key: '/org-chart', icon: <ApartmentOutlined />, label: 'Org Chart' },
+    { key: '/hiring', icon: <SolutionOutlined />, label: 'Hiring' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
 
