@@ -232,6 +232,36 @@ export async function getEmployeeHistory(nik: string, limit = 50): Promise<OrgCh
   return r.data;
 }
 
+// ─── Org Chart (TSK-014) ────────────────────────────────────────
+
+export interface OrgChartNode {
+  id: string;
+  nik: string;
+  full_name: string;
+  photo_url: string | null;
+  position_name: string | null;
+  position_level: number | null;
+  department_name: string | null;
+  employee_type: EmployeeType;
+  status: EmployeeStatus;
+  direct_reports_count: number;
+  children: OrgChartNode[];
+}
+
+export interface OrgChartResponse {
+  roots: OrgChartNode[];
+  total_employees: number;
+  department_id: string | null;
+  department_name: string | null;
+}
+
+export async function getOrgChart(departmentId?: string): Promise<OrgChartResponse> {
+  const r = await apiClient.get<OrgChartResponse>('/api/v1/org-chart', {
+    params: departmentId ? { department_id: departmentId } : undefined,
+  });
+  return r.data;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 
 /** Map status backend → tag color class untuk UI (tokens.css). */
