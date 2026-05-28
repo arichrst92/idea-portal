@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { login, type ApiError, type LoginRequest, type LoginResponse } from '@/api/auth';
+import { useResponsive } from '@/lib/useResponsive';
 import { useAuthStore } from '@/store/auth';
 
 const { Title, Text, Paragraph } = Typography;
@@ -41,6 +42,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const { isMobile } = useResponsive();
   const [serverError, setServerError] = useState<string | null>(null);
   const [lockoutRemaining, setLockoutRemaining] = useState<number | null>(null);
 
@@ -92,6 +94,120 @@ function LoginPage() {
     setServerError(null);
     mutation.mutate(values);
   };
+
+  // Responsive: di mobile, single-column layout dengan compact header
+  if (isMobile) {
+    return (
+      <div style={styles.mobilePage}>
+        <div style={styles.mobileBrand}>
+          <div style={styles.logoMark}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7" height="7" rx="1.8" fill="#0A0A0A" />
+              <rect x="14" y="3" width="7" height="7" rx="1.8" fill="#0A0A0A" opacity=".5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.8" fill="#0A0A0A" opacity=".5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.8" fill="#0A0A0A" opacity=".85" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#0A0A0A' }}>IDEA Portal</div>
+            <div style={{ fontSize: 11, color: '#86868B' }}>IT Consultant & Outsourcing</div>
+          </div>
+        </div>
+
+        <div style={styles.mobileFormContainer}>
+          <Title level={3} style={{ marginBottom: 4 }}>Sign In</Title>
+          <Text type="secondary" style={{ marginBottom: 24, display: 'block' }}>
+            Masukkan NIK dan password Anda
+          </Text>
+
+          {serverError && (
+            <Alert
+              type="error"
+              message={serverError}
+              description={
+                lockoutRemaining !== null && lockoutRemaining > 0 ? (
+                  <Text>
+                    Akun di-unlock otomatis dalam{' '}
+                    <strong>
+                      {Math.floor(lockoutRemaining / 60)}:{String(lockoutRemaining % 60).padStart(2, '0')}
+                    </strong>
+                    .
+                  </Text>
+                ) : undefined
+              }
+              showIcon
+              style={{ marginBottom: 16 }}
+              closable
+              onClose={() => {
+                setServerError(null);
+                setLockoutRemaining(null);
+              }}
+              role="alert"
+              aria-live="assertive"
+            />
+          )}
+
+          <Form layout="vertical" onFinish={handleSubmit(onSubmit)} aria-label="Login form">
+            <Form.Item label="NIK Karyawan" validateStatus={errors.nik ? 'error' : ''} help={errors.nik?.message}>
+              <Controller
+                name="nik"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    size="large"
+                    placeholder="Contoh: EMP-001"
+                    prefix={<UserOutlined style={{ color: '#86868B' }} aria-hidden="true" />}
+                    autoFocus
+                    autoComplete="username"
+                    aria-label="NIK Karyawan"
+                  />
+                )}
+              />
+            </Form.Item>
+
+            <Form.Item label="Password" validateStatus={errors.password ? 'error' : ''} help={errors.password?.message}>
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <Input.Password
+                    {...field}
+                    size="large"
+                    placeholder="Password"
+                    prefix={<LockOutlined style={{ color: '#86868B' }} aria-hidden="true" />}
+                    autoComplete="current-password"
+                    aria-label="Password"
+                  />
+                )}
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" size="large" block loading={mutation.isPending}>
+                Masuk
+              </Button>
+            </Form.Item>
+
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <a onClick={() => navigate('/forgot-password')} style={{ cursor: 'pointer' }}>
+                Lupa password?
+              </a>
+            </div>
+          </Form>
+
+          <div style={styles.helpBox}>
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>
+              NIK & password dikonfigurasi oleh IT Admin
+            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Hubungi Dept. Operation jika perlu bantuan.
+            </Text>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
@@ -260,6 +376,28 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
+  },
+  mobilePage: {
+    minHeight: '100vh',
+    background: '#F5F5F7',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '24px 20px',
+  },
+  mobileBrand: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 28,
+  },
+  mobileFormContainer: {
+    width: '100%',
+    maxWidth: 420,
+    margin: '0 auto',
+    background: '#FFFFFF',
+    padding: 24,
+    borderRadius: 12,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
   },
   leftPanel: {
     position: 'relative',
