@@ -191,7 +191,7 @@ function LoginPage() {
             </Form.Item>
 
             <div style={styles.forgotLink}>
-              <a href="#" onClick={(e) => e.preventDefault()}>
+              <a onClick={() => navigate('/forgot-password')} style={{ cursor: 'pointer' }}>
                 Lupa password?
               </a>
             </div>

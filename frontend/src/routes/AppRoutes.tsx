@@ -7,7 +7,10 @@
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
+import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
+import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
 
@@ -30,11 +33,21 @@ function AppRoutes() {
       <SessionManager />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/"
           element={
             <RequireAuth>
               <App />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/permissions"
+          element={
+            <RequireAuth>
+              <PermissionMatrixPage />
             </RequireAuth>
           }
         />

@@ -83,3 +83,46 @@ export async function logout(refreshToken: string): Promise<{ success: boolean; 
   );
   return response.data;
 }
+
+export interface ForgotPasswordResponse {
+  message: string;
+  reset_token?: string;  // DEV only
+  expires_at?: string;
+}
+
+/**
+ * POST /api/v1/auth/forgot-password
+ * Generic response — tidak leak whether NIK exists (anti-enumeration).
+ * DEV mode: response berisi reset_token untuk testing.
+ */
+export async function forgotPassword(nik: string): Promise<ForgotPasswordResponse> {
+  const response = await apiClient.post<ForgotPasswordResponse>(
+    '/api/v1/auth/forgot-password',
+    { nik },
+  );
+  return response.data;
+}
+
+/**
+ * POST /api/v1/auth/reset-password
+ * Single-use token consumption.
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  const response = await apiClient.post<{ success: boolean; message: string }>(
+    '/api/v1/auth/reset-password',
+    { token, new_password: newPassword },
+  );
+  return response.data;
+}
+
+/**
+ * POST /api/v1/auth/change-password
+ * Authenticated user changing own password.
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  const response = await apiClient.post<{ success: boolean; message: string }>(
+    '/api/v1/auth/change-password',
+    { current_password: currentPassword, new_password: newPassword },
+  );
+  return response.data;
+}
