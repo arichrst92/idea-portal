@@ -123,7 +123,13 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     last_login_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)  # IPv6 = 45 chars
 
     # Relationships
-    roles: Mapped[list[UserRole]] = relationship(back_populates="user", lazy="selectin")
+    # foreign_keys eksplisit karena user_roles punya 2 FK ke users.id
+    # (user_id = PK, assigned_by_user_id = audit). Tanpa ini SQLAlchemy ambiguous.
+    roles: Mapped[list[UserRole]] = relationship(
+        back_populates="user",
+        foreign_keys="UserRole.user_id",
+        lazy="selectin",
+    )
     employee: Mapped[Employee | None] = relationship(back_populates="user", uselist=False)
 
     __table_args__ = (

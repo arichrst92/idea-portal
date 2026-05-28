@@ -10,6 +10,7 @@ dependencies = [
     "fastapi[standard]>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "sqlalchemy>=2.0.30",
+    "greenlet>=3.0.0",
     "alembic>=1.13.0",
     "asyncpg>=0.29.0",
     "psycopg[binary]>=3.2.0",
@@ -17,6 +18,9 @@ dependencies = [
     "pydantic-settings>=2.4.0",
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    # bcrypt 5.x removes __about__ attribute, breaking passlib detection.
+    # Pin ke <4.1 sampai passlib release fix (or migrate ke bcrypt langsung).
+    "bcrypt>=4.0.0,<4.1.0",
     "python-multipart>=0.0.9",
     "celery[redis]>=5.4.0",
     "redis>=5.0.0",

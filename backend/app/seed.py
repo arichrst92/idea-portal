@@ -29,6 +29,15 @@ from app.identity.models import (
 )
 from app.identity.permissions import PERMISSION_REGISTRY, ROLE_PERMISSION_MAP
 
+# Register semua domain models supaya mapper config resolve relationship cross-domain
+# (User.employee → Employee, dst). Tanpa ini SQLAlchemy raise InvalidRequestError.
+from app.organization import models as _organization_models  # noqa: F401
+from app.assessment import models as _assessment_models  # noqa: F401
+from app.project import models as _project_models  # noqa: F401
+from app.outsource import models as _outsource_models  # noqa: F401
+from app.payroll import models as _payroll_models  # noqa: F401
+from app.sales import models as _sales_models  # noqa: F401
+
 
 # ─── Roles ───────────────────────────────────────────────────────
 ROLES_SEED = [

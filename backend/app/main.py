@@ -13,6 +13,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.config import get_settings
 
+# Register semua domain models supaya SQLAlchemy mapper bisa resolve relationship
+# cross-domain (mis. User.employee → Employee). Tanpa ini muncul
+# InvalidRequestError saat query pertama yang trigger mapper config.
+from app.identity import models as _identity_models  # noqa: F401
+from app.organization import models as _organization_models  # noqa: F401
+from app.assessment import models as _assessment_models  # noqa: F401
+from app.project import models as _project_models  # noqa: F401
+from app.outsource import models as _outsource_models  # noqa: F401
+from app.payroll import models as _payroll_models  # noqa: F401
+from app.sales import models as _sales_models  # noqa: F401
+
 settings = get_settings()
 
 
