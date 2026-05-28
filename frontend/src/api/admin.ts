@@ -43,3 +43,10 @@ export async function toggleRolePermission(
   );
   return response.data;
 }
+
+export async function unlockUserAccount(nik: string): Promise<{ success: boolean; message: string; was_locked: boolean }> {
+  const response = await apiClient.post<{ success: boolean; message: string; was_locked: boolean }>(
+    `/api/v1/admin/users/${encodeURIComponent(nik)}/unlock`,
+  );
+  return response.data;
+}

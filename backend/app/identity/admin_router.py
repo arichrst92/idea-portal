@@ -19,7 +19,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.audit import audit_log
-from app.core.deps import DBSession, require_executive
+from app.core.deps import DBSession, require_executive, require_permission
+from app.identity import service
 from app.identity.models import Permission, Role, RolePermission, User
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -203,3 +204,57 @@ async def toggle_role_permission(
     )
 
     return {"message": result_msg, "action": action_str}
+
+
+# ─── User unlock (TSK-006) ───────────────────────────────────────
+
+
+@router.post(
+    "/users/{nik}/unlock",
+    status_code=status.HTTP_200_OK,
+    summary="Manually unlock account (Operation only)",
+    description=(
+        "Reset failed login counter + clear lock state. "
+        "Akan dipakai oleh Operation untuk help karyawan yang lupa password "
+        "atau accidentally lock akun mereka."
+    ),
+)
+async def unlock_user_account(
+    nik: str,
+    request: Request,
+    session: DBSession,
+    current_user: User = Depends(require_permission("user.edit")),
+) -> dict[str, object]:
+    """POST /api/v1/admin/users/{nik}/unlock — admin unlock account."""
+    client_ip = request.client.host if request.client else None
+
+    user = await service.get_user_by_nik(session, nik)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "USER_NOT_FOUND", "message": f"User dengan NIK '{nik}' tidak ditemukan."},
+        )
+
+    was_locked = user.is_locked
+    failed_before = user.failed_login_attempts
+
+    await service.unlock_user(session, user)
+
+    await audit_log(
+        session,
+        actor=current_user,
+        action="USER_UNLOCKED",
+        resource_type="user",
+        resource_id=nik,
+        ip_address=client_ip,
+        before_state={"is_locked": was_locked, "failed_login_attempts": failed_before},
+        after_state={"is_locked": False, "failed_login_attempts": 0},
+        notes=f"Manually unlocked by {service.get_persona_name(current_user)}",
+        commit=True,
+    )
+
+    return {
+        "success": True,
+        "message": f"Account {nik} berhasil di-unlock.",
+        "was_locked": was_locked,
+    }

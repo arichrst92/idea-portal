@@ -96,9 +96,14 @@ async def login(
             status.HTTP_403_FORBIDDEN if e.code == "ACCOUNT_INACTIVE"
             else status.HTTP_401_UNAUTHORIZED
         )
+        # Include lock info (TSK-006) jika account locked
+        detail: dict[str, object] = {"code": e.code, "message": e.message}
+        if e.locked_until is not None:
+            detail["locked_until"] = e.locked_until.isoformat()
+            detail["remaining_seconds"] = e.remaining_seconds
         raise HTTPException(
             status_code=status_code,
-            detail={"code": e.code, "message": e.message},
+            detail=detail,
         ) from e
 
     await audit_log(

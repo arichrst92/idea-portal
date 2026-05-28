@@ -30,10 +30,18 @@ settings = get_settings()
 class AuthenticationError(Exception):
     """Raised saat kredensial invalid atau account locked."""
 
-    def __init__(self, message: str, code: str = "INVALID_CREDENTIALS") -> None:
+    def __init__(
+        self,
+        message: str,
+        code: str = "INVALID_CREDENTIALS",
+        locked_until: datetime | None = None,
+        remaining_seconds: int | None = None,
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
+        self.locked_until = locked_until
+        self.remaining_seconds = remaining_seconds
 
 
 # ─── User lookup ─────────────────────────────────────────────────
@@ -132,6 +140,16 @@ async def logout(refresh_token: str) -> bool:
     return await blacklist.revoke_refresh_token(refresh_token)
 
 
+async def unlock_user(session: AsyncSession, user: User) -> User:
+    """Admin: unlock account manually. Reset counter + clear lock state."""
+    user.is_locked = False
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
 # ─── Authentication ──────────────────────────────────────────────
 
 
@@ -159,10 +177,14 @@ async def authenticate(
 
     if user.is_locked:
         if user.locked_until and user.locked_until > datetime.now(UTC):
+            remaining = int((user.locked_until - datetime.now(UTC)).total_seconds())
+            mins = remaining // 60
             raise AuthenticationError(
-                "Account locked due to too many failed attempts. "
-                "Try again in 30 minutes or reset password.",
+                f"Account locked due to too many failed attempts. "
+                f"Try again in {mins} minute{'s' if mins != 1 else ''} or reset password.",
                 code="ACCOUNT_LOCKED",
+                locked_until=user.locked_until,
+                remaining_seconds=remaining,
             )
         user.is_locked = False
         user.failed_login_attempts = 0

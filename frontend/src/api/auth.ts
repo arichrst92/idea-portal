@@ -41,6 +41,10 @@ export interface RefreshResponse extends TokenPair {}
 export interface ApiError {
   code: string;
   message: string;
+  /** TSK-006: when ACCOUNT_LOCKED, ISO timestamp kapan lock expire. */
+  locked_until?: string;
+  /** TSK-006: when ACCOUNT_LOCKED, seconds remaining. */
+  remaining_seconds?: number;
 }
 
 /**
