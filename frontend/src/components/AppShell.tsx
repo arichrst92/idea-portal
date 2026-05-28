@@ -14,6 +14,7 @@
 
 import {
   ApartmentOutlined,
+  CheckSquareOutlined,
   CrownOutlined,
   DashboardOutlined,
   LockOutlined,
@@ -51,6 +52,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
     { key: '/org-chart', icon: <ApartmentOutlined />, label: 'Org Chart' },
     { key: '/hiring', icon: <SolutionOutlined />, label: 'Hiring' },
+    { key: '/onboarding', icon: <CheckSquareOutlined />, label: 'Onboarding' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
 

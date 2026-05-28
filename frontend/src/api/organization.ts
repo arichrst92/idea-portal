@@ -45,6 +45,7 @@ export interface Position {
 }
 
 export interface EmployeeListItem {
+  id: string;
   nik: string;
   full_name: string;
   email: string | null;

@@ -20,6 +20,8 @@ import OrgChartPage from '@/features/employees/OrgChartPage';
 import JobOpeningCreatePage from '@/features/hiring/JobOpeningCreatePage';
 import JobOpeningDetailPage from '@/features/hiring/JobOpeningDetailPage';
 import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
+import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
+import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
@@ -123,6 +125,22 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><JobOpeningDetailPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <RequireAuth>
+              <AppShell><OnboardingListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/onboarding/:id"
+          element={
+            <RequireAuth>
+              <AppShell><OnboardingDetailPage /></AppShell>
             </RequireAuth>
           }
         />
