@@ -410,9 +410,12 @@ def calculate_progress(assignment: OnboardingAssignment) -> tuple[int, int, int]
 def group_completions_by_category(
     assignment: OnboardingAssignment,
 ) -> dict[str, list[TaskCompletion]]:
-    """Grouping TaskCompletion by task.category untuk UI checklist."""
+    """Grouping TaskCompletion by task.category untuk UI checklist.
+
+    Note: task.category dari DB bisa berupa str (kalau column String) atau
+    TaskCategory enum (kalau ada explicit converter). Handle keduanya.
+    """
     grouped: dict[str, list[TaskCompletion]] = defaultdict(list)
-    # Sort completions by task.order_index
     task_by_id = {t.id: t for t in assignment.template.tasks}
     sorted_completions = sorted(
         assignment.completions,
@@ -422,7 +425,11 @@ def group_completions_by_category(
     )
     for completion in sorted_completions:
         task = task_by_id.get(completion.task_id)
-        cat = task.category.value if task else TaskCategory.OTHER.value
+        if task is None:
+            cat = TaskCategory.OTHER.value
+        else:
+            # Handle both string (raw from DB) dan enum instance
+            cat = task.category.value if hasattr(task.category, "value") else str(task.category)
         grouped[cat].append(completion)
     return dict(grouped)
 
