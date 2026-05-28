@@ -97,6 +97,7 @@ def _employee_to_out(emp) -> EmployeeOut:
 def _employee_to_list_item(emp) -> EmployeeListItem:
     """Build EmployeeListItem dari Employee ORM."""
     return EmployeeListItem(
+        id=emp.id,
         nik=emp.user.nik if emp.user else "",
         full_name=emp.full_name,
         email=emp.user.email if emp.user else None,

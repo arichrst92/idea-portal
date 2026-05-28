@@ -24,6 +24,7 @@ from app.outsource import models as _outsource_models  # noqa: F401
 from app.payroll import models as _payroll_models  # noqa: F401
 from app.sales import models as _sales_models  # noqa: F401
 from app.hiring import models as _hiring_models  # noqa: F401
+from app.onboarding import models as _onboarding_models  # noqa: F401
 
 settings = get_settings()
 
@@ -81,11 +82,13 @@ from app.identity.admin_router import router as identity_admin_router
 from app.identity.router import router as identity_router
 from app.organization.router import router as organization_router
 from app.hiring.router import router as hiring_router
+from app.onboarding.router import router as onboarding_router
 
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(identity_admin_router, prefix="/api/v1")
 app.include_router(organization_router, prefix="/api/v1")  # M1.2 TSK-013
 app.include_router(hiring_router, prefix="/api/v1")  # M1.2 TSK-015
+app.include_router(onboarding_router, prefix="/api/v1")  # M1.2 TSK-016
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)

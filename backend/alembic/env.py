@@ -82,6 +82,12 @@ from app.hiring.models import (  # noqa: F401  — Hiring (3) TSK-015
     JobApplication,
     JobOpening,
 )
+from app.onboarding.models import (  # noqa: F401  — Onboarding (4) TSK-016
+    OnboardingAssignment,
+    OnboardingTask,
+    OnboardingTemplate,
+    TaskCompletion,
+)
 
 config = context.config
 

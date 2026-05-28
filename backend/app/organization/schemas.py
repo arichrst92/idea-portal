@@ -158,6 +158,7 @@ class EmployeeListItem(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    id: UUID  # employees.id — dibutuhkan untuk cross-domain FK (mis. onboarding assignment)
     nik: str
     full_name: str
     email: str | None
