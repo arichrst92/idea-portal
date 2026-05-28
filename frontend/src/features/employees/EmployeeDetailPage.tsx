@@ -22,8 +22,9 @@ import {
   SwapOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Modal, Spin, message } from 'antd';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
@@ -33,10 +34,15 @@ import {
   getEmployee,
   getEmployeeHistory,
   getInitials,
+  listPositions,
   softDeleteEmployee,
   type OrgChange,
 } from '@/api/organization';
 import { useAuthStore } from '@/store/auth';
+
+import { EditEmployeeModal } from './EditEmployeeModal';
+import { MutateModal } from './MutateModal';
+import { PromoteModal } from './PromoteModal';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
@@ -147,7 +153,12 @@ function ChangeRow({ change }: { change: OrgChange }) {
 export default function EmployeeDetailPage() {
   const { nik = '' } = useParams<{ nik: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [mutateOpen, setMutateOpen] = useState(false);
 
   const isExecutive = user?.roles.some(
     (r) => r.code === 'DIREKTUR_UTAMA' || r.code === 'WAKIL_DIREKTUR_UTAMA',
@@ -164,6 +175,22 @@ export default function EmployeeDetailPage() {
     queryFn: () => getEmployeeHistory(nik),
     enabled: !!nik,
   });
+
+  // Lookup current position level (untuk validasi promote)
+  const currentPosLevelQuery = useQuery({
+    queryKey: ['positions-current', empQuery.data?.department_id],
+    queryFn: () => listPositions(empQuery.data?.department_id || undefined),
+    enabled: !!empQuery.data?.position_id,
+  });
+
+  const currentPositionLevel = empQuery.data?.position_id
+    ? currentPosLevelQuery.data?.find((p) => p.id === empQuery.data?.position_id)?.level ?? null
+    : null;
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['employee', nik] });
+    queryClient.invalidateQueries({ queryKey: ['employee-history', nik] });
+  };
 
   if (empQuery.isLoading) {
     return (
@@ -296,25 +323,17 @@ export default function EmployeeDetailPage() {
 
       {/* Action bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-        <Button
-          icon={<EditOutlined />}
-          onClick={() => navigate(`/employees/${emp.nik}/edit`)}
-          disabled={!isExecutive}
-        >
+        <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)} disabled={!isExecutive}>
           Edit
         </Button>
         <Button
           icon={<RiseOutlined />}
-          onClick={() => message.info('Promote form — coming next session')}
-          disabled={!isExecutive}
+          onClick={() => setPromoteOpen(true)}
+          disabled={!isExecutive || !emp.position_id}
         >
           Promote
         </Button>
-        <Button
-          icon={<SwapOutlined />}
-          onClick={() => message.info('Mutate form — coming next session')}
-          disabled={!isExecutive}
-        >
+        <Button icon={<SwapOutlined />} onClick={() => setMutateOpen(true)} disabled={!isExecutive}>
           Mutate
         </Button>
         <Button
@@ -327,6 +346,27 @@ export default function EmployeeDetailPage() {
           Soft Delete
         </Button>
       </div>
+
+      {/* Modals */}
+      <EditEmployeeModal
+        employee={emp}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSuccess={refreshAll}
+      />
+      <PromoteModal
+        employee={emp}
+        open={promoteOpen}
+        currentPositionLevel={currentPositionLevel}
+        onClose={() => setPromoteOpen(false)}
+        onSuccess={refreshAll}
+      />
+      <MutateModal
+        employee={emp}
+        open={mutateOpen}
+        onClose={() => setMutateOpen(false)}
+        onSuccess={refreshAll}
+      />
 
       {/* Info grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
