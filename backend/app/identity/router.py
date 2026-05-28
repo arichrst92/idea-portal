@@ -1,16 +1,18 @@
 """FastAPI router untuk Identity domain — auth endpoints.
 
 Endpoint:
-- POST /api/v1/auth/login        — NIK + password → JWT pair
-- POST /api/v1/auth/refresh      — refresh token rotation (TSK-002)
-- GET  /api/v1/auth/me           — current user info (TSK-002)
-- POST /api/v1/auth/logout       — revoke token (TSK-005, future)
+- POST /api/v1/auth/login        — NIK + password → JWT pair + audit
+- POST /api/v1/auth/refresh      — refresh token rotation
+- GET  /api/v1/auth/me           — current user info (protected)
+- GET  /api/v1/auth/me/permissions — list permissions yang dimiliki user
+- GET  /api/v1/auth/executive-ping — demo Executive Portal access (DIREKTUR_UTAMA or WAKIL only)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.config import get_settings
-from app.core.deps import DBSession, get_current_user
+from app.core.audit import audit_log
+from app.core.deps import DBSession, get_current_user, require_executive
 from app.identity import service
 from app.identity.models import User
 from app.identity.schemas import (
@@ -56,8 +58,9 @@ async def login(
     request: Request,
     session: DBSession,
 ) -> LoginResponse:
-    """POST /api/v1/auth/login — NIK + password → JWT pair."""
+    """POST /api/v1/auth/login — NIK + password → JWT pair + audit log."""
     client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
 
     try:
         user = await service.authenticate(
@@ -67,6 +70,19 @@ async def login(
             client_ip=client_ip,
         )
     except service.AuthenticationError as e:
+        # Log failed login (anonymous actor)
+        await audit_log(
+            session,
+            actor=None,
+            action=f"LOGIN_FAILED_{e.code}",
+            resource_type="auth",
+            resource_id=payload.nik,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            notes=e.message,
+            commit=True,
+        )
+
         status_code = (
             status.HTTP_403_FORBIDDEN
             if e.code == "ACCOUNT_INACTIVE"
@@ -76,6 +92,18 @@ async def login(
             status_code=status_code,
             detail={"code": e.code, "message": e.message},
         ) from e
+
+    # Audit success
+    await audit_log(
+        session,
+        actor=user,
+        action="LOGIN_SUCCESS",
+        resource_type="auth",
+        resource_id=user.nik,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        commit=True,
+    )
 
     access, refresh = service.issue_token_pair(user)
 
@@ -93,10 +121,6 @@ async def login(
     response_model=RefreshResponse,
     status_code=status.HTTP_200_OK,
     summary="Refresh access token via refresh token",
-    description=(
-        "Rotate refresh token — issue NEW pair access+refresh. "
-        "Old refresh token tidak otomatis revoked di TSK-002 (akan ditambah di TSK-005 dengan blacklist)."
-    ),
     responses={
         401: {"description": "Refresh token invalid/expired"},
         403: {"description": "User inactive"},
@@ -135,12 +159,41 @@ async def refresh(
     response_model=UserPublic,
     status_code=status.HTTP_200_OK,
     summary="Get current user info dari JWT",
-    description="Protected endpoint — butuh `Authorization: Bearer <access_token>` header.",
-    responses={
-        401: {"description": "Token invalid/expired"},
-        403: {"description": "Account inactive"},
-    },
 )
 async def get_me(current_user: User = Depends(get_current_user)) -> UserPublic:
     """GET /api/v1/auth/me — return info user dari JWT."""
     return _user_to_public(current_user)
+
+
+@router.get(
+    "/me/permissions",
+    status_code=status.HTTP_200_OK,
+    summary="List permissions yang dimiliki current user",
+)
+async def get_my_permissions(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, list[str]]:
+    """GET /api/v1/auth/me/permissions — frontend bisa pakai untuk hide/show UI."""
+    return {"permissions": sorted(service.get_user_permissions(current_user))}
+
+
+@router.get(
+    "/executive-ping",
+    status_code=status.HTTP_200_OK,
+    summary="Demo Executive Portal — Direktur Utama atau Wakil only",
+    description=(
+        "Demo endpoint untuk verify Executive Portal RBAC. "
+        "Hanya Direktur Utama atau Wakil Direktur Utama yang bisa akses. "
+        "Response include persona name eksplisit (NC-EX-005)."
+    ),
+    responses={403: {"description": "Bukan Direktur Utama / Wakil"}},
+)
+async def executive_ping(
+    current_user: User = Depends(require_executive()),
+) -> dict[str, str]:
+    """GET /api/v1/auth/executive-ping — demo Executive Portal access."""
+    return {
+        "message": "Welcome to Executive Portal",
+        "persona": service.get_persona_name(current_user),
+        "nik": current_user.nik,
+    }

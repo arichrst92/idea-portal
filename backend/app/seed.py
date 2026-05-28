@@ -1,13 +1,15 @@
-"""Initial database seed — roles + admin user.
+"""Initial database seed — roles + permissions + role-permission mapping + admin user.
 
 Jalankan SEKALI setelah migration:
     uv run python -m app.seed
 
-Buat:
-- 8 roles per knowledge.md sec.2 (L1 + L1B + L2-L6 + outsource)
-- 1 admin user untuk testing (NIK: ADMIN-001, password: admin123)
+Idempotent: aman dijalankan berulang, hanya tambah yang belum ada.
 
-⚠️ Untuk production, GANTI password admin via /api/v1/auth/change-password setelah login pertama.
+Buat:
+- 7 roles per knowledge.md sec.2 (L1 Direktur + L1B Wakil Direktur + L2-L6)
+- ~50 permissions per app/identity/permissions.py
+- Role-permission mapping per ROLE_PERMISSION_MAP
+- 1 admin user untuk testing (NIK: ADMIN-001, password: admin123)
 """
 
 import asyncio
@@ -17,7 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.database import async_session_factory
-from app.identity.models import HierarchyLevel, Role, User, UserRole
+from app.identity.models import (
+    HierarchyLevel,
+    Permission,
+    Role,
+    RolePermission,
+    User,
+    UserRole,
+)
+from app.identity.permissions import PERMISSION_REGISTRY, ROLE_PERMISSION_MAP
 
 
 # ─── Roles ───────────────────────────────────────────────────────
@@ -75,7 +85,7 @@ ROLES_SEED = [
 
 
 async def seed_roles(session: AsyncSession) -> dict[str, Role]:
-    """Insert 7 roles jika belum ada. Returns dict {code: Role}."""
+    """Insert 7 roles. Idempotent."""
     roles = {}
     for spec in ROLES_SEED:
         existing = await session.execute(select(Role).where(Role.code == spec["code"]))
@@ -83,16 +93,81 @@ async def seed_roles(session: AsyncSession) -> dict[str, Role]:
         if role is None:
             role = Role(**spec)
             session.add(role)
-            print(f"  + Role: {spec['code']:30} (level {spec['level']})")
+            print(f"  + Role: {spec['code']:25} (level {spec['level']})")
         else:
-            print(f"  = Role: {spec['code']:30} already exists")
+            print(f"  = Role: {spec['code']:25} already exists")
         roles[spec["code"]] = role
     await session.commit()
+    # Refresh untuk dapat ID
+    for role in roles.values():
+        await session.refresh(role)
     return roles
 
 
+async def seed_permissions(session: AsyncSession) -> dict[str, Permission]:
+    """Insert all permissions dari PERMISSION_REGISTRY. Idempotent."""
+    perms = {}
+    new_count = 0
+    for code, resource, action, description in PERMISSION_REGISTRY:
+        existing = await session.execute(select(Permission).where(Permission.code == code))
+        p = existing.scalar_one_or_none()
+        if p is None:
+            p = Permission(
+                code=code,
+                resource=resource.value,
+                action=action.value,
+                description=description,
+            )
+            session.add(p)
+            new_count += 1
+        perms[code] = p
+    await session.commit()
+    for p in perms.values():
+        await session.refresh(p)
+    print(f"  + {new_count} new permissions added (total registry: {len(PERMISSION_REGISTRY)})")
+    return perms
+
+
+async def seed_role_permissions(
+    session: AsyncSession,
+    roles: dict[str, Role],
+    perms: dict[str, Permission],
+) -> None:
+    """Map roles → permissions per ROLE_PERMISSION_MAP. Idempotent."""
+    total_new = 0
+    for role_code, permission_codes in ROLE_PERMISSION_MAP.items():
+        role = roles.get(role_code)
+        if role is None:
+            print(f"  ⚠️  Role {role_code} not found, skipping")
+            continue
+
+        # Get existing mappings untuk role ini
+        stmt = select(RolePermission).where(RolePermission.role_id == role.id)
+        existing_result = await session.execute(stmt)
+        existing_perm_ids = {rp.permission_id for rp in existing_result.scalars().all()}
+
+        new_for_role = 0
+        for perm_code in permission_codes:
+            perm = perms.get(perm_code)
+            if perm is None:
+                continue
+            if perm.id in existing_perm_ids:
+                continue
+            session.add(RolePermission(role_id=role.id, permission_id=perm.id))
+            new_for_role += 1
+
+        if new_for_role > 0:
+            print(f"  + {role_code:25} → +{new_for_role} permissions (total: {len(permission_codes)})")
+            total_new += new_for_role
+        else:
+            print(f"  = {role_code:25} → {len(permission_codes)} permissions (already mapped)")
+
+    await session.commit()
+    print(f"  Total new role-permission links: {total_new}")
+
+
 async def seed_admin_user(session: AsyncSession, admin_role: Role) -> None:
-    """Insert 1 admin user untuk testing."""
+    """Insert 1 admin user untuk testing. Idempotent."""
     nik = "ADMIN-001"
     existing = await session.execute(select(User).where(User.nik == nik))
     user = existing.scalar_one_or_none()
@@ -107,9 +182,8 @@ async def seed_admin_user(session: AsyncSession, admin_role: Role) -> None:
         is_active=True,
     )
     session.add(user)
-    await session.flush()  # Get user.id
+    await session.flush()
 
-    # Assign Direktur Utama role
     user_role = UserRole(user_id=user.id, role_id=admin_role.id)
     session.add(user_role)
     await session.commit()
@@ -123,6 +197,12 @@ async def main() -> None:
     async with async_session_factory() as session:
         print("Seeding roles...")
         roles = await seed_roles(session)
+
+        print("\nSeeding permissions...")
+        perms = await seed_permissions(session)
+
+        print("\nSeeding role-permission mapping...")
+        await seed_role_permissions(session, roles, perms)
 
         print("\nSeeding admin user...")
         await seed_admin_user(session, roles["DIREKTUR_UTAMA"])
