@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# datetime imported di top untuk forward ref di ForgotPasswordResponse.expires_at
+
 
 class LoginRequest(BaseModel):
     """POST /api/v1/auth/login request body."""
@@ -23,6 +25,46 @@ class LogoutRequest(BaseModel):
     """POST /api/v1/auth/logout request body."""
 
     refresh_token: str = Field(..., description="Refresh token yang akan di-revoke")
+
+
+class ForgotPasswordRequest(BaseModel):
+    """POST /api/v1/auth/forgot-password request body."""
+
+    nik: str = Field(..., min_length=3, max_length=30)
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Response untuk forgot-password.
+
+    Dev mode: include token untuk testing.
+    Production: only return success message, token via email.
+    """
+
+    message: str
+    reset_token: str | None = Field(
+        default=None,
+        description="DEV ONLY — token untuk testing. Production: None, token dikirim via email.",
+    )
+    expires_at: datetime | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    """POST /api/v1/auth/reset-password request body."""
+
+    token: str = Field(..., min_length=10, max_length=200)
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=200,
+        description="Password baru minimal 8 karakter.",
+    )
+
+
+class ChangePasswordRequest(BaseModel):
+    """POST /api/v1/auth/change-password request body (authenticated)."""
+
+    current_password: str = Field(..., min_length=1, max_length=200)
+    new_password: str = Field(..., min_length=8, max_length=200)
 
 
 class TokenPair(BaseModel):

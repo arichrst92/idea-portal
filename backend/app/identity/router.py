@@ -29,14 +29,20 @@ from app.identity.models import AuditLog, User
 from app.identity.schemas import (
     AuditLogEntry,
     AuditLogPage,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
     RefreshRequest,
     RefreshResponse,
+    ResetPasswordRequest,
     RolePublic,
     UserPublic,
 )
+from app.identity import password_reset
+from app.core.security import hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -194,6 +200,180 @@ async def logout(
     )
 
     return {"success": True, "revoked": revoked}
+
+
+# ─── Password reset / change (TSK-007) ───────────────────────────
+
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Request password reset token",
+    description=(
+        "Generate password reset token. Selalu return 200 (tidak leak whether NIK exists). "
+        "DEV mode: token di-return di response. "
+        "Production (TODO PH4): token dikirim via email."
+    ),
+)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    request: Request,
+    session: DBSession,
+) -> ForgotPasswordResponse:
+    """POST /api/v1/auth/forgot-password — generate reset token."""
+    client_ip = request.client.host if request.client else None
+
+    user = await service.get_user_by_nik(session, payload.nik)
+
+    # Generic response — JANGAN leak whether NIK exists (anti-enumeration)
+    generic_msg = (
+        "Jika NIK valid, link reset password telah dibuat. "
+        "Cek email Anda dalam beberapa menit."
+    )
+
+    if user is None or not user.is_active:
+        # Log attempt tapi return 200 generic
+        await audit_log(
+            session,
+            actor=None,
+            action="PASSWORD_RESET_REQUESTED_INVALID_NIK",
+            resource_type="auth",
+            resource_id=payload.nik,
+            ip_address=client_ip,
+            commit=True,
+        )
+        return ForgotPasswordResponse(message=generic_msg)
+
+    token, expires_at = await password_reset.issue_reset_token(user.id)
+
+    await audit_log(
+        session,
+        actor=user,
+        action="PASSWORD_RESET_TOKEN_ISSUED",
+        resource_type="auth",
+        resource_id=user.nik,
+        ip_address=client_ip,
+        commit=True,
+    )
+
+    # DEV mode: return token di response (untuk testing tanpa email)
+    if settings.app_env == "development":
+        return ForgotPasswordResponse(
+            message=generic_msg + " [DEV: token disertakan di response]",
+            reset_token=token,
+            expires_at=expires_at,
+        )
+
+    # Production: token tidak di-return (akan dikirim via email — TODO PH4)
+    return ForgotPasswordResponse(message=generic_msg)
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Reset password dengan token",
+)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    request: Request,
+    session: DBSession,
+) -> dict[str, bool | str]:
+    """POST /api/v1/auth/reset-password — single-use token consumption."""
+    client_ip = request.client.host if request.client else None
+
+    user_id = await password_reset.consume_reset_token(payload.token)
+    if user_id is None:
+        await audit_log(
+            session,
+            actor=None,
+            action="PASSWORD_RESET_FAILED_INVALID_TOKEN",
+            resource_type="auth",
+            ip_address=client_ip,
+            commit=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_RESET_TOKEN", "message": "Token tidak valid atau sudah expired."},
+        )
+
+    user = await service.get_user_by_id(session, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "USER_NOT_FOUND", "message": "User tidak ditemukan."},
+        )
+
+    # Update password + reset failed attempts + unlock
+    user.password_hash = hash_password(payload.new_password)
+    user.failed_login_attempts = 0
+    user.is_locked = False
+    user.locked_until = None
+    await session.commit()
+
+    await audit_log(
+        session,
+        actor=user,
+        action="PASSWORD_RESET_SUCCESS",
+        resource_type="auth",
+        resource_id=user.nik,
+        ip_address=client_ip,
+        commit=True,
+    )
+
+    return {"success": True, "message": "Password berhasil di-reset. Silakan login dengan password baru."}
+
+
+@router.post(
+    "/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Change password (authenticated)",
+)
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    session: DBSession,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, bool | str]:
+    """POST /api/v1/auth/change-password — user ganti password sendiri."""
+    client_ip = request.client.host if request.client else None
+
+    # Verify current password
+    if not verify_password(payload.current_password, current_user.password_hash):
+        await audit_log(
+            session,
+            actor=current_user,
+            action="PASSWORD_CHANGE_FAILED_WRONG_CURRENT",
+            resource_type="auth",
+            resource_id=current_user.nik,
+            ip_address=client_ip,
+            commit=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "WRONG_CURRENT_PASSWORD", "message": "Password lama tidak sesuai."},
+        )
+
+    if payload.new_password == payload.current_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "SAME_PASSWORD", "message": "Password baru tidak boleh sama dengan password lama."},
+        )
+
+    current_user.password_hash = hash_password(payload.new_password)
+    await session.commit()
+
+    await audit_log(
+        session,
+        actor=current_user,
+        action="PASSWORD_CHANGE_SUCCESS",
+        resource_type="auth",
+        resource_id=current_user.nik,
+        ip_address=client_ip,
+        commit=True,
+    )
+
+    return {"success": True, "message": "Password berhasil diubah."}
 
 
 # ─── User info ───────────────────────────────────────────────────
