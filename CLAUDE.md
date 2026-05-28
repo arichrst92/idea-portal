@@ -216,6 +216,7 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-28 | Pin `bcrypt>=4.0.0,<4.1.0` di pyproject | bcrypt 5.x hapus `__about__` attribute yang dipakai passlib untuk version detection. passlib gagal init dan crash semua password hashing. Pin sampai passlib release fix atau migrate ke bcrypt direct. |
 | 2026-05-28 | Docker postgres → port 5433 (bukan 5432) | Mac mini punya postgres native di 5432 yang shadow Docker. Untuk hindari kill postgres user (mungkin dipakai project lain), Docker IDEA Portal pakai 5433. Update di docker-compose.yml + backend/.env. |
 | 2026-05-28 | UI polish per epic, BUKAN dedicated sprint UI | M1.1 frontend dibangun pakai AntD bare-bones tanpa visual port dari `GUI html/*.html`. Setiap port halaman baru di milestone berikutnya WAJIB ambil styling (colors, typography, layout, shadows, gradient mesh) langsung dari mockup HTML. Halaman M1.1 yang sudah ada (Login, AppShell, Settings, PermissionMatrix, GlobalSearch) di-polish belakangan saat ada kapasitas. Mockup HTML = source of truth visual. |
+| 2026-05-28 | VPS production stack pakai Docker Compose, dibangun setelah M1.2 selesai | `start.sh` cuma dev tool (uvicorn --reload + vite dev). Production stack akan: backend Dockerfile (gunicorn + uvicorn workers), frontend Dockerfile (npm build → nginx), docker-compose.prod.yml, Caddy reverse proxy + auto HTTPS, .env.prod, deploy.sh. Defer ke setelah M1.2 (101 pts) supaya ada cukup fitur demo-able sebelum invest deployment effort. |
 
 Tambah row baru saat ada keputusan signifikan.
 
