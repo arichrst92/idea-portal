@@ -113,11 +113,23 @@ function App() {
           )}
         </Card>
 
-        <Card title="Next Steps">
+        <Card title="Quick Links">
+          <Space direction="vertical">
+            <Text>
+              <a href="/admin/permissions">🔐 Permission Matrix</a>{' '}
+              <Text type="secondary" style={{ fontSize: 11 }}>(Executive only)</Text>
+            </Text>
+            <Text>
+              <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">📖 API Docs (Swagger)</a>
+            </Text>
+          </Space>
+        </Card>
+
+        <Card title="Sprint Progress">
           <Paragraph>
             <ol>
               <li>Sprint 0 (1–7 Jun 2026): infra running, hello-world working ✅</li>
-              <li>Sprint 1 (8 Jun – 5 Jul): EP-01 Auth &amp; RBAC — JWT login, level 1–6, Wakil Direktur</li>
+              <li>Sprint 1 (8 Jun – 5 Jul): EP-01 Auth &amp; RBAC — JWT login, level 1–6, Wakil Direktur ✅</li>
               <li>Sprint 2+: see <Text code>IDEA_Development_Roadmap.md</Text></li>
             </ol>
           </Paragraph>

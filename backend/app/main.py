@@ -65,9 +65,11 @@ async def health() -> dict[str, str]:
 
 
 # ─── Register domain routers ───────────────────────────────────
+from app.identity.admin_router import router as identity_admin_router
 from app.identity.router import router as identity_router
 
 app.include_router(identity_router, prefix="/api/v1")
+app.include_router(identity_admin_router, prefix="/api/v1")
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)
