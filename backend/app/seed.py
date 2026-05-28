@@ -201,6 +201,78 @@ async def seed_admin_user(session: AsyncSession, admin_role: Role) -> None:
     print("  ⚠️  GANTI PASSWORD VIA /api/v1/auth/change-password SETELAH LOGIN PERTAMA")
 
 
+async def seed_departments(session: AsyncSession) -> dict[str, "Department"]:
+    """Seed 4 dept utama per knowledge.md sec.3. Idempotent."""
+    from app.organization.models import Department
+
+    DEPT_SEED = [
+        {"code": "TECH", "name": "Teknologi", "description": "Engineering, IT, Product"},
+        {"code": "OPS", "name": "Operation", "description": "Operations, HR, Admin"},
+        {"code": "SALES", "name": "Sales & Marketing", "description": "Sales, Marketing, BD"},
+        {"code": "FIN", "name": "Finance & Tax", "description": "Finance, Accounting, Tax"},
+    ]
+    depts: dict[str, Department] = {}
+    for spec in DEPT_SEED:
+        existing = await session.execute(select(Department).where(Department.code == spec["code"]))
+        d = existing.scalar_one_or_none()
+        if d is None:
+            d = Department(**spec)
+            session.add(d)
+            print(f"  + Department: {spec['code']:8} ({spec['name']})")
+        else:
+            print(f"  = Department: {spec['code']:8} (exists)")
+        depts[spec["code"]] = d
+    await session.commit()
+    for d in depts.values():
+        await session.refresh(d)
+    return depts
+
+
+async def seed_positions(session: AsyncSession, depts: dict[str, "Department"]) -> int:
+    """Seed beberapa position default per dept. Idempotent."""
+    from app.organization.models import Position
+
+    POSITION_SEED = [
+        # Tech
+        {"code": "TECH-DIR", "name": "Director of Technology", "dept": "TECH", "level": 2},
+        {"code": "TECH-GM", "name": "GM Engineering", "dept": "TECH", "level": 3},
+        {"code": "TECH-MGR", "name": "Engineering Manager", "dept": "TECH", "level": 4},
+        {"code": "TECH-LEAD", "name": "Tech Lead", "dept": "TECH", "level": 5},
+        {"code": "TECH-ENG", "name": "Engineer", "dept": "TECH", "level": 6},
+        # Ops
+        {"code": "OPS-GM", "name": "GM Operations", "dept": "OPS", "level": 3},
+        {"code": "OPS-MGR", "name": "Operations Manager", "dept": "OPS", "level": 4},
+        {"code": "OPS-HR", "name": "HR Staff", "dept": "OPS", "level": 6},
+        # Sales
+        {"code": "SALES-GM", "name": "GM Sales & Marketing", "dept": "SALES", "level": 3},
+        {"code": "SALES-MGR", "name": "Sales Manager", "dept": "SALES", "level": 4},
+        {"code": "SALES-EXEC", "name": "Sales Executive", "dept": "SALES", "level": 6},
+        # Finance
+        {"code": "FIN-GM", "name": "GM Finance & Tax", "dept": "FIN", "level": 3},
+        {"code": "FIN-MGR", "name": "Finance Manager", "dept": "FIN", "level": 4},
+        {"code": "FIN-STAFF", "name": "Finance Staff", "dept": "FIN", "level": 6},
+    ]
+    created = 0
+    for spec in POSITION_SEED:
+        existing = await session.execute(select(Position).where(Position.code == spec["code"]))
+        if existing.scalar_one_or_none() is not None:
+            continue
+        pos = Position(
+            code=spec["code"],
+            name=spec["name"],
+            department_id=depts[spec["dept"]].id,
+            level=spec["level"],
+        )
+        session.add(pos)
+        created += 1
+    await session.commit()
+    if created > 0:
+        print(f"  + {created} positions seeded")
+    else:
+        print("  = All positions already exist")
+    return created
+
+
 async def main() -> None:
     print("━━━ IDEA Portal — Database Seed ━━━\n")
     async with async_session_factory() as session:
@@ -215,6 +287,12 @@ async def main() -> None:
 
         print("\nSeeding admin user...")
         await seed_admin_user(session, roles["DIREKTUR_UTAMA"])
+
+        print("\nSeeding departments...")
+        depts = await seed_departments(session)
+
+        print("\nSeeding positions...")
+        await seed_positions(session, depts)
 
     print("\n✓ Seed complete.")
     print("\nTest login:")
