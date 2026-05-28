@@ -31,6 +31,14 @@ from app.core.deps import (
 from app.organization import service
 from app.organization.schemas import (
     BulkImportResult,
+    ContractCreate,
+    ContractExpiringAlert,
+    ContractListItem,
+    ContractListResponse,
+    ContractOut,
+    ContractRenewRequest,
+    ContractTerminateRequest,
+    ContractUpdate,
     DepartmentCreate,
     DepartmentOut,
     DepartmentUpdate,
@@ -49,9 +57,11 @@ from app.organization.schemas import (
     PositionUpdate,
 )
 from app.organization.service import (
+    ContractNotFoundError,
     DepartmentNotFoundError,
     EmployeeAlreadyExistsError,
     EmployeeNotFoundError,
+    InvalidContractStateError,
     InvalidEmployeeStateError,
     PositionNotFoundError,
 )
@@ -595,3 +605,283 @@ async def org_chart_endpoint(
         department_id=department_id,
         department_name=dept_name,
     )
+
+
+# ─── EmployeeContract endpoints (TSK-018) ──────────────────────────
+
+
+async def _contract_to_out(session, contract) -> ContractOut:
+    """Build ContractOut dengan derived fields."""
+    nik = None
+    name = None
+    if contract.employee_id:
+        emp_row = await session.execute(
+            select(Employee.full_name, User.nik)
+            .join(User, Employee.user_id == User.id)
+            .where(Employee.id == contract.employee_id)
+        )
+        row = emp_row.first()
+        if row:
+            name = row[0]
+            nik = row[1]
+
+    return ContractOut(
+        id=contract.id,
+        employee_id=contract.employee_id,
+        contract_type=contract.contract_type,
+        start_date=contract.start_date,
+        end_date=contract.end_date,
+        salary=contract.salary,
+        document_url=contract.document_url,
+        is_active=contract.is_active,
+        created_at=contract.created_at,
+        updated_at=contract.updated_at,
+        employee_nik=nik,
+        employee_name=name,
+        days_until_expiry=service.days_until_expiry(contract),
+        derived_status=service.derive_contract_status(contract),
+    )
+
+
+async def _contract_to_list_item(session, contract) -> ContractListItem:
+    nik = None
+    name = None
+    dept = None
+    emp_row = await session.execute(
+        select(Employee.full_name, User.nik, Department.name)
+        .join(User, Employee.user_id == User.id)
+        .outerjoin(Department, Employee.department_id == Department.id)
+        .where(Employee.id == contract.employee_id)
+    )
+    row = emp_row.first()
+    if row:
+        name = row[0]
+        nik = row[1]
+        dept = row[2]
+
+    return ContractListItem(
+        id=contract.id,
+        employee_id=contract.employee_id,
+        employee_nik=nik,
+        employee_name=name,
+        employee_department=dept,
+        contract_type=contract.contract_type,
+        start_date=contract.start_date,
+        end_date=contract.end_date,
+        is_active=contract.is_active,
+        days_until_expiry=service.days_until_expiry(contract),
+        derived_status=service.derive_contract_status(contract),
+    )
+
+
+@router.get("/contracts", response_model=ContractListResponse)
+async def list_contracts_endpoint(
+    session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+    employee_id: UUID | None = Query(None),
+    contract_type: str | None = Query(None, description="PKWT atau PKWTT"),
+    is_active: bool | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=200),
+) -> ContractListResponse:
+    from app.organization.models import ContractType as CT
+
+    type_enum = CT(contract_type) if contract_type else None
+    contracts, total = await service.list_contracts(
+        session,
+        employee_id=employee_id,
+        contract_type=type_enum,
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
+    )
+    items = [await _contract_to_list_item(session, c) for c in contracts]
+    return ContractListResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=service.calc_total_pages(total, page_size),
+    )
+
+
+@router.get("/contracts/expiring", response_model=ContractExpiringAlert)
+async def expiring_contracts_endpoint(
+    session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+    days_ahead: int = Query(30, ge=1, le=180),
+) -> ContractExpiringAlert:
+    """Get contracts expiring dalam X hari + already expired tapi masih is_active.
+
+    Untuk dashboard widget H-30/H-7 alerts.
+    """
+    contracts = await service.get_expiring_contracts(session, days_ahead=days_ahead)
+    items = [await _contract_to_list_item(session, c) for c in contracts]
+    total_h30 = sum(
+        1 for i in items if i.derived_status == "EXPIRING_SOON_30"
+    )
+    total_h7 = sum(1 for i in items if i.derived_status == "EXPIRING_SOON_7")
+    total_expired = sum(1 for i in items if i.derived_status == "EXPIRED")
+    return ContractExpiringAlert(
+        total_h30=total_h30,
+        total_h7=total_h7,
+        total_expired_unrenewed=total_expired,
+        items=items,
+    )
+
+
+@router.post(
+    "/contracts", response_model=ContractOut, status_code=status.HTTP_201_CREATED
+)
+async def create_contract_endpoint(
+    request: Request,
+    data: ContractCreate,
+    session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ContractOut:
+    try:
+        contract = await service.create_contract(session, data)
+    except InvalidContractStateError as e:
+        raise HTTPException(
+            status_code=400, detail={"code": "INVALID_CONTRACT", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="CONTRACT_CREATED",
+        resource_type="employee_contract",
+        resource_id=str(contract.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        after_state={
+            "employee_id": str(data.employee_id),
+            "type": data.contract_type.value,
+            "start": str(data.start_date),
+            "end": str(data.end_date) if data.end_date else None,
+        },
+    )
+    return await _contract_to_out(session, contract)
+
+
+@router.get("/contracts/{contract_id}", response_model=ContractOut)
+async def get_contract_endpoint(
+    contract_id: UUID,
+    session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+) -> ContractOut:
+    try:
+        contract = await service.get_contract(session, contract_id)
+    except ContractNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "CONTRACT_NOT_FOUND", "message": str(e)}
+        ) from e
+    return await _contract_to_out(session, contract)
+
+
+@router.patch("/contracts/{contract_id}", response_model=ContractOut)
+async def update_contract_endpoint(
+    request: Request,
+    contract_id: UUID,
+    data: ContractUpdate,
+    session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ContractOut:
+    try:
+        contract = await service.update_contract(session, contract_id, data)
+    except ContractNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "CONTRACT_NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidContractStateError as e:
+        raise HTTPException(
+            status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="CONTRACT_UPDATED",
+        resource_type="employee_contract",
+        resource_id=str(contract.id),
+        ip_address=request.client.host if request.client else None,
+        after_state=data.model_dump(exclude_unset=True),
+    )
+    return await _contract_to_out(session, contract)
+
+
+@router.post("/contracts/{contract_id}/renew", response_model=ContractOut)
+async def renew_contract_endpoint(
+    request: Request,
+    contract_id: UUID,
+    data: ContractRenewRequest,
+    session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ContractOut:
+    """Renew PKWT contract: end old + create new. Returns new contract."""
+    try:
+        old, new = await service.renew_contract(session, contract_id, data)
+    except ContractNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "CONTRACT_NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidContractStateError as e:
+        raise HTTPException(
+            status_code=400, detail={"code": "INVALID_RENEWAL", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="CONTRACT_RENEWED",
+        resource_type="employee_contract",
+        resource_id=str(new.id),
+        ip_address=request.client.host if request.client else None,
+        before_state={
+            "old_contract_id": str(old.id),
+            "old_type": old.contract_type.value if hasattr(old.contract_type, "value") else str(old.contract_type),
+            "old_end_date": str(old.end_date),
+        },
+        after_state={
+            "new_contract_id": str(new.id),
+            "new_type": data.new_contract_type.value,
+            "new_period": f"{data.new_start_date} - {data.new_end_date or 'open'}",
+            "reason": data.notes,
+        },
+    )
+    return await _contract_to_out(session, new)
+
+
+@router.post("/contracts/{contract_id}/terminate", response_model=ContractOut)
+async def terminate_contract_endpoint(
+    request: Request,
+    contract_id: UUID,
+    data: ContractTerminateRequest,
+    session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ContractOut:
+    """Terminate contract earlier than end_date."""
+    try:
+        contract = await service.terminate_contract(session, contract_id, data)
+    except ContractNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "CONTRACT_NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidContractStateError as e:
+        raise HTTPException(
+            status_code=400, detail={"code": "INVALID_TERMINATION", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="CONTRACT_TERMINATED",
+        resource_type="employee_contract",
+        resource_id=str(contract.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "termination_date": str(data.termination_date),
+            "reason": data.reason,
+        },
+    )
+    return await _contract_to_out(session, contract)

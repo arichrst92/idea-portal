@@ -20,10 +20,10 @@ Aturan kunci (knowledge.md):
 from __future__ import annotations
 
 import math
-from datetime import date
+from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -31,13 +31,19 @@ from sqlalchemy.orm import selectinload
 from app.core.security import hash_password
 from app.identity.models import Role, User, UserRole
 from app.organization.models import (
+    ContractType,
     Department,
     Employee,
+    EmployeeContract,
     EmployeeStatus,
     OrgChange,
     Position,
 )
 from app.organization.schemas import (
+    ContractCreate,
+    ContractRenewRequest,
+    ContractTerminateRequest,
+    ContractUpdate,
     DepartmentCreate,
     DepartmentUpdate,
     EmployeeCreate,
@@ -655,3 +661,243 @@ async def build_org_chart(
         dept_name = dept.name
 
     return roots, len(employees), dept_name
+
+
+# ─── EmployeeContract (TSK-018) ────────────────────────────────────
+
+
+class ContractNotFoundError(Exception):
+    pass
+
+
+class InvalidContractStateError(Exception):
+    pass
+
+
+def derive_contract_status(contract: EmployeeContract, today: date | None = None) -> str:
+    """Compute status string dari contract.
+
+    Returns:
+        ACTIVE — masih jauh dari expiry
+        EXPIRING_SOON_30 — sisa 8-30 hari
+        EXPIRING_SOON_7 — sisa 0-7 hari (critical alert)
+        EXPIRED — end_date sudah lewat tapi masih is_active=true
+        ENDED — is_active=false (terminated atau renewed)
+    """
+    today = today or date.today()
+    if not contract.is_active:
+        return "ENDED"
+    if contract.end_date is None:
+        return "ACTIVE"  # PKWTT — no expiry
+    days_left = (contract.end_date - today).days
+    if days_left < 0:
+        return "EXPIRED"
+    if days_left <= 7:
+        return "EXPIRING_SOON_7"
+    if days_left <= 30:
+        return "EXPIRING_SOON_30"
+    return "ACTIVE"
+
+
+def days_until_expiry(contract: EmployeeContract, today: date | None = None) -> int | None:
+    today = today or date.today()
+    if contract.end_date is None:
+        return None
+    return (contract.end_date - today).days
+
+
+async def get_contract(session: AsyncSession, contract_id: UUID) -> EmployeeContract:
+    stmt = select(EmployeeContract).where(EmployeeContract.id == contract_id)
+    result = await session.execute(stmt)
+    contract = result.scalar_one_or_none()
+    if contract is None:
+        raise ContractNotFoundError(f"Contract {contract_id} not found")
+    return contract
+
+
+async def list_contracts(
+    session: AsyncSession,
+    employee_id: UUID | None = None,
+    contract_type: ContractType | None = None,
+    is_active: bool | None = None,
+    page: int = 1,
+    page_size: int = 25,
+) -> tuple[list[EmployeeContract], int]:
+    page = max(page, 1)
+    page_size = max(min(page_size, 200), 1)
+
+    base = select(EmployeeContract)
+    if employee_id is not None:
+        base = base.where(EmployeeContract.employee_id == employee_id)
+    if contract_type is not None:
+        base = base.where(EmployeeContract.contract_type == contract_type)
+    if is_active is not None:
+        base = base.where(EmployeeContract.is_active == is_active)
+
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = int((await session.execute(count_stmt)).scalar_one())
+
+    stmt = (
+        base.order_by(EmployeeContract.start_date.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all()), total
+
+
+async def create_contract(
+    session: AsyncSession, data: ContractCreate
+) -> EmployeeContract:
+    """Create contract baru untuk employee.
+
+    Validate:
+    - Employee exists + active
+    - PKWT wajib punya end_date, PKWTT tidak (open-ended)
+    - Tidak ada contract active overlap untuk employee
+    """
+    # Validate employee
+    emp_result = await session.execute(
+        select(Employee).where(
+            Employee.id == data.employee_id, Employee.deleted_at.is_(None)
+        )
+    )
+    emp = emp_result.scalar_one_or_none()
+    if emp is None:
+        raise InvalidContractStateError(f"Employee {data.employee_id} not found / sudah deleted")
+
+    # Type-specific validation
+    if data.contract_type == ContractType.PKWT and data.end_date is None:
+        raise InvalidContractStateError("PKWT wajib punya end_date")
+    if data.end_date is not None and data.end_date <= data.start_date:
+        raise InvalidContractStateError("end_date harus setelah start_date")
+
+    # Check overlap dengan contract active existing
+    overlap_stmt = select(EmployeeContract).where(
+        EmployeeContract.employee_id == data.employee_id,
+        EmployeeContract.is_active.is_(True),
+    )
+    existing = await session.execute(overlap_stmt)
+    for prev in existing.scalars().all():
+        # Overlap kalau salah satu kondisi:
+        # - new.start_date di dalam (prev.start_date, prev.end_date or infinity)
+        # - prev.start_date di dalam (new.start_date, new.end_date or infinity)
+        prev_end = prev.end_date or date(9999, 12, 31)
+        new_end = data.end_date or date(9999, 12, 31)
+        if not (new_end < prev.start_date or data.start_date > prev_end):
+            raise InvalidContractStateError(
+                f"Overlap dengan contract aktif existing (id={prev.id}, "
+                f"period {prev.start_date} - {prev.end_date or 'open'}). "
+                "Terminate dulu contract lama atau pakai renew endpoint."
+            )
+
+    contract = EmployeeContract(
+        employee_id=data.employee_id,
+        contract_type=data.contract_type,
+        start_date=data.start_date,
+        end_date=data.end_date,
+        salary=data.salary,
+        document_url=data.document_url,
+        is_active=True,
+    )
+    session.add(contract)
+    await session.commit()
+    await session.refresh(contract)
+    return contract
+
+
+async def update_contract(
+    session: AsyncSession, contract_id: UUID, data: ContractUpdate
+) -> EmployeeContract:
+    contract = await get_contract(session, contract_id)
+    update_data = data.model_dump(exclude_unset=True)
+    if "end_date" in update_data and update_data["end_date"] is not None:
+        if update_data["end_date"] <= contract.start_date:
+            raise InvalidContractStateError("end_date harus setelah start_date")
+    for field, value in update_data.items():
+        setattr(contract, field, value)
+    await session.commit()
+    await session.refresh(contract)
+    return contract
+
+
+async def renew_contract(
+    session: AsyncSession,
+    contract_id: UUID,
+    data: ContractRenewRequest,
+) -> tuple[EmployeeContract, EmployeeContract]:
+    """End existing contract + create new one. Returns (old, new)."""
+    old_contract = await get_contract(session, contract_id)
+
+    if not old_contract.is_active:
+        raise InvalidContractStateError(
+            "Contract sudah tidak aktif — tidak bisa di-renew. Buat contract baru saja."
+        )
+
+    # New contract validation
+    if data.new_contract_type == ContractType.PKWT and data.new_end_date is None:
+        raise InvalidContractStateError("New PKWT wajib punya new_end_date")
+    if data.new_end_date is not None and data.new_end_date <= data.new_start_date:
+        raise InvalidContractStateError("new_end_date harus setelah new_start_date")
+
+    # End old contract
+    old_contract.is_active = False
+    # Optionally adjust old contract end_date kalau new starts earlier
+    if old_contract.end_date is None or data.new_start_date <= old_contract.end_date:
+        # Make sure old contract ends 1 day before new starts (kalau new starts during old)
+        old_contract.end_date = data.new_start_date - timedelta(days=1)
+
+    # Create new contract
+    new_contract = EmployeeContract(
+        employee_id=old_contract.employee_id,
+        contract_type=data.new_contract_type,
+        start_date=data.new_start_date,
+        end_date=data.new_end_date,
+        salary=data.new_salary if data.new_salary is not None else old_contract.salary,
+        is_active=True,
+    )
+    session.add(new_contract)
+    await session.commit()
+    await session.refresh(old_contract)
+    await session.refresh(new_contract)
+    return old_contract, new_contract
+
+
+async def terminate_contract(
+    session: AsyncSession,
+    contract_id: UUID,
+    data: ContractTerminateRequest,
+) -> EmployeeContract:
+    """End contract earlier than original end_date."""
+    contract = await get_contract(session, contract_id)
+    if not contract.is_active:
+        raise InvalidContractStateError("Contract sudah tidak aktif")
+    if data.termination_date < contract.start_date:
+        raise InvalidContractStateError("termination_date tidak boleh sebelum start_date")
+    contract.end_date = data.termination_date
+    contract.is_active = False
+    await session.commit()
+    await session.refresh(contract)
+    return contract
+
+
+async def get_expiring_contracts(
+    session: AsyncSession, days_ahead: int = 30
+) -> list[EmployeeContract]:
+    """Contracts yang expire dalam X hari ke depan (PKWT only) atau sudah expired tapi masih active."""
+    today = date.today()
+    deadline = today + timedelta(days=days_ahead)
+
+    # All active PKWT contracts dengan end_date <= deadline
+    stmt = (
+        select(EmployeeContract)
+        .where(
+            EmployeeContract.is_active.is_(True),
+            EmployeeContract.contract_type == ContractType.PKWT,
+            EmployeeContract.end_date.is_not(None),
+            EmployeeContract.end_date <= deadline,
+        )
+        .order_by(EmployeeContract.end_date.asc())
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())

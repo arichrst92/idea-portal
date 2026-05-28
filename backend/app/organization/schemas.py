@@ -14,6 +14,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
 from app.organization.models import ContractType, EmployeeStatus, EmployeeType
 
+# Forward enum for contract status (derived: ACTIVE, EXPIRING_SOON, EXPIRED, ENDED)
+ContractStatus = Annotated[str, Field(pattern="^(ACTIVE|EXPIRING_SOON|EXPIRED|ENDED)$")]
+
 
 # ─── Reusable types ────────────────────────────────────────────────
 
@@ -263,6 +266,98 @@ class BulkImportResult(BaseModel):
     error_count: int
     errors: list[dict] = Field(default_factory=list)
     created_niks: list[str] = Field(default_factory=list)
+
+
+# ─── EmployeeContract (TSK-018) ────────────────────────────────────
+
+
+class ContractBase(BaseModel):
+    contract_type: ContractType
+    start_date: date
+    end_date: date | None = None
+    salary: Decimal | None = None
+    document_url: Annotated[str, StringConstraints(max_length=500)] | None = None
+
+
+class ContractCreate(ContractBase):
+    employee_id: UUID
+
+
+class ContractUpdate(BaseModel):
+    """Patch contract fields. Tidak bisa ubah type (gunakan renew/new contract)."""
+
+    end_date: date | None = None
+    salary: Decimal | None = None
+    document_url: str | None = None
+    is_active: bool | None = None
+
+
+class ContractRenewRequest(BaseModel):
+    """Renew PKWT — create new contract following existing one."""
+
+    new_start_date: date
+    new_end_date: date | None = None
+    new_contract_type: ContractType  # bisa rotate ke PKWTT
+    new_salary: Decimal | None = None
+    notes: Annotated[str, StringConstraints(min_length=10, max_length=1000)]
+
+
+class ContractTerminateRequest(BaseModel):
+    """End contract earlier than end_date."""
+
+    termination_date: date
+    reason: Annotated[str, StringConstraints(min_length=10, max_length=1000)]
+
+
+class ContractOut(ContractBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    employee_id: UUID
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    # Derived
+    employee_nik: str | None = None
+    employee_name: str | None = None
+    days_until_expiry: int | None = None
+    derived_status: str | None = None  # ACTIVE / EXPIRING_SOON_30 / EXPIRING_SOON_7 / EXPIRED / ENDED
+
+
+class ContractListItem(BaseModel):
+    """Slim payload untuk list."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    employee_id: UUID
+    employee_nik: str | None = None
+    employee_name: str | None = None
+    employee_department: str | None = None
+    contract_type: ContractType
+    start_date: date
+    end_date: date | None
+    is_active: bool
+    days_until_expiry: int | None
+    derived_status: str
+
+
+class ContractListResponse(BaseModel):
+    items: list[ContractListItem]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class ContractExpiringAlert(BaseModel):
+    """Dashboard widget data — contracts expiring dalam X hari."""
+
+    total_h30: int  # contracts expiring 8-30 hari
+    total_h7: int  # contracts expiring 0-7 hari (critical)
+    total_expired_unrenewed: int  # already expired tapi masih is_active=true
+    items: list[ContractListItem]
 
 
 # ─── Org Chart (TSK-014) ───────────────────────────────────────────
