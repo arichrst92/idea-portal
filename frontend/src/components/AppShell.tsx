@@ -13,6 +13,7 @@
  */
 
 import {
+  ApartmentOutlined,
   CrownOutlined,
   DashboardOutlined,
   LockOutlined,
@@ -47,6 +48,7 @@ function getMenuItems(isExecutive: boolean) {
   const items = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
+    { key: '/org-chart', icon: <ApartmentOutlined />, label: 'Org Chart' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
 

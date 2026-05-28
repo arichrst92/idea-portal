@@ -16,6 +16,7 @@ import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
 import EmployeeCreatePage from '@/features/employees/EmployeeCreatePage';
 import EmployeeDetailPage from '@/features/employees/EmployeeDetailPage';
 import EmployeeListPage from '@/features/employees/EmployeeListPage';
+import OrgChartPage from '@/features/employees/OrgChartPage';
 import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
@@ -87,6 +88,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><EmployeeDetailPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/org-chart"
+          element={
+            <RequireAuth>
+              <AppShell><OrgChartPage /></AppShell>
             </RequireAuth>
           }
         />
