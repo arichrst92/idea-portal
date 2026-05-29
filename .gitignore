@@ -154,3 +154,8 @@ $RECYCLE.BIN/
 # One-time commit helper scripts
 # ─────────────────────────────────────────────
 tsk_*_commit.sh
+
+# ─────────────────────────────────────────────
+# Scratch TS configs (sandbox check files)
+# ─────────────────────────────────────────────
+frontend/tsconfig.check.json

@@ -90,6 +90,7 @@ from app.assessment.router import router as assessment_router
 from app.project.router import router as project_router
 from app.payroll.reimbursement_router import router as reimb_proc_router
 from app.sales.router import router as sales_router
+from app.dashboard.router import router as dashboard_router
 
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(identity_admin_router, prefix="/api/v1")
@@ -102,6 +103,7 @@ app.include_router(assessment_router, prefix="/api/v1")  # M2.1 TSK-021
 app.include_router(project_router, prefix="/api/v1")  # M2.1 TSK-022
 app.include_router(reimb_proc_router, prefix="/api/v1")  # M2.2 TSK-023
 app.include_router(sales_router, prefix="/api/v1")  # M3.1 TSK-024
+app.include_router(dashboard_router, prefix="/api/v1")  # M3.2 TSK-025
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)

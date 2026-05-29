@@ -13,6 +13,7 @@ import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import DashboardPage from '@/features/dashboard/DashboardPage';
 import EmployeeCreatePage from '@/features/employees/EmployeeCreatePage';
 import EmployeeDetailPage from '@/features/employees/EmployeeDetailPage';
 import EmployeeListPage from '@/features/employees/EmployeeListPage';
@@ -34,8 +35,6 @@ import SeparationListPage from '@/features/separation/SeparationListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
 import { SessionManager } from '@/lib/sessionManager';
 import { useAuthStore } from '@/store/auth';
-
-import App from '../App';
 
 /**
  * Placeholder protected route guard. TSK-003 akan tambah role-based check.
@@ -61,7 +60,7 @@ function AppRoutes() {
           path="/"
           element={
             <RequireAuth>
-              <AppShell><App /></AppShell>
+              <AppShell><DashboardPage /></AppShell>
             </RequireAuth>
           }
         />
