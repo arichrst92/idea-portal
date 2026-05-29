@@ -14,6 +14,7 @@
 
 import {
   ApartmentOutlined,
+  BarChartOutlined,
   CalendarOutlined,
   CheckSquareOutlined,
   CrownOutlined,
@@ -58,6 +59,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/onboarding', icon: <CheckSquareOutlined />, label: 'Onboarding' },
     { key: '/contracts', icon: <FileTextOutlined />, label: 'Contracts' },
     { key: '/leave', icon: <CalendarOutlined />, label: 'Leave' },
+    { key: '/performance', icon: <BarChartOutlined />, label: 'Performance' },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];

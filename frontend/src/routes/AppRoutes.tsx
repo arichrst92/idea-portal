@@ -24,6 +24,7 @@ import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
 import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import ContractsListPage from '@/features/contracts/ContractsListPage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
+import PerformancePage from '@/features/performance/PerformancePage';
 import SeparationDetailPage from '@/features/separation/SeparationDetailPage';
 import SeparationListPage from '@/features/separation/SeparationListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
@@ -177,6 +178,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><LeaveListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/performance"
+          element={
+            <RequireAuth>
+              <AppShell><PerformancePage /></AppShell>
             </RequireAuth>
           }
         />
