@@ -87,6 +87,7 @@ from app.onboarding.router import router as onboarding_router
 from app.separation.router import router as separation_router
 from app.payroll.leave_router import router as leave_router
 from app.assessment.router import router as assessment_router
+from app.project.router import router as project_router
 
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(identity_admin_router, prefix="/api/v1")
@@ -96,6 +97,7 @@ app.include_router(onboarding_router, prefix="/api/v1")  # M1.2 TSK-016
 app.include_router(separation_router, prefix="/api/v1")  # M1.2 TSK-017
 app.include_router(leave_router, prefix="/api/v1")  # M1.2 TSK-019
 app.include_router(assessment_router, prefix="/api/v1")  # M2.1 TSK-021
+app.include_router(project_router, prefix="/api/v1")  # M2.1 TSK-022
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)

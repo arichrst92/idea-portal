@@ -24,6 +24,7 @@ import {
   LogoutOutlined,
   MenuOutlined,
   PoweroffOutlined,
+  ProjectOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -60,6 +61,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/contracts', icon: <FileTextOutlined />, label: 'Contracts' },
     { key: '/leave', icon: <CalendarOutlined />, label: 'Leave' },
     { key: '/performance', icon: <BarChartOutlined />, label: 'Performance' },
+    { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
