@@ -1,7 +1,9 @@
 /**
- * Finance Page — TSK-023.
- * Tabs: Reimbursement, Procurement, Vendor.
+ * Finance Page — TSK-023 + TSK-022D.
+ * Tabs: Invoices (AR), Reimbursement, Procurement, Vendor.
  */
+
+import InvoicesTab from './InvoicesTab';
 
 import { CheckOutlined, CloseOutlined, PlusOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -643,13 +645,14 @@ export default function FinancePage() {
           Finance Operations
         </h2>
         <p style={{ fontSize: 13, color: 'var(--ide-ink2)' }}>
-          Reimbursement (transfer terpisah dari payroll) + Procurement (pengadaan barang) + Vendor master.
+          Invoices/AR (billing termin) · Reimbursement (transfer terpisah dari payroll) · Procurement · Vendor master.
         </p>
       </div>
 
       <Tabs
-        defaultActiveKey="reimb"
+        defaultActiveKey="invoices"
         items={[
+          { key: 'invoices', label: 'Invoices / AR', children: <InvoicesTab /> },
           { key: 'reimb', label: 'Reimbursement', children: <ReimbursementTab /> },
           { key: 'proc', label: 'Procurement', children: <ProcurementTab /> },
           { key: 'vendor', label: 'Vendors', children: <VendorTab /> },
