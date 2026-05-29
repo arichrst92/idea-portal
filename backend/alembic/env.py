@@ -38,14 +38,18 @@ from app.assessment.models import (  # noqa: F401  — Assessment & Performance 
     OkrObjective,
     WarningLetter,
 )
-from app.project.models import (  # noqa: F401  — Project & Work (6)
+from app.project.models import (  # noqa: F401  — Project & Work (8 post TSK-022B)
     Project,
     ProjectDocument,
-    ProjectInvoice,
+    ProjectEpic,
     ProjectMember,
-    ProjectMilestone,
+    ProjectPhase,
+    ProjectSubtask,
+    ProjectSubtaskComment,
     ProjectTask,
+    ProjectTaskComment,
 )
+from app.finance.models import Invoice  # noqa: F401  — Finance (TSK-022C)
 from app.outsource.models import (  # noqa: F401  — Outsource (7)
     BeritaAcara,
     Client,
