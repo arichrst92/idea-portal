@@ -40,7 +40,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 
 from app.core.audit import audit_log
-from app.core.deps import CurrentUser, DBSession, require_permission
+from app.core.deps import DBSession, require_permission
 from app.identity.models import User
 from app.organization.models import Employee
 from app.project import service
@@ -815,7 +815,7 @@ async def list_task_comments_endpoint(
 )
 async def create_task_comment_endpoint(
     request: Request, task_id: UUID, data: CommentCreate, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> CommentOut:
     try:
         c = await service.create_task_comment(session, task_id, user.id, data)
@@ -833,7 +833,7 @@ async def create_task_comment_endpoint(
 @router.patch("/projects/task-comments/{comment_id}", response_model=CommentOut)
 async def update_task_comment_endpoint(
     request: Request, comment_id: UUID, data: CommentUpdate, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> CommentOut:
     try:
         c = await service.update_task_comment(session, comment_id, user.id, data)
@@ -852,7 +852,7 @@ async def update_task_comment_endpoint(
 @router.delete("/projects/task-comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task_comment_endpoint(
     request: Request, comment_id: UUID, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> None:
     try:
         await service.delete_task_comment(session, comment_id, user.id)
@@ -882,7 +882,7 @@ async def list_subtask_comments_endpoint(
 )
 async def create_subtask_comment_endpoint(
     request: Request, subtask_id: UUID, data: CommentCreate, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> CommentOut:
     try:
         c = await service.create_subtask_comment(session, subtask_id, user.id, data)
@@ -900,7 +900,7 @@ async def create_subtask_comment_endpoint(
 @router.patch("/projects/subtask-comments/{comment_id}", response_model=CommentOut)
 async def update_subtask_comment_endpoint(
     request: Request, comment_id: UUID, data: CommentUpdate, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> CommentOut:
     try:
         c = await service.update_subtask_comment(session, comment_id, user.id, data)
@@ -919,7 +919,7 @@ async def update_subtask_comment_endpoint(
 @router.delete("/projects/subtask-comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_subtask_comment_endpoint(
     request: Request, comment_id: UUID, session: DBSession,
-    user: CurrentUser = Depends(require_permission("project.view")),
+    user=Depends(require_permission("project.view")),
 ) -> None:
     try:
         await service.delete_subtask_comment(session, comment_id, user.id)
