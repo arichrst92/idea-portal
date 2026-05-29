@@ -256,6 +256,113 @@ export async function deliverProc(id: string, actual_delivery_date: string): Pro
   return r.data;
 }
 
+// ─── Invoice API (TSK-022C) ─────────────────────────────────────
+
+export type InvoiceStatus =
+  | 'PENDING'
+  | 'SENT'
+  | 'PARTIAL'
+  | 'PAID'
+  | 'OVERDUE'
+  | 'CANCELLED';
+
+export interface InvoiceListItem {
+  id: string;
+  invoice_no: string;
+  project_id: string | null;
+  trigger_phase_id: string | null;
+  client_id: string | null;
+  client_name_snapshot: string | null;
+  termin_pct: string | null;
+  amount: string;
+  currency: string;
+  tax_pct: string;
+  tax_amount: string;
+  total_amount: string;
+  issue_date: string | null;
+  due_date: string | null;
+  notified_finance_at: string | null;
+  status: InvoiceStatus;
+  paid_amount: string;
+  paid_at: string | null;
+  notes: string | null;
+  created_at: string;
+  project_code: string | null;
+  project_name: string | null;
+  days_overdue: number | null;
+  aging_bucket: string | null;
+}
+
+export interface InvoiceListResponse {
+  items: InvoiceListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export async function listInvoices(params: {
+  project_id?: string;
+  status?: InvoiceStatus;
+  page?: number;
+  page_size?: number;
+} = {}): Promise<InvoiceListResponse> {
+  const r = await apiClient.get<InvoiceListResponse>('/api/v1/finance/invoices', { params });
+  return r.data;
+}
+
+export async function getInvoice(id: string): Promise<InvoiceListItem> {
+  const r = await apiClient.get<InvoiceListItem>(`/api/v1/finance/invoices/${id}`);
+  return r.data;
+}
+
+export async function createInvoice(data: {
+  invoice_no: string;
+  project_id?: string;
+  trigger_phase_id?: string;
+  client_id?: string;
+  client_name_snapshot?: string;
+  termin_pct?: number;
+  amount: number;
+  currency?: string;
+  tax_pct?: number;
+  issue_date?: string;
+  due_date?: string;
+  notes?: string;
+}): Promise<InvoiceListItem> {
+  const r = await apiClient.post<InvoiceListItem>('/api/v1/finance/invoices', data);
+  return r.data;
+}
+
+export async function updateInvoice(
+  id: string,
+  data: { status?: InvoiceStatus; paid_amount?: number; paid_at?: string; due_date?: string; notes?: string },
+): Promise<InvoiceListItem> {
+  const r = await apiClient.patch<InvoiceListItem>(`/api/v1/finance/invoices/${id}`, data);
+  return r.data;
+}
+
+export async function deleteInvoice(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/finance/invoices/${id}`);
+}
+
+export function invoiceStatusColor(s: InvoiceStatus): { className: string; label: string } {
+  switch (s) {
+    case 'PENDING':
+      return { className: 'ide-tag-gray', label: 'Pending' };
+    case 'SENT':
+      return { className: 'ide-tag-blue', label: 'Sent' };
+    case 'PARTIAL':
+      return { className: 'ide-tag-orange', label: 'Partial' };
+    case 'PAID':
+      return { className: 'ide-tag-green', label: 'Paid' };
+    case 'OVERDUE':
+      return { className: 'ide-tag-red', label: 'Overdue' };
+    case 'CANCELLED':
+      return { className: 'ide-tag-gray', label: 'Cancelled' };
+  }
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 
 export function reimbStatusColor(s: ReimbStatus): { className: string; label: string } {

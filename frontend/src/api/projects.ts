@@ -81,21 +81,7 @@ export interface Task {
   milestone_name: string | null;
 }
 
-export interface Invoice {
-  id: string;
-  project_id: string;
-  invoice_no: string;
-  termin_pct: string;
-  amount: string;
-  trigger_milestone_id: string | null;
-  trigger_date: string | null;
-  status: string;
-  notified_finance_at: string | null;
-  paid_amount: string;
-  paid_at: string | null;
-  created_at: string;
-  milestone_name: string | null;
-}
+// Invoice TYPE & API — REMOVED (TSK-022C). Lihat src/api/finance.ts.
 
 // ─── Projects API ────────────────────────────────────────────────
 
@@ -230,20 +216,7 @@ export async function updateTask(
   return r.data;
 }
 
-// ─── Invoices ───────────────────────────────────────────────────
-
-export async function listInvoices(project_id: string): Promise<Invoice[]> {
-  const r = await apiClient.get<Invoice[]>(`/api/v1/projects/${project_id}/invoices`);
-  return r.data;
-}
-
-export async function createInvoice(
-  project_id: string,
-  data: { invoice_no: string; termin_pct: number; amount: number; trigger_milestone_id?: string },
-): Promise<Invoice> {
-  const r = await apiClient.post<Invoice>(`/api/v1/projects/${project_id}/invoices`, data);
-  return r.data;
-}
+// Invoice API REMOVED (TSK-022C). Pindah ke src/api/finance.ts.
 
 // ─── Helpers ────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 /**
- * Project Detail Page — TSK-022.
- * Tabs: Overview, Milestones, Tasks (kanban), Invoices.
+ * Project Detail Page — TSK-022 (TSK-022C: tab Invoices dihapus, pindah ke Finance).
+ * Tabs: Overview, Milestones, Tasks (kanban), Members.
  */
 
 import {
@@ -36,11 +36,9 @@ import { listEmployees } from '@/api/organization';
 import {
   activateProject,
   closeProject,
-  createInvoice,
   createMilestone,
   createTask,
   getProject,
-  listInvoices,
   listMembers,
   listMilestones,
   listTasks,
@@ -91,7 +89,6 @@ function MilestonesTab({ projectId }: { projectId: string }) {
       message.success('Milestone updated');
       queryClient.invalidateQueries({ queryKey: ['milestones', projectId] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', projectId] });
     },
   });
 
@@ -423,164 +420,8 @@ function TasksTab({ projectId }: { projectId: string }) {
   );
 }
 
-// ─── INVOICES TAB ───────────────────────────────────────────────
-
-function InvoicesTab({ projectId }: { projectId: string }) {
-  const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = useState(false);
-  const query = useQuery({
-    queryKey: ['invoices', projectId],
-    queryFn: () => listInvoices(projectId),
-  });
-  const msQuery = useQuery({
-    queryKey: ['milestones', projectId],
-    queryFn: () => listMilestones(projectId),
-  });
-
-  const createMut = useMutation({
-    mutationFn: (d: any) => createInvoice(projectId, d),
-    onSuccess: () => {
-      message.success('Invoice created');
-      queryClient.invalidateQueries({ queryKey: ['invoices', projectId] });
-    },
-    onError: (e: any) =>
-      message.error(e?.response?.data?.detail?.message || 'Gagal create invoice'),
-  });
-
-  const invoices = query.data || [];
-
-  return (
-    <div>
-      <div style={{ marginBottom: 14 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-          Add Invoice Termin
-        </Button>
-      </div>
-
-      {invoices.length === 0 && <Empty description="Belum ada invoice" />}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {invoices.map((inv) => (
-          <div
-            key={inv.id}
-            style={{
-              background: 'var(--ide-surface)',
-              border: '1px solid var(--ide-border)',
-              borderRadius: 'var(--ide-rm)',
-              padding: 14,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
-              gap: 10,
-              alignItems: 'center',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontFamily: 'var(--ide-font-mono)',
-                  fontWeight: 700,
-                  color: 'var(--ide-blue)',
-                }}
-              >
-                {inv.invoice_no}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--ide-ink3)' }}>
-                Termin {inv.termin_pct}%
-              </div>
-            </div>
-            <div style={{ fontFamily: 'var(--ide-font-mono)', fontWeight: 700 }}>
-              {formatIDR(inv.amount)}
-            </div>
-            <div style={{ fontSize: 11 }}>
-              {inv.milestone_name ? (
-                <span>
-                  📍 {inv.milestone_name}
-                </span>
-              ) : (
-                <span style={{ color: 'var(--ide-ink3)' }}>No trigger</span>
-              )}
-            </div>
-            <div>
-              <Tag
-                color={
-                  inv.status === 'PAID'
-                    ? 'green'
-                    : inv.status === 'SENT'
-                      ? 'blue'
-                      : 'orange'
-                }
-              >
-                {inv.status}
-              </Tag>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--ide-ink3)' }}>
-              {inv.notified_finance_at && (
-                <>📩 Notified Finance {formatDate(inv.notified_finance_at)}</>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <Modal
-        title="Add Invoice Termin"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          onFinish={(v) => {
-            createMut.mutate({
-              invoice_no: v.invoice_no,
-              termin_pct: v.termin_pct,
-              amount: v.amount,
-              trigger_milestone_id: v.trigger_milestone_id,
-            });
-            setCreateOpen(false);
-          }}
-        >
-          <Form.Item label="Invoice No" name="invoice_no" rules={[{ required: true }]}>
-            <Input placeholder="INV-2026-001" style={{ fontFamily: 'var(--ide-font-mono)' }} />
-          </Form.Item>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Form.Item
-              label="Termin %"
-              name="termin_pct"
-              rules={[{ required: true, type: 'number', min: 0, max: 100 }]}
-            >
-              <InputNumber style={{ width: '100%' }} min={0} max={100} />
-            </Form.Item>
-            <Form.Item label="Amount (IDR)" name="amount" rules={[{ required: true }]}>
-              <InputNumber
-                min={0}
-                style={{ width: '100%', fontFamily: 'var(--ide-font-mono)' }}
-                formatter={(v) =>
-                  v ? `Rp ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
-                }
-                parser={(v) => (v ? Number(v.replace(/[^0-9]/g, '')) : 0)}
-              />
-            </Form.Item>
-          </div>
-          <Form.Item label="Trigger Milestone (opsional)" name="trigger_milestone_id">
-            <Select
-              allowClear
-              placeholder="Pilih milestone — auto-notify Finance saat milestone selesai"
-              options={(msQuery.data || []).map((m) => ({
-                value: m.id,
-                label: m.name,
-              }))}
-            />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-            Create
-          </Button>
-        </Form>
-      </Modal>
-    </div>
-  );
-}
+// InvoicesTab REMOVED (TSK-022C). Invoice management dipindah ke Finance page
+// (akan dibangun di TSK-023D — currently /finance hanya tampilkan reimbursement+procurement).
 
 // ─── MEMBERS TAB ────────────────────────────────────────────────
 
@@ -815,7 +656,6 @@ export default function ProjectDetailPage() {
           },
           { key: 'tasks', label: 'Tasks (Kanban)', children: <TasksTab projectId={id} /> },
           { key: 'members', label: 'Members', children: <MembersTab projectId={id} /> },
-          { key: 'invoices', label: 'Invoices', children: <InvoicesTab projectId={id} /> },
         ]}
       />
     </div>

@@ -1,4 +1,4 @@
-"""Project router — TSK-022.
+"""Project router — TSK-022, refactored TSK-022C.
 
 Endpoints di /api/v1:
 - /projects                          — list, create
@@ -8,11 +8,12 @@ Endpoints di /api/v1:
 - /projects/{id}/members             — list, add
 - /projects/members/{member_id}      — delete
 - /projects/{id}/milestones          — list, create
-- /projects/milestones/{m_id}        — update (auto-trigger invoice notif kalau complete)
+- /projects/milestones/{m_id}        — update
 - /projects/{id}/tasks               — list (kanban), create
 - /projects/tasks/{t_id}             — update, delete
-- /projects/{id}/invoices            — list, create
-- /projects/invoices/{i_id}          — update status (sent/paid)
+
+CATATAN (TSK-022C): Invoice endpoints di-pindah ke /api/v1/finance/invoices.
+Lihat app.finance.router.
 """
 
 from __future__ import annotations
@@ -29,9 +30,6 @@ from app.organization.models import Employee
 from app.project import service
 from app.project.models import ProjectStatus, ProjectType
 from app.project.schemas import (
-    InvoiceCreate,
-    InvoiceOut,
-    InvoiceUpdate,
     MemberAdd,
     MemberOut,
     MilestoneCreate,
@@ -50,7 +48,6 @@ from app.project.schemas import (
 from app.project.service import (
     DuplicateCodeError,
     InvalidProjectStateError,
-    InvoiceNotFoundError,
     MemberNotFoundError,
     MilestoneNotFoundError,
     ProjectNotFoundError,
@@ -468,7 +465,6 @@ async def update_milestone_endpoint(
         after_state={
             "progress_pct": float(m.progress_pct),
             "completed_at": str(m.completed_at) if m.completed_at else None,
-            "triggered_invoices": [str(inv.id) for inv in triggered],
         },
     )
     return _ms_to_out(m)
@@ -570,95 +566,5 @@ async def delete_task_endpoint(
 
 
 # ─── Invoices ──────────────────────────────────────────────────────
-
-
-async def _inv_to_out(session, inv) -> InvoiceOut:
-    ms_name = None
-    if inv.trigger_milestone_id:
-        from app.project.models import ProjectMilestone
-
-        mr = await session.execute(
-            select(ProjectMilestone.name).where(ProjectMilestone.id == inv.trigger_milestone_id)
-        )
-        ms_name = mr.scalar_one_or_none()
-    return InvoiceOut(
-        id=inv.id,
-        project_id=inv.project_id,
-        invoice_no=inv.invoice_no,
-        termin_pct=inv.termin_pct,
-        amount=inv.amount,
-        trigger_milestone_id=inv.trigger_milestone_id,
-        trigger_date=inv.trigger_date,
-        status=inv.status,
-        notified_finance_at=inv.notified_finance_at,
-        paid_amount=inv.paid_amount,
-        paid_at=inv.paid_at,
-        created_at=inv.created_at,
-        milestone_name=ms_name,
-    )
-
-
-@router.get("/projects/{project_id}/invoices", response_model=list[InvoiceOut])
-async def list_invoices_endpoint(
-    project_id: UUID,
-    session: DBSession,
-    _user=Depends(require_permission("invoice.view")),
-) -> list[InvoiceOut]:
-    invoices = await service.list_invoices(session, project_id)
-    return [await _inv_to_out(session, inv) for inv in invoices]
-
-
-@router.post(
-    "/projects/{project_id}/invoices",
-    response_model=InvoiceOut,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_invoice_endpoint(
-    request: Request,
-    project_id: UUID,
-    data: InvoiceCreate,
-    session: DBSession,
-    user=Depends(require_permission("invoice.create")),
-) -> InvoiceOut:
-    try:
-        inv = await service.create_invoice(session, project_id, data)
-    except (ProjectNotFoundError, InvalidProjectStateError) as e:
-        raise HTTPException(status_code=400, detail={"code": "INVALID", "message": str(e)}) from e
-    except DuplicateCodeError as e:
-        raise HTTPException(status_code=409, detail={"code": "DUPLICATE_INVOICE_NO", "message": str(e)}) from e
-
-    await audit_log(
-        session=session,
-        actor=user,
-        action="INVOICE_CREATED",
-        resource_type="project_invoice",
-        resource_id=str(inv.id),
-        ip_address=request.client.host if request.client else None,
-        after_state={"invoice_no": inv.invoice_no, "amount": float(inv.amount)},
-    )
-    return await _inv_to_out(session, inv)
-
-
-@router.patch("/projects/invoices/{invoice_id}", response_model=InvoiceOut)
-async def update_invoice_endpoint(
-    request: Request,
-    invoice_id: UUID,
-    data: InvoiceUpdate,
-    session: DBSession,
-    user=Depends(require_permission("invoice.create")),
-) -> InvoiceOut:
-    try:
-        inv = await service.update_invoice(session, invoice_id, data)
-    except InvoiceNotFoundError as e:
-        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
-
-    await audit_log(
-        session=session,
-        actor=user,
-        action="INVOICE_UPDATED",
-        resource_type="project_invoice",
-        resource_id=str(inv.id),
-        ip_address=request.client.host if request.client else None,
-        after_state=data.model_dump(exclude_unset=True),
-    )
-    return await _inv_to_out(session, inv)
+# REMOVED (TSK-022C). Pindah ke /api/v1/finance/invoices.
+# Lihat app.finance.router.

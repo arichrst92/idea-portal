@@ -1,14 +1,17 @@
-"""Project & Work domain — 6 tabel per ERD knowledge.md sec.20.
+"""Project & Work domain — 5 tabel per ERD knowledge.md sec.20.
 
 Tabel:
 - projects             — Client/Internal/R&D types
 - project_members      — assignee + allocation %
-- project_milestones   — milestone tracking
+- project_milestones   — milestone tracking (akan diganti Phase di TSK-022B)
 - project_tasks        — task per project (Kanban + Gantt)
 - project_documents    — link ke dokumentasi teknis per project (US-TK-003)
-- project_invoices     — termin per project (auto-trigger notif Finance)
 
-Schema detail full per EP-07 (M2.1).
+CATATAN (TSK-022C, 2026-05-29):
+Invoice termin di-pindah ke app/finance/ (lihat app.finance.models.Invoice).
+Tabel `project_invoices` di-drop via migration a7c2f5e8b401. Phase completion
+akan trigger `app.finance.service.trigger_invoices_on_phase_complete()`
+setelah TSK-022B selesai.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ import enum
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, Text
+from sqlalchemy import Date, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
@@ -106,20 +109,4 @@ class ProjectDocument(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin
     uploaded_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-class ProjectInvoice(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Termin invoice per project (auto-notif Finance saat milestone tercapai)."""
-
-    __tablename__ = "project_invoices"
-
-    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
-    invoice_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    termin_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
-    trigger_milestone_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("project_milestones.id"), nullable=True
-    )
-    trigger_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    status: Mapped[str] = mapped_column(String(20), default="PENDING", nullable=False)  # PENDING/SENT/PARTIAL/PAID
-    notified_finance_at: Mapped[date | None] = mapped_column(Date, nullable=True)
-    paid_amount: Mapped[float] = mapped_column(Numeric(15, 2), default=0, nullable=False)
-    paid_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+# ProjectInvoice — REMOVED (TSK-022C). Lihat app.finance.models.Invoice.

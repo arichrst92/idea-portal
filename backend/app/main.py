@@ -26,6 +26,7 @@ from app.sales import models as _sales_models  # noqa: F401
 from app.hiring import models as _hiring_models  # noqa: F401
 from app.onboarding import models as _onboarding_models  # noqa: F401
 from app.separation import models as _separation_models  # noqa: F401
+from app.finance import models as _finance_models  # noqa: F401
 
 settings = get_settings()
 
@@ -91,6 +92,7 @@ from app.project.router import router as project_router
 from app.payroll.reimbursement_router import router as reimb_proc_router
 from app.sales.router import router as sales_router
 from app.dashboard.router import router as dashboard_router
+from app.finance.router import router as finance_router
 
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(identity_admin_router, prefix="/api/v1")
@@ -104,6 +106,7 @@ app.include_router(project_router, prefix="/api/v1")  # M2.1 TSK-022
 app.include_router(reimb_proc_router, prefix="/api/v1")  # M2.2 TSK-023
 app.include_router(sales_router, prefix="/api/v1")  # M3.1 TSK-024
 app.include_router(dashboard_router, prefix="/api/v1")  # M3.2 TSK-025
+app.include_router(finance_router, prefix="/api/v1")  # TSK-022C — invoice moved from project
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)

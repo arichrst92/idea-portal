@@ -1,10 +1,13 @@
-"""Project business logic — TSK-022.
+"""Project business logic — TSK-022, refactored TSK-022C.
 
 Workflow:
 - Project lifecycle: DRAFT → ACTIVE → COMPLETED/TERMINATED (atau ON_HOLD)
 - Direktur Utama bisa override close kapan saja (with reason)
-- Milestone: track progress, kalau di-mark complete → auto-notify Finance via invoice trigger
+- Milestone: track progress; (auto-notify Finance via invoice trigger akan
+  di-re-aktifkan di TSK-022B via Phase → app.finance.service)
 - Task: simple kanban (BACKLOG → TODO → IN_PROGRESS → IN_REVIEW → DONE/BLOCKED)
+
+TSK-022C (2026-05-29): semua logic invoice di-pindah ke app/finance/service.py.
 """
 
 from __future__ import annotations
@@ -20,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.project.models import (
     Project,
-    ProjectInvoice,
     ProjectMember,
     ProjectMilestone,
     ProjectStatus,
@@ -28,8 +30,6 @@ from app.project.models import (
     ProjectType,
 )
 from app.project.schemas import (
-    InvoiceCreate,
-    InvoiceUpdate,
     MemberAdd,
     MilestoneCreate,
     MilestoneUpdate,
@@ -53,10 +53,6 @@ class MilestoneNotFoundError(Exception):
 
 
 class TaskNotFoundError(Exception):
-    pass
-
-
-class InvoiceNotFoundError(Exception):
     pass
 
 
@@ -299,11 +295,15 @@ async def update_milestone(
     session: AsyncSession,
     milestone_id: UUID,
     data: MilestoneUpdate,
-) -> tuple[ProjectMilestone, list[ProjectInvoice]]:
+) -> tuple[ProjectMilestone, list]:
     """Update milestone. Kalau marked complete (progress=100 atau completed_at),
-    auto-notify Finance via update invoice trigger.
+    set completed_at.
 
-    Returns: (milestone, triggered_invoices)
+    TSK-022C: invoice trigger di-pindah ke finance domain. Untuk sementara
+    return triggered = [] (empty). Akan di-re-aktivasi di TSK-022B saat
+    Phase menggantikan Milestone.
+
+    Returns: (milestone, triggered_invoices [always empty for now])
     """
     milestone = await get_milestone(session, milestone_id)
 
@@ -311,33 +311,17 @@ async def update_milestone(
     for field, value in update_dict.items():
         setattr(milestone, field, value)
 
-    triggered = []
-    # Auto-trigger Finance notif kalau milestone newly completed
     is_newly_completed = (
         (milestone.progress_pct == Decimal("100") or milestone.completed_at is not None)
         and "progress_pct" in update_dict
         or "completed_at" in update_dict
     )
-    if is_newly_completed:
-        if milestone.completed_at is None:
-            milestone.completed_at = date.today()
-        # Find invoices yang trigger by this milestone
-        invoice_stmt = select(ProjectInvoice).where(
-            ProjectInvoice.trigger_milestone_id == milestone_id,
-            ProjectInvoice.notified_finance_at.is_(None),
-        )
-        invoice_result = await session.execute(invoice_stmt)
-        invoices = list(invoice_result.scalars().all())
-        for inv in invoices:
-            inv.notified_finance_at = date.today()
-            inv.trigger_date = date.today()
-            triggered.append(inv)
+    if is_newly_completed and milestone.completed_at is None:
+        milestone.completed_at = date.today()
 
     await session.commit()
     await session.refresh(milestone)
-    for inv in triggered:
-        await session.refresh(inv)
-    return milestone, triggered
+    return milestone, []
 
 
 # ─── Tasks ─────────────────────────────────────────────────────────
@@ -408,64 +392,8 @@ async def delete_task(session: AsyncSession, task_id: UUID) -> None:
 
 
 # ─── Invoices ──────────────────────────────────────────────────────
-
-
-async def list_invoices(
-    session: AsyncSession, project_id: UUID
-) -> list[ProjectInvoice]:
-    stmt = (
-        select(ProjectInvoice)
-        .where(ProjectInvoice.project_id == project_id)
-        .order_by(ProjectInvoice.created_at.desc())
-    )
-    result = await session.execute(stmt)
-    return list(result.scalars().all())
-
-
-async def create_invoice(
-    session: AsyncSession, project_id: UUID, data: InvoiceCreate
-) -> ProjectInvoice:
-    """Setup termin invoice — pending sampai milestone trigger atau manual sent."""
-    project = await get_project(session, project_id)
-    if project.type != ProjectType.CLIENT:
-        raise InvalidProjectStateError(
-            "Hanya project type CLIENT yang bisa create invoice"
-        )
-
-    inv = ProjectInvoice(
-        project_id=project_id,
-        invoice_no=data.invoice_no,
-        termin_pct=data.termin_pct,
-        amount=data.amount,
-        trigger_milestone_id=data.trigger_milestone_id,
-        status="PENDING",
-        paid_amount=Decimal("0"),
-    )
-    session.add(inv)
-    try:
-        await session.commit()
-    except IntegrityError as e:
-        await session.rollback()
-        if "project_invoices_invoice_no_key" in str(e):
-            raise DuplicateCodeError(f"Invoice no '{data.invoice_no}' sudah ada") from e
-        raise
-    await session.refresh(inv)
-    return inv
-
-
-async def update_invoice(
-    session: AsyncSession, invoice_id: UUID, data: InvoiceUpdate
-) -> ProjectInvoice:
-    stmt = select(ProjectInvoice).where(ProjectInvoice.id == invoice_id)
-    result = await session.execute(stmt)
-    inv = result.scalar_one_or_none()
-    if inv is None:
-        raise InvoiceNotFoundError(f"Invoice {invoice_id} not found")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(inv, field, value)
-    await session.commit()
-    await session.refresh(inv)
-    return inv
+# REMOVED (TSK-022C). Pindah ke app.finance.service.
+# Lihat: app.finance.service.list_invoices / create_invoice / update_invoice
 
 
 # ─── Helpers ───────────────────────────────────────────────────────

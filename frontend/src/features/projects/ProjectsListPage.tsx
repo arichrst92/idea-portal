@@ -280,7 +280,7 @@ export default function ProjectsListPage() {
             Projects
           </h2>
           <p style={{ fontSize: 13, color: 'var(--ide-ink2)' }}>
-            Client / Internal / R&D dengan milestone tracking + invoice termin.
+            Client / Internal / R&D dengan milestone tracking. Invoice di Finance.
           </p>
         </div>
         <Button

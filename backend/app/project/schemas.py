@@ -208,36 +208,4 @@ class TaskOut(BaseModel):
     milestone_name: str | None = None
 
 
-# ─── Invoices ──────────────────────────────────────────────────────
-
-
-class InvoiceCreate(BaseModel):
-    invoice_no: Annotated[str, StringConstraints(min_length=3, max_length=50)]
-    termin_pct: Annotated[Decimal, Field(ge=0, le=100)]
-    amount: Annotated[Decimal, Field(ge=0)]
-    trigger_milestone_id: UUID | None = None
-
-
-class InvoiceUpdate(BaseModel):
-    status: str | None = None  # PENDING/SENT/PARTIAL/PAID
-    paid_amount: Decimal | None = None
-    paid_at: date | None = None
-
-
-class InvoiceOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    project_id: UUID
-    invoice_no: str
-    termin_pct: Decimal
-    amount: Decimal
-    trigger_milestone_id: UUID | None
-    trigger_date: date | None
-    status: str
-    notified_finance_at: date | None
-    paid_amount: Decimal
-    paid_at: date | None
-    created_at: datetime
-
-    milestone_name: str | None = None
+# Invoice schemas REMOVED (TSK-022C). Lihat app.finance.schemas.
