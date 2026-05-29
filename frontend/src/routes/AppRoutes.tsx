@@ -28,6 +28,7 @@ import LeaveListPage from '@/features/leave/LeaveListPage';
 import PerformancePage from '@/features/performance/PerformancePage';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import ProjectsListPage from '@/features/projects/ProjectsListPage';
+import SalesPage from '@/features/sales/SalesPage';
 import SeparationDetailPage from '@/features/separation/SeparationDetailPage';
 import SeparationListPage from '@/features/separation/SeparationListPage';
 import SettingsPage from '@/features/settings/SettingsPage';
@@ -213,6 +214,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><FinancePage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/sales"
+          element={
+            <RequireAuth>
+              <AppShell><SalesPage /></AppShell>
             </RequireAuth>
           }
         />
