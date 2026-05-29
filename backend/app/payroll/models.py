@@ -22,7 +22,7 @@ import enum
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
@@ -40,7 +40,15 @@ class LeaveType(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
 
 class LeaveRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Submit cuti dengan 2-layer approval."""
+    """Submit cuti dengan 2-layer approval.
+
+    Status flow:
+    PENDING_L1 → PENDING_L2 (L1 approve)
+             → REJECTED (L1 reject)
+             → CANCELLED (employee cancel)
+    PENDING_L2 → APPROVED (L2 approve, auto-deduct saldo)
+             → REJECTED (L2 reject)
+    """
 
     __tablename__ = "leave_requests"
 
@@ -50,11 +58,54 @@ class LeaveRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     days_count: Mapped[int] = mapped_column(nullable=False)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False, index=True)
+
+    # Approval audit
     layer1_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     layer1_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer1_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     layer2_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     layer2_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer2_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Rejection / Cancellation
+    rejected_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class LeaveBalance(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Saldo cuti per employee per leave type per tahun.
+
+    Auto-create saat employee first request leave di tahun tersebut
+    (atau via batch yearly reset).
+    """
+
+    __tablename__ = "leave_balances"
+
+    employee_id: Mapped[UUID] = mapped_column(
+        ForeignKey("employees.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    leave_type_id: Mapped[UUID] = mapped_column(
+        ForeignKey("leave_types.id"), nullable=False, index=True
+    )
+    year: Mapped[int] = mapped_column(nullable=False, index=True)
+    allocated_days: Mapped[int] = mapped_column(nullable=False, default=0)
+    used_days: Mapped[int] = mapped_column(nullable=False, default=0)
+    carried_over_days: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "employee_id",
+            "leave_type_id",
+            "year",
+            name="uq_balance_employee_type_year",
+        ),
+        Index("ix_balance_employee_year", "employee_id", "year"),
+    )
 
 
 class PayrollConfig(Base, UUIDPrimaryKeyMixin, TimestampMixin):

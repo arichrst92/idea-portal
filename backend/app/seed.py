@@ -273,6 +273,35 @@ async def seed_positions(session: AsyncSession, depts: dict[str, "Department"]) 
     return created
 
 
+async def seed_leave_types(session: AsyncSession) -> int:
+    """Seed default leave types per knowledge.md sec.10."""
+    from app.payroll.models import LeaveType
+
+    LEAVE_SEED = [
+        {"code": "ANNUAL", "name": "Cuti Tahunan", "default_days_per_year": 12, "is_paid": True},
+        {"code": "SICK", "name": "Cuti Sakit (dokter)", "default_days_per_year": 14, "is_paid": True},
+        {"code": "MATERNITY", "name": "Cuti Melahirkan", "default_days_per_year": 90, "is_paid": True},
+        {"code": "PATERNITY", "name": "Cuti Ayah", "default_days_per_year": 2, "is_paid": True},
+        {"code": "MARRIAGE", "name": "Cuti Menikah", "default_days_per_year": 3, "is_paid": True},
+        {"code": "BEREAVEMENT", "name": "Cuti Duka", "default_days_per_year": 2, "is_paid": True},
+        {"code": "HAJJ", "name": "Cuti Haji/Umrah", "default_days_per_year": 40, "is_paid": True},
+        {"code": "UNPAID", "name": "Cuti Tanpa Bayar", "default_days_per_year": 0, "is_paid": False},
+    ]
+    created = 0
+    for spec in LEAVE_SEED:
+        existing = await session.execute(select(LeaveType).where(LeaveType.code == spec["code"]))
+        if existing.scalar_one_or_none() is not None:
+            continue
+        session.add(LeaveType(**spec))
+        created += 1
+    await session.commit()
+    if created > 0:
+        print(f"  + {created} leave types seeded")
+    else:
+        print("  = All leave types already exist")
+    return created
+
+
 async def main() -> None:
     print("━━━ IDEA Portal — Database Seed ━━━\n")
     async with async_session_factory() as session:
@@ -293,6 +322,9 @@ async def main() -> None:
 
         print("\nSeeding positions...")
         await seed_positions(session, depts)
+
+        print("\nSeeding leave types...")
+        await seed_leave_types(session)
 
     print("\n✓ Seed complete.")
     print("\nTest login:")
