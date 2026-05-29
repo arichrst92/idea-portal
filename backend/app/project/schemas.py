@@ -1,4 +1,8 @@
-"""Pydantic schemas — project domain TSK-022."""
+"""Pydantic schemas — project domain (TSK-022, TSK-022C, TSK-022B).
+
+Hierarki: Project > Phase > Epic > Task > Subtask
++ TaskComment & SubtaskComment (markdown).
+"""
 
 from __future__ import annotations
 
@@ -9,7 +13,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from app.project.models import ProjectStatus, ProjectType
+from app.project.models import PhaseStatus, ProjectStatus, ProjectType
+
 
 Title = Annotated[str, StringConstraints(min_length=1, max_length=200, strip_whitespace=True)]
 Code = Annotated[str, StringConstraints(min_length=2, max_length=50, strip_whitespace=True)]
@@ -65,8 +70,8 @@ class ProjectOut(ProjectBase):
     pm_name: str | None = None
     client_name: str | None = None
     member_count: int = 0
-    milestone_count: int = 0
-    completed_milestones: int = 0
+    phase_count: int = 0
+    completed_phases: int = 0
     overall_progress_pct: Decimal | None = None
 
 
@@ -121,31 +126,79 @@ class MemberOut(BaseModel):
     employee_name: str | None = None
 
 
-# ─── Milestones ────────────────────────────────────────────────────
+# ─── Phase (replaces Milestone) ────────────────────────────────────
 
 
-class MilestoneCreate(BaseModel):
+class PhaseCreate(BaseModel):
     name: Title
-    target_date: date
-
-
-class MilestoneUpdate(BaseModel):
-    name: str | None = None
+    description: str | None = None
     target_date: date | None = None
+    order_index: int = 0
+
+
+class PhaseUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    target_date: date | None = None
+    order_index: int | None = None
+    status: PhaseStatus | None = None
     progress_pct: Annotated[Decimal, Field(ge=0, le=100)] | None = None
     completed_at: date | None = None
 
 
-class MilestoneOut(BaseModel):
+class PhaseOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     project_id: UUID
     name: str
-    target_date: date
+    description: str | None
+    order_index: int
+    target_date: date | None
     completed_at: date | None
+    status: PhaseStatus
     progress_pct: Decimal
-    is_overdue: bool = False  # derived: target_date < today AND completed_at is None
+    is_overdue: bool = False
+    epic_count: int = 0
+
+
+# Backward-compat alias (kode lama masih reference MilestoneCreate/Out/Update)
+MilestoneCreate = PhaseCreate
+MilestoneUpdate = PhaseUpdate
+MilestoneOut = PhaseOut
+
+
+# ─── Epic ──────────────────────────────────────────────────────────
+
+
+class EpicCreate(BaseModel):
+    name: Title
+    description: str | None = None
+    color: str | None = None
+    order_index: int = 0
+
+
+class EpicUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    color: str | None = None
+    order_index: int | None = None
+    status: str | None = None
+
+
+class EpicOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    phase_id: UUID
+    project_id: UUID
+    name: str
+    description: str | None
+    order_index: int
+    status: str
+    color: str | None
+    task_count: int = 0
+    completed_task_count: int = 0
 
 
 # ─── Tasks (Kanban) ────────────────────────────────────────────────
@@ -169,23 +222,29 @@ class TaskPriority:
     CRITICAL = "CRITICAL"
 
 
+_TASK_STATUS_PATTERN = "^(BACKLOG|TODO|IN_PROGRESS|IN_REVIEW|DONE|BLOCKED)$"
+_TASK_PRIORITY_PATTERN = "^(LOW|MEDIUM|HIGH|CRITICAL)$"
+
+
 class TaskCreate(BaseModel):
     title: Title
     description: str | None = None
-    milestone_id: UUID | None = None
+    epic_id: UUID | None = None
     assignee_id: UUID | None = None
-    status: Annotated[str, StringConstraints(pattern="^(BACKLOG|TODO|IN_PROGRESS|IN_REVIEW|DONE|BLOCKED)$")] = "BACKLOG"
-    priority: Annotated[str, StringConstraints(pattern="^(LOW|MEDIUM|HIGH|CRITICAL)$")] = "MEDIUM"
+    status: Annotated[str, StringConstraints(pattern=_TASK_STATUS_PATTERN)] = "BACKLOG"
+    priority: Annotated[str, StringConstraints(pattern=_TASK_PRIORITY_PATTERN)] = "MEDIUM"
+    story_points: int | None = Field(None, ge=0, le=99)
     due_date: date | None = None
 
 
 class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
-    milestone_id: UUID | None = None
+    epic_id: UUID | None = None
     assignee_id: UUID | None = None
     status: str | None = None
     priority: str | None = None
+    story_points: int | None = None
     due_date: date | None = None
 
 
@@ -194,18 +253,90 @@ class TaskOut(BaseModel):
 
     id: UUID
     project_id: UUID
-    milestone_id: UUID | None
+    epic_id: UUID | None
+    slug: str
     title: str
     description: str | None
     assignee_id: UUID | None
     status: str
     priority: str
+    story_points: int | None
     due_date: date | None
     created_at: datetime
+    updated_at: datetime
 
     assignee_nik: str | None = None
     assignee_name: str | None = None
-    milestone_name: str | None = None
+    epic_name: str | None = None
+    phase_name: str | None = None
+    subtask_count: int = 0
+    completed_subtask_count: int = 0
+    comment_count: int = 0
 
 
-# Invoice schemas REMOVED (TSK-022C). Lihat app.finance.schemas.
+# ─── Subtasks ──────────────────────────────────────────────────────
+
+
+class SubtaskCreate(BaseModel):
+    title: Title
+    description: str | None = None
+    assignee_id: UUID | None = None
+    status: Annotated[str, StringConstraints(pattern=_TASK_STATUS_PATTERN)] = "BACKLOG"
+    story_points: int | None = Field(None, ge=0, le=99)
+    due_date: date | None = None
+    order_index: int = 0
+
+
+class SubtaskUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    assignee_id: UUID | None = None
+    status: str | None = None
+    story_points: int | None = None
+    due_date: date | None = None
+    order_index: int | None = None
+
+
+class SubtaskOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    task_id: UUID
+    slug: str
+    title: str
+    description: str | None
+    assignee_id: UUID | None
+    status: str
+    story_points: int | None
+    due_date: date | None
+    order_index: int
+    created_at: datetime
+    updated_at: datetime
+
+    assignee_nik: str | None = None
+    assignee_name: str | None = None
+    comment_count: int = 0
+
+
+# ─── Comments (markdown) ───────────────────────────────────────────
+
+
+class CommentCreate(BaseModel):
+    body: Annotated[str, StringConstraints(min_length=1, max_length=5000, strip_whitespace=True)]
+
+
+class CommentUpdate(BaseModel):
+    body: Annotated[str, StringConstraints(min_length=1, max_length=5000, strip_whitespace=True)]
+
+
+class CommentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    author_user_id: UUID
+    body: str
+    created_at: datetime
+    updated_at: datetime
+
+    author_nik: str | None = None
+    author_name: str | None = None

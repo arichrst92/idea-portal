@@ -1,21 +1,25 @@
 /**
- * Project Detail Page — TSK-022 (TSK-022C: tab Invoices dihapus, pindah ke Finance).
- * Tabs: Overview, Milestones, Tasks (kanban), Members.
+ * Project Detail Page — TSK-022 + TSK-022B + TSK-022C.
+ *
+ * Tabs:
+ *  - Overview          — meta + KPI + progress
+ *  - Hierarchy         — Phase > Epic accordion with task grouping
+ *  - Board (Kanban)    — flat board across all tasks, informative KanbanCard,
+ *                        click → TaskDrawer (with comments tab)
+ *  - Members           — tim project
  */
 
 import {
   ArrowLeftOutlined,
   CheckCircleFilled,
-  ExclamationCircleOutlined,
   PlusOutlined,
   StopOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
   Button,
-  DatePicker,
+  Collapse,
   Empty,
   Form,
   Input,
@@ -23,9 +27,12 @@ import {
   Modal,
   Progress,
   Select,
+  Space,
   Spin,
   Tabs,
   Tag,
+  Tooltip,
+  Typography,
   message,
 } from 'antd';
 import dayjs from 'dayjs';
@@ -36,383 +43,175 @@ import { listEmployees } from '@/api/organization';
 import {
   activateProject,
   closeProject,
-  createMilestone,
+  createEpic,
+  createPhase,
   createTask,
+  deleteEpic,
+  deletePhase,
   getProject,
   listMembers,
-  listMilestones,
+  listPhases,
+  listProjectEpics,
   listTasks,
-  priorityColor,
   projectStatusColor,
   projectTypeColor,
   taskStatusColor,
   TASK_STATUSES,
-  updateMilestone,
-  updateTask,
+  updatePhase,
+  type Phase,
   type Task,
   type TaskStatus,
 } from '@/api/projects';
-import { useAuthStore } from '@/store/auth';
 
-const { TextArea } = Input;
+import { KanbanCard } from './components/KanbanCard';
+import { TaskDrawer } from './components/TaskDrawer';
 
-function formatDate(value: string | null): string {
-  if (!value) return '—';
-  return new Date(value).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+const { Title, Text, Paragraph } = Typography;
 
-function formatIDR(value: string | null): string {
-  if (!value) return '—';
-  const n = parseFloat(value);
-  if (!isFinite(n)) return value;
-  return `Rp ${n.toLocaleString('id-ID')}`;
-}
+const formatDate = (s: string | null) => (s ? dayjs(s).format('DD MMM YYYY') : '—');
 
-// ─── MILESTONES TAB ─────────────────────────────────────────────
-
-function MilestonesTab({ projectId }: { projectId: string }) {
+export default function ProjectDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = useState(false);
-  const query = useQuery({
-    queryKey: ['milestones', projectId],
-    queryFn: () => listMilestones(projectId),
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [closeStatus, setCloseStatus] = useState<'COMPLETED' | 'TERMINATED'>('COMPLETED');
+
+  const projectQuery = useQuery({
+    queryKey: ['project', id],
+    queryFn: () => getProject(id!),
+    enabled: !!id,
   });
 
-  const mutation = useMutation({
-    mutationFn: ({ id, pct }: { id: string; pct: number }) =>
-      updateMilestone(id, { progress_pct: pct, completed_at: pct === 100 ? dayjs().format('YYYY-MM-DD') : undefined }),
+  const activateMut = useMutation({
+    mutationFn: () => activateProject(id!),
     onSuccess: () => {
-      message.success('Milestone updated');
-      queryClient.invalidateQueries({ queryKey: ['milestones', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      message.success('Project activated');
+      queryClient.invalidateQueries({ queryKey: ['project', id] });
     },
+    onError: (e: any) => message.error(e?.response?.data?.detail?.message ?? 'Gagal activate'),
   });
 
-  const createMut = useMutation({
-    mutationFn: (d: { name: string; target_date: string }) => createMilestone(projectId, d),
+  const closeMut = useMutation({
+    mutationFn: ({ status, reason }: { status: 'COMPLETED' | 'TERMINATED'; reason: string }) =>
+      closeProject(id!, status, reason),
     onSuccess: () => {
-      message.success('Milestone created');
-      queryClient.invalidateQueries({ queryKey: ['milestones', projectId] });
+      message.success('Project closed');
+      queryClient.invalidateQueries({ queryKey: ['project', id] });
+      setCloseOpen(false);
     },
+    onError: (e: any) => message.error(e?.response?.data?.detail?.message ?? 'Gagal close'),
   });
 
-  const milestones = query.data || [];
+  if (!id) return <Empty description="Project ID missing" />;
+  if (projectQuery.isLoading) return <Spin tip="Loading..." style={{ margin: 40 }} />;
+  if (!projectQuery.data) return <Empty description="Project not found" />;
+
+  const project = projectQuery.data;
+  const typeColor = projectTypeColor(project.type);
+  const statusColor = projectStatusColor(project.status);
 
   return (
-    <div>
-      <div style={{ marginBottom: 14 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-          Add Milestone
+    <div style={{ padding: '20px 24px', maxWidth: 1400, margin: '0 auto' }}>
+      <Space style={{ marginBottom: 14 }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/projects')}>
+          Back
         </Button>
+      </Space>
+
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <Space size={10} style={{ marginBottom: 6 }}>
+          <Text style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 16, fontWeight: 700, color: 'var(--ide-blue, #0071E3)' }}>
+            {project.code}
+          </Text>
+          <Tag className={typeColor.className}>{typeColor.label}</Tag>
+          <Tag className={statusColor.className}>{statusColor.label}</Tag>
+        </Space>
+        <Title level={3} style={{ margin: '4px 0' }}>{project.name}</Title>
+        {project.description && (
+          <Paragraph type="secondary" style={{ marginBottom: 4 }}>
+            {project.description}
+          </Paragraph>
+        )}
+        <Space size={16} style={{ fontSize: 13, color: 'var(--ide-ink3, #6e6e73)' }}>
+          {project.pm_nik && <span>PM: {project.pm_nik}</span>}
+          {project.client_name && <span>Client: {project.client_name}</span>}
+          <span>{formatDate(project.start_date)} → {formatDate(project.end_date)}</span>
+          {project.contract_value && (
+            <span>
+              Contract: Rp {Number(project.contract_value).toLocaleString('id-ID')} {project.currency}
+            </span>
+          )}
+        </Space>
       </div>
 
-      {query.isLoading && <Spin />}
-      {milestones.length === 0 && <Empty description="Belum ada milestone" />}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {milestones.map((m) => {
-          const pct = Number(m.progress_pct);
-          return (
-            <div
-              key={m.id}
-              style={{
-                background: 'var(--ide-surface)',
-                border: `1px solid ${m.is_overdue ? 'var(--ide-red)' : 'var(--ide-border)'}`,
-                borderRadius: 'var(--ide-rm)',
-                padding: 14,
-              }}
+      {/* Actions */}
+      <Space style={{ marginBottom: 20 }} wrap>
+        {project.status === 'DRAFT' && (
+          <Button
+            type="primary" icon={<ThunderboltOutlined />}
+            loading={activateMut.isPending}
+            onClick={() => activateMut.mutate()}
+          >
+            Activate
+          </Button>
+        )}
+        {(project.status === 'ACTIVE' || project.status === 'ON_HOLD') && (
+          <>
+            <Button
+              icon={<CheckCircleFilled />}
+              onClick={() => { setCloseStatus('COMPLETED'); setCloseOpen(true); }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: 8,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>
-                    {m.completed_at && (
-                      <CheckCircleFilled
-                        style={{ color: 'var(--ide-green)', marginRight: 6 }}
-                      />
-                    )}
-                    {m.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--ide-ink3)', marginTop: 2 }}>
-                    Target: {formatDate(m.target_date)}
-                    {m.completed_at && ` · Completed ${formatDate(m.completed_at)}`}
-                    {m.is_overdue && (
-                      <span style={{ color: 'var(--ide-red)', fontWeight: 700 }}>
-                        {' '}
-                        · ⚠ OVERDUE
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--ide-font-mono)',
-                    fontSize: 18,
-                    fontWeight: 800,
-                    color: pct >= 100 ? 'var(--ide-green)' : 'var(--ide-blue)',
-                  }}
-                >
-                  {pct.toFixed(0)}%
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Progress percent={pct} size="small" style={{ flex: 1 }} />
-                <InputNumber
-                  size="small"
-                  min={0}
-                  max={100}
-                  value={pct}
-                  onChange={(v) => v !== null && mutation.mutate({ id: m.id, pct: v })}
-                  style={{ width: 80 }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <Modal
-        title="Create Milestone"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        destroyOnClose
-        onOk={async () => {
-          const v = await (createOpen ? document.querySelector('#ms-form') : null);
-          // Use form ref instead
-        }}
-        footer={null}
-      >
-        <Form
-          layout="vertical"
-          onFinish={(v) => {
-            createMut.mutate({
-              name: v.name,
-              target_date: dayjs(v.target_date).format('YYYY-MM-DD'),
-            });
-            setCreateOpen(false);
-          }}
-        >
-          <Form.Item label="Name" name="name" rules={[{ required: true }]}>
-            <Input placeholder="Phase 1 — Architecture design" />
-          </Form.Item>
-          <Form.Item label="Target Date" name="target_date" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-              Create
+              Complete
             </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
-  );
-}
+            <Button
+              danger icon={<StopOutlined />}
+              onClick={() => { setCloseStatus('TERMINATED'); setCloseOpen(true); }}
+            >
+              Terminate
+            </Button>
+          </>
+        )}
+      </Space>
 
-// ─── TASKS KANBAN ────────────────────────────────────────────────
-
-function TaskCard({ task, onUpdate }: { task: Task; onUpdate: () => void }) {
-  const color = taskStatusColor(task.status);
-  const prio = priorityColor(task.priority);
-  const updateMut = useMutation({
-    mutationFn: (status: TaskStatus) => updateTask(task.id, { status }),
-    onSuccess: onUpdate,
-  });
-
-  return (
-    <div
-      style={{
-        background: 'var(--ide-surface)',
-        border: '1px solid var(--ide-border)',
-        borderRadius: 'var(--ide-rs)',
-        padding: 10,
-        marginBottom: 8,
-        cursor: 'pointer',
-        transition: 'all 0.12s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = color;
-        e.currentTarget.style.boxShadow = 'var(--ide-shadow-sm)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'var(--ide-border)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{task.title}</div>
-      {task.assignee_name && (
-        <div style={{ fontSize: 10, color: 'var(--ide-ink3)', marginBottom: 6 }}>
-          {task.assignee_name}
-        </div>
-      )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            padding: '1px 6px',
-            borderRadius: 4,
-            color: '#fff',
-            background: prio,
-          }}
-        >
-          {task.priority}
-        </span>
-        <Select
-          size="small"
-          value={task.status}
-          style={{ width: 110 }}
-          onChange={(v) => updateMut.mutate(v)}
-          options={TASK_STATUSES.map((s) => ({ value: s, label: s }))}
+      {/* KPI Strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <KPIBox label="Phases" value={`${project.completed_phases}/${project.phase_count}`} />
+        <KPIBox label="Members" value={project.member_count} />
+        <KPIBox label="Progress" value={`${Math.round(Number(project.overall_progress_pct ?? 0))}%`} />
+        <KPIBox
+          label="Contract Value"
+          value={project.contract_value
+            ? `Rp ${Number(project.contract_value).toLocaleString('id-ID')}`
+            : '—'}
         />
       </div>
-    </div>
-  );
-}
 
-function TasksTab({ projectId }: { projectId: string }) {
-  const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = useState(false);
-  const query = useQuery({
-    queryKey: ['tasks', projectId],
-    queryFn: () => listTasks(projectId),
-  });
-  const empQuery = useQuery({
-    queryKey: ['emp-tasks'],
-    queryFn: () => listEmployees({ page_size: 200 }),
-  });
+      {/* Tabs */}
+      <Tabs
+        defaultActiveKey="hierarchy"
+        items={[
+          { key: 'hierarchy', label: 'Hierarchy', children: <HierarchyTab projectId={id} /> },
+          { key: 'board', label: 'Board (Kanban)', children: <KanbanTab projectId={id} /> },
+          { key: 'members', label: 'Members', children: <MembersTab projectId={id} /> },
+        ]}
+      />
 
-  const createMut = useMutation({
-    mutationFn: (d: any) => createTask(projectId, d),
-    onSuccess: () => {
-      message.success('Task created');
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-    },
-  });
-
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-  const tasks = query.data || [];
-
-  return (
-    <div>
-      <div style={{ marginBottom: 14 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-          Add Task
-        </Button>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(6, minmax(180px, 1fr))',
-          gap: 10,
-          overflowX: 'auto',
-        }}
-      >
-        {TASK_STATUSES.map((s) => {
-          const bucket = tasks.filter((t) => t.status === s);
-          const color = taskStatusColor(s);
-          return (
-            <div
-              key={s}
-              style={{
-                background: 'var(--ide-bg)',
-                borderRadius: 'var(--ide-rm)',
-                padding: 10,
-                minHeight: 200,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: 10,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color,
-                  textTransform: 'uppercase',
-                }}
-              >
-                <span>{s.replace(/_/g, ' ')}</span>
-                <span>{bucket.length}</span>
-              </div>
-              {bucket.map((t) => (
-                <TaskCard key={t.id} task={t} onUpdate={refresh} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
+      {/* Close Modal */}
       <Modal
-        title="Create Task"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
+        title={closeStatus === 'COMPLETED' ? 'Complete Project' : 'Terminate Project'}
+        open={closeOpen}
+        onCancel={() => setCloseOpen(false)}
         footer={null}
         destroyOnClose
       >
-        <Form
-          layout="vertical"
-          onFinish={(v) => {
-            createMut.mutate({
-              title: v.title,
-              description: v.description,
-              assignee_id: v.assignee_id,
-              status: v.status || 'BACKLOG',
-              priority: v.priority || 'MEDIUM',
-              due_date: v.due_date ? dayjs(v.due_date).format('YYYY-MM-DD') : undefined,
-            });
-            setCreateOpen(false);
-          }}
-          initialValues={{ status: 'BACKLOG', priority: 'MEDIUM' }}
-        >
-          <Form.Item label="Title" name="title" rules={[{ required: true }]}>
-            <Input />
+        <Form layout="vertical" onFinish={(v) => closeMut.mutate({ status: closeStatus, reason: v.reason })}>
+          <Form.Item label="Reason" name="reason" rules={[{ required: true, min: 10 }]}>
+            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
           </Form.Item>
-          <Form.Item label="Description" name="description">
-            <TextArea rows={2} />
-          </Form.Item>
-          <Form.Item label="Assignee" name="assignee_id">
-            <Select
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              options={(empQuery.data?.items || []).map((e) => ({
-                value: e.id,
-                label: `${e.nik} · ${e.full_name}`,
-              }))}
-            />
-          </Form.Item>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <Form.Item label="Status" name="status">
-              <Select options={TASK_STATUSES.map((s) => ({ value: s, label: s }))} />
-            </Form.Item>
-            <Form.Item label="Priority" name="priority">
-              <Select
-                options={[
-                  { value: 'LOW', label: 'Low' },
-                  { value: 'MEDIUM', label: 'Medium' },
-                  { value: 'HIGH', label: 'High' },
-                  { value: 'CRITICAL', label: 'Critical' },
-                ]}
-              />
-            </Form.Item>
-            <Form.Item label="Due" name="due_date">
-              <DatePicker style={{ width: '100%' }} format="DD MMM" />
-            </Form.Item>
-          </div>
-          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-            Create
+          <Button type="primary" htmlType="submit" loading={closeMut.isPending}>
+            Confirm
           </Button>
         </Form>
       </Modal>
@@ -420,8 +219,399 @@ function TasksTab({ projectId }: { projectId: string }) {
   );
 }
 
-// InvoicesTab REMOVED (TSK-022C). Invoice management dipindah ke Finance page
-// (akan dibangun di TSK-023D — currently /finance hanya tampilkan reimbursement+procurement).
+function KPIBox({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div
+      style={{
+        background: '#fff', border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: 10, padding: 14,
+      }}
+    >
+      <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+        {label}
+      </Text>
+      <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+// ─── HIERARCHY TAB ───────────────────────────────────────────────
+
+function HierarchyTab({ projectId }: { projectId: string }) {
+  const queryClient = useQueryClient();
+  const [phaseOpen, setPhaseOpen] = useState(false);
+  const [epicOpen, setEpicOpen] = useState(false);
+  const [epicPhaseId, setEpicPhaseId] = useState<string | null>(null);
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskEpicId, setTaskEpicId] = useState<string | null>(null);
+
+  const phasesQuery = useQuery({
+    queryKey: ['phases', projectId],
+    queryFn: () => listPhases(projectId),
+  });
+  const epicsQuery = useQuery({
+    queryKey: ['epics', projectId],
+    queryFn: () => listProjectEpics(projectId),
+  });
+  const tasksQuery = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => listTasks(projectId),
+  });
+  const employeesQuery = useQuery({
+    queryKey: ['employees-list'],
+    queryFn: () => listEmployees({ page: 1, page_size: 100 }),
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['phases', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['epics', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+  };
+
+  const createPhaseMut = useMutation({
+    mutationFn: (data: any) => createPhase(projectId, data),
+    onSuccess: () => { message.success('Phase dibuat'); invalidate(); setPhaseOpen(false); },
+  });
+  const updatePhaseMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => updatePhase(id, data),
+    onSuccess: () => { invalidate(); message.success('Phase updated'); },
+  });
+  const deletePhaseMut = useMutation({
+    mutationFn: (pid: string) => deletePhase(pid),
+    onSuccess: () => { invalidate(); message.success('Phase dihapus'); },
+  });
+  const createEpicMut = useMutation({
+    mutationFn: ({ phaseId, data }: { phaseId: string; data: any }) => createEpic(phaseId, data),
+    onSuccess: () => { invalidate(); setEpicOpen(false); message.success('Epic dibuat'); },
+  });
+  const deleteEpicMut = useMutation({
+    mutationFn: (eid: string) => deleteEpic(eid),
+    onSuccess: () => { invalidate(); message.success('Epic dihapus'); },
+  });
+  const createTaskMut = useMutation({
+    mutationFn: (data: any) => createTask(projectId, data),
+    onSuccess: () => { invalidate(); setTaskOpen(false); message.success('Task dibuat'); },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal create task'),
+  });
+
+  const phases = phasesQuery.data ?? [];
+  const epics = epicsQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
+
+  const tasksByEpic = (epicId: string) => tasks.filter((t) => t.epic_id === epicId);
+  const orphanTasks = tasks.filter((t) => t.epic_id === null);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Project › Phase › Epic › Task (klik task untuk buka detail + comments)
+        </Text>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setPhaseOpen(true)}>
+          Add Phase
+        </Button>
+      </div>
+
+      {phases.length === 0 ? (
+        <Empty description="Belum ada Phase. Mulai dengan menambahkan Phase pertama." />
+      ) : (
+        <Collapse
+          defaultActiveKey={phases.map((p) => p.id)}
+          items={phases.map((p) => ({
+            key: p.id,
+            label: <PhaseHeader phase={p} onUpdate={updatePhaseMut.mutate} onDelete={() => deletePhaseMut.mutate(p.id)} />,
+            children: (
+              <PhaseContent
+                phase={p}
+                epics={epics.filter((e) => e.phase_id === p.id)}
+                tasksByEpic={tasksByEpic}
+                onAddEpic={() => { setEpicPhaseId(p.id); setEpicOpen(true); }}
+                onDeleteEpic={(eid) => deleteEpicMut.mutate(eid)}
+                onAddTask={(epicId) => { setTaskEpicId(epicId); setTaskOpen(true); }}
+              />
+            ),
+          }))}
+        />
+      )}
+
+      {orphanTasks.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <Text type="secondary" style={{ fontSize: 12 }}>Tasks tanpa epic:</Text>
+          <div style={{ marginTop: 6 }}>
+            {orphanTasks.map((t) => (
+              <KanbanCard key={t.id} task={t} onClick={() => {}} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Create Phase Modal */}
+      <Modal
+        title="Add Phase" open={phaseOpen} onCancel={() => setPhaseOpen(false)} footer={null} destroyOnClose
+      >
+        <Form layout="vertical" onFinish={(v) => createPhaseMut.mutate(v)}>
+          <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+            <Input placeholder="Phase 1 — MVP" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} />
+          </Form.Item>
+          <Form.Item label="Target Date (YYYY-MM-DD)" name="target_date">
+            <Input placeholder="2026-12-31" />
+          </Form.Item>
+          <Form.Item label="Order Index" name="order_index" initialValue={0}>
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={createPhaseMut.isPending}>Create</Button>
+        </Form>
+      </Modal>
+
+      {/* Create Epic Modal */}
+      <Modal
+        title="Add Epic" open={epicOpen} onCancel={() => setEpicOpen(false)} footer={null} destroyOnClose
+      >
+        <Form layout="vertical" onFinish={(v) => createEpicMut.mutate({ phaseId: epicPhaseId!, data: v })}>
+          <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+            <Input placeholder="Auth & RBAC" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} />
+          </Form.Item>
+          <Form.Item label="Color (CSS)" name="color">
+            <Input placeholder="#AF52DE" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={createEpicMut.isPending}>Create</Button>
+        </Form>
+      </Modal>
+
+      {/* Create Task Modal */}
+      <Modal
+        title="Add Task" open={taskOpen} onCancel={() => setTaskOpen(false)} footer={null} destroyOnClose
+      >
+        <Form
+          layout="vertical"
+          initialValues={{ status: 'BACKLOG', priority: 'MEDIUM', epic_id: taskEpicId ?? undefined }}
+          onFinish={(v) => createTaskMut.mutate({ ...v, epic_id: taskEpicId ?? v.epic_id })}
+        >
+          <Form.Item label="Title" name="title" rules={[{ required: true }]}>
+            <Input placeholder="Implement login form" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} />
+          </Form.Item>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Form.Item label="Status" name="status">
+              <Select options={TASK_STATUSES.map((s) => ({ value: s, label: s }))} />
+            </Form.Item>
+            <Form.Item label="Priority" name="priority">
+              <Select
+                options={['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((p) => ({ value: p, label: p }))}
+              />
+            </Form.Item>
+            <Form.Item label="Story Points" name="story_points">
+              <InputNumber min={0} max={99} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Assignee" name="assignee_id">
+              <Select
+                allowClear showSearch optionFilterProp="label"
+                options={(employeesQuery.data?.items ?? []).map((e: any) => ({
+                  value: e.id,
+                  label: `${e.nik} — ${e.full_name}`,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item label="Due Date (YYYY-MM-DD)" name="due_date">
+              <Input placeholder="2026-12-31" />
+            </Form.Item>
+          </div>
+          <Button type="primary" htmlType="submit" loading={createTaskMut.isPending}>Create</Button>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
+
+function PhaseHeader({
+  phase, onUpdate, onDelete,
+}: {
+  phase: Phase;
+  onUpdate: (args: { id: string; data: any }) => void;
+  onDelete: () => void;
+}) {
+  const isOverdue = phase.is_overdue;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <Space>
+        <Text strong>{phase.name}</Text>
+        <Tag color={phase.status === 'COMPLETED' ? 'green' : phase.status === 'IN_PROGRESS' ? 'blue' : 'default'}>
+          {phase.status}
+        </Tag>
+        {phase.target_date && (
+          <Text type="secondary" style={{ fontSize: 11, color: isOverdue ? 'var(--ide-red, #FF3B30)' : undefined }}>
+            Target: {formatDate(phase.target_date)} {isOverdue && '(OVERDUE)'}
+          </Text>
+        )}
+      </Space>
+      <Space>
+        <Progress percent={Math.round(Number(phase.progress_pct))} size="small" style={{ width: 100 }} />
+        <Tooltip title="Mark complete">
+          <Button
+            type="text" size="small" icon={<CheckCircleFilled />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpdate({ id: phase.id, data: { status: 'COMPLETED', progress_pct: 100 } });
+            }}
+            disabled={phase.status === 'COMPLETED'}
+          />
+        </Tooltip>
+        <Button type="text" size="small" danger onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+          Delete
+        </Button>
+      </Space>
+    </div>
+  );
+}
+
+function PhaseContent({
+  phase, epics, tasksByEpic, onAddEpic, onDeleteEpic, onAddTask,
+}: {
+  phase: Phase;
+  epics: { id: string; name: string; color: string | null; task_count: number; completed_task_count: number }[];
+  tasksByEpic: (epicId: string) => Task[];
+  onAddEpic: () => void;
+  onDeleteEpic: (eid: string) => void;
+  onAddTask: (epicId: string | null) => void;
+}) {
+  const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  return (
+    <div>
+      {phase.description && (
+        <Paragraph type="secondary" style={{ fontSize: 12, marginBottom: 10 }}>
+          {phase.description}
+        </Paragraph>
+      )}
+      <div style={{ marginBottom: 10 }}>
+        <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={onAddEpic}>
+          Add Epic
+        </Button>
+      </div>
+
+      {epics.length === 0 ? (
+        <Text type="secondary" style={{ fontSize: 12 }}>Belum ada epic di phase ini.</Text>
+      ) : (
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          {epics.map((e) => (
+            <div
+              key={e.id}
+              style={{
+                background: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 8,
+                borderLeft: `3px solid ${e.color ?? 'var(--ide-purple, #AF52DE)'}`,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Space>
+                  <Text strong>{e.name}</Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {e.completed_task_count}/{e.task_count} tasks
+                  </Text>
+                </Space>
+                <Space>
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => onAddTask(e.id)}>
+                    Add Task
+                  </Button>
+                  <Button size="small" danger onClick={() => onDeleteEpic(e.id)}>Delete</Button>
+                </Space>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                {tasksByEpic(e.id).map((t) => (
+                  <KanbanCard
+                    key={t.id} task={t}
+                    onClick={() => { setActiveTask(t); setTaskDrawerOpen(true); }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </Space>
+      )}
+
+      <TaskDrawer
+        task={activeTask} open={taskDrawerOpen}
+        onClose={() => { setTaskDrawerOpen(false); setActiveTask(null); }}
+      />
+    </div>
+  );
+}
+
+// ─── KANBAN TAB (flat board) ──────────────────────────────────────
+
+function KanbanTab({ projectId }: { projectId: string }) {
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const query = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => listTasks(projectId),
+  });
+
+  const tasks = query.data ?? [];
+  const groupedByStatus: Record<TaskStatus, Task[]> = {
+    BACKLOG: [], TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [],
+  };
+  tasks.forEach((t) => groupedByStatus[t.status].push(t));
+
+  return (
+    <div>
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        {tasks.length} tasks total · klik card untuk buka detail + comments
+      </Text>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))',
+          gap: 12,
+          marginTop: 12,
+          overflowX: 'auto',
+        }}
+      >
+        {TASK_STATUSES.map((status) => (
+          <div
+            key={status}
+            style={{
+              background: 'rgba(0,0,0,0.025)',
+              borderRadius: 10,
+              padding: 10,
+              minHeight: 200,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text strong style={{ fontSize: 11, color: taskStatusColor(status) }}>
+                {status}
+              </Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {groupedByStatus[status].length}
+              </Text>
+            </div>
+            {groupedByStatus[status].map((t) => (
+              <KanbanCard
+                key={t.id} task={t}
+                onClick={() => { setActiveTask(t); setDrawerOpen(true); }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      <TaskDrawer
+        task={activeTask} open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setActiveTask(null); }}
+      />
+    </div>
+  );
+}
 
 // ─── MEMBERS TAB ────────────────────────────────────────────────
 
@@ -430,7 +620,7 @@ function MembersTab({ projectId }: { projectId: string }) {
     queryKey: ['members', projectId],
     queryFn: () => listMembers(projectId),
   });
-  const members = query.data || [];
+  const members = query.data ?? [];
 
   return (
     <div>
@@ -440,224 +630,23 @@ function MembersTab({ projectId }: { projectId: string }) {
           <div
             key={m.id}
             style={{
-              background: 'var(--ide-surface)',
-              border: '1px solid var(--ide-border)',
-              borderRadius: 'var(--ide-rm)',
-              padding: 12,
+              background: '#fff', border: '1px solid rgba(0,0,0,0.08)',
+              borderRadius: 10, padding: 12,
             }}
           >
             <div style={{ fontWeight: 700 }}>{m.employee_name}</div>
-            <div style={{ fontSize: 11, color: 'var(--ide-ink3)' }}>
-              {m.employee_nik} · {m.role || 'No role'}
+            <div style={{ fontSize: 11, color: 'var(--ide-ink3, #6e6e73)' }}>
+              {m.employee_nik} · {m.role ?? 'No role'}
             </div>
             <div style={{ marginTop: 8, fontSize: 12 }}>
               <Tag color="blue">{m.allocation_pct}% allocation</Tag>
             </div>
-            <div style={{ fontSize: 10, color: 'var(--ide-ink3)', marginTop: 4 }}>
+            <div style={{ fontSize: 10, color: 'var(--ide-ink3, #6e6e73)', marginTop: 4 }}>
               {formatDate(m.start_date)} → {formatDate(m.end_date)}
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ─── Main Detail Page ───────────────────────────────────────────
-
-export default function ProjectDetailPage() {
-  const { id = '' } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-  const isExecutive =
-    user?.roles.some(
-      (r) => r.code === 'DIREKTUR_UTAMA' || r.code === 'WAKIL_DIREKTUR_UTAMA',
-    ) ?? false;
-
-  const query = useQuery({
-    queryKey: ['project', id],
-    queryFn: () => getProject(id),
-    enabled: !!id,
-  });
-
-  const activateMut = useMutation({
-    mutationFn: () => activateProject(id),
-    onSuccess: () => {
-      message.success('Project activated');
-      queryClient.invalidateQueries({ queryKey: ['project', id] });
-    },
-  });
-
-  const closeMut = useMutation({
-    mutationFn: ({ new_status, reason }: any) => closeProject(id, new_status, reason),
-    onSuccess: () => {
-      message.success('Project closed');
-      queryClient.invalidateQueries({ queryKey: ['project', id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-    },
-    onError: (e: any) =>
-      message.error(e?.response?.data?.detail?.message || 'Gagal close'),
-  });
-
-  const handleClose = () => {
-    Modal.confirm({
-      title: 'Close Project',
-      content: (
-        <Form layout="vertical" id="close-form">
-          <Form.Item label="New Status">
-            <Select
-              id="close-status"
-              defaultValue="COMPLETED"
-              options={[
-                { value: 'COMPLETED', label: 'Completed (sukses)' },
-                { value: 'TERMINATED', label: 'Terminated (dibatalkan)' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item label="Reason (min 10 char)">
-            <TextArea id="close-reason" rows={3} />
-          </Form.Item>
-        </Form>
-      ),
-      okText: 'Close Project',
-      okType: 'danger',
-      onOk: () => {
-        const status = (document.getElementById('close-status') as HTMLSelectElement)?.value || 'COMPLETED';
-        const reason = (document.getElementById('close-reason') as HTMLTextAreaElement)?.value || '';
-        if (reason.length < 10) {
-          message.warning('Reason min 10 karakter');
-          return Promise.reject();
-        }
-        return closeMut.mutateAsync({ new_status: status as any, reason });
-      },
-    });
-  };
-
-  if (query.isLoading) return <Spin size="large" style={{ display: 'block', margin: 40 }} />;
-  if (!query.data) return <Empty description="Project tidak ditemukan" />;
-
-  const p = query.data;
-  const typeTag = projectTypeColor(p.type);
-  const statusTag = projectStatusColor(p.status);
-  const progress = p.overall_progress_pct ? Number(p.overall_progress_pct) : 0;
-
-  return (
-    <div className="ide-font" style={{ maxWidth: 1400, margin: '0 auto' }}>
-      <Button
-        type="text"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate('/projects')}
-        style={{ marginBottom: 14 }}
-      >
-        Projects
-      </Button>
-
-      {/* Header */}
-      <div
-        style={{
-          background: 'var(--ide-surface)',
-          border: '1px solid var(--ide-border)',
-          borderRadius: 'var(--ide-r)',
-          padding: '20px 24px',
-          marginBottom: 14,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontFamily: 'var(--ide-font-mono)',
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--ide-blue)',
-                marginBottom: 4,
-              }}
-            >
-              {p.code}
-            </div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>{p.name}</h2>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <span className={`ide-tag ${typeTag.className}`}>{typeTag.label}</span>
-              <span className={`ide-tag ${statusTag.className}`}>{statusTag.label}</span>
-              {p.client_name && <span className="ide-tag ide-tag-blue">{p.client_name}</span>}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {p.status === 'DRAFT' && (
-              <Button
-                type="primary"
-                icon={<ThunderboltOutlined />}
-                loading={activateMut.isPending}
-                onClick={() => activateMut.mutate()}
-                style={{ background: 'var(--ide-green)', borderColor: 'var(--ide-green)' }}
-              >
-                Activate
-              </Button>
-            )}
-            {!['COMPLETED', 'TERMINATED'].includes(p.status) && (
-              <Button danger icon={<StopOutlined />} onClick={handleClose}>
-                Close {isExecutive && '(Override)'}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {p.description && (
-          <div
-            style={{
-              marginTop: 14,
-              padding: '10px 12px',
-              background: 'var(--ide-bg)',
-              borderRadius: 'var(--ide-rs)',
-              fontSize: 13,
-              color: 'var(--ide-ink2)',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {p.description}
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 14 }}>
-          <div className="ide-kpi">
-            <div className="ide-kpi-val" style={{ fontSize: 18 }}>
-              {Math.round(progress)}%
-            </div>
-            <div className="ide-kpi-lbl">Overall Progress</div>
-          </div>
-          <div className="ide-kpi">
-            <div className="ide-kpi-val">{p.member_count}</div>
-            <div className="ide-kpi-lbl">Members</div>
-          </div>
-          <div className="ide-kpi">
-            <div className="ide-kpi-val">
-              {p.completed_milestones}/{p.milestone_count}
-            </div>
-            <div className="ide-kpi-lbl">Milestones Done</div>
-          </div>
-          <div className="ide-kpi">
-            <div className="ide-kpi-val" style={{ fontSize: 14 }}>
-              {formatIDR(p.contract_value)}
-            </div>
-            <div className="ide-kpi-lbl">Contract Value</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs
-        defaultActiveKey="milestones"
-        items={[
-          {
-            key: 'milestones',
-            label: 'Milestones',
-            children: <MilestonesTab projectId={id} />,
-          },
-          { key: 'tasks', label: 'Tasks (Kanban)', children: <TasksTab projectId={id} /> },
-          { key: 'members', label: 'Members', children: <MembersTab projectId={id} /> },
-        ]}
-      />
     </div>
   );
 }

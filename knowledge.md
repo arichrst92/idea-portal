@@ -289,7 +289,7 @@ Tanggal gajian    → Slip gaji publish ke portal, notif karyawan
 ## 13. Project Lifecycle
 
 ```
-LEAD → PROPOSAL → KICK-OFF → DELIVERY → CLOSING & INVOICE
+LEAD → PROPOSAL → KICK-OFF → DELIVERY → CLOSING
 ```
 
 **3 Tipe Project:**
@@ -304,10 +304,32 @@ LEAD → PROPOSAL → KICK-OFF → DELIVERY → CLOSING & INVOICE
 - Exception: Direktur Utama bisa close langsung kapan saja (wajib input alasan)
 - Status: DRAFT | ACTIVE | ON HOLD | COMPLETED | TERMINATED
 
-**Invoice per Termin:**
-- Setup saat kick-off, notif otomatis ke Finance saat milestone tercapai
-- Track status: Sent → Partial → Paid
-- Outstanding termin masuk dashboard Executive
+**Hierarki Pekerjaan (4-level, TSK-022B 2026-05-29):**
+```
+Project
+  └─ Phase           — release/wave, punya target_date + progress_pct
+       └─ Epic       — grouping task per kategori (color-coded)
+            └─ Task           — kanban unit, slug Jira-style (CODE-123),
+            │                   assignee, story_points (free int),
+            │                   priority (LOW/MEDIUM/HIGH/CRITICAL),
+            │                   markdown comments
+                 └─ Subtask   — breakdown task, slug CODE-123.1, assignee,
+                                story_points, markdown comments
+```
+
+- **Slug auto-generate**: format `{PROJECT_CODE}-{counter}` per project (atomic
+  via row-lock). Subtask = `{task_slug}.{subcounter}`.
+- **Story point**: integer bebas (no Fibonacci constraint).
+- **Comments**: markdown (via `react-markdown` + `remark-gfm`), aksesibel langsung
+  dari kanban card (icon + count badge → drawer).
+
+**Invoice per Termin (pindah ke Finance domain, TSK-022C 2026-05-29):**
+- Tabel invoice di `app/finance/` (bukan `app/project/` lagi)
+- Trigger by **Phase completion** (bukan Milestone) → `app.finance.service.trigger_invoices_on_phase_complete()`
+- Track status: PENDING → SENT → PARTIAL → PAID (+ OVERDUE, CANCELLED)
+- Tax (PPN 11%) di-compute otomatis saat create invoice
+- Aging bucket: CURRENT, 1-30, 31-60, 61-90, 90+
+- Outstanding termin masuk dashboard Executive (via Finance widget)
 
 ---
 
@@ -456,7 +478,7 @@ Roadmap lengkap timeline pengembangan dari kickoff sampai go-live ada di file te
 
 ---
 
-## 20. Database ERD — 42 Tables, 7 Domains
+## 20. Database ERD — 48 Tables, 8 Domains
 
 **Domain 1: Identity & Auth**
 users, user_roles, role_permissions, audit_logs
@@ -467,8 +489,8 @@ departments, positions, employees, employee_contracts, org_changes
 **Domain 3: Assessment & Performance**
 assessment_configs, assessment_items, assessment_periods, assessments, okr_objectives, okr_key_results, warning_letters
 
-**Domain 4: Project & Work**
-projects, project_members, project_milestones, project_tasks, project_documents, project_invoices
+**Domain 4: Project & Work** *(refactored TSK-022B 2026-05-29)*
+projects *(+task_slug_counter)*, project_members, **project_phases** *(replace project_milestones)*, **project_epics**, project_tasks *(+epic_id, slug, story_points)*, **project_subtasks**, **project_task_comments** *(markdown)*, **project_subtask_comments** *(markdown)*, project_documents
 
 **Domain 5: Outsource**
 clients, outsource_placements, timesheets, timesheet_items, berita_acara, **client_complaints**, **warning_letters_outsource** *(SP-O)*
@@ -478,6 +500,10 @@ leave_types, leave_requests, payroll_configs, payroll_periods, payroll_component
 
 **Domain 7: Sales**
 leads, lead_activities, proposals, proposal_items, sales_targets, **sales_action_items** *(AI-generated)*, **sales_commissions** *(link ke payroll_components)*
+
+**Domain 8: Finance & Tax** *(new TSK-022C 2026-05-29)*
+**invoices** *(FK project_id nullable, trigger_phase_id nullable; PPN 11% auto, aging bucket)*
+*(future: chart_of_accounts, transactions, journal_entries, currencies, tax_reports — di M2.2)*
 
 ---
 

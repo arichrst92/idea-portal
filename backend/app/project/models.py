@@ -1,17 +1,28 @@
-"""Project & Work domain — 5 tabel per ERD knowledge.md sec.20.
+"""Project & Work domain — TSK-022B refactor.
+
+Hierarki pekerjaan (4-level):
+
+    Project
+      └─ Phase           (replace Milestone)
+           └─ Epic
+                └─ Task           (slug WEB-123, assignee, story_points)
+                     └─ Subtask   (slug WEB-123.1, assignee, story_points)
 
 Tabel:
 - projects             — Client/Internal/R&D types
 - project_members      — assignee + allocation %
-- project_milestones   — milestone tracking (akan diganti Phase di TSK-022B)
-- project_tasks        — task per project (Kanban + Gantt)
+- project_phases       — replaces project_milestones (TSK-022B)
+- project_epics        — grouping di dalam phase (TSK-022B)
+- project_tasks        — unit kerja kanban (slug + story_points + comments)
+- project_subtasks     — breakdown task (TSK-022B)
+- project_task_comments     — markdown comments per task (TSK-022B)
+- project_subtask_comments  — markdown comments per subtask (TSK-022B)
 - project_documents    — link ke dokumentasi teknis per project (US-TK-003)
 
-CATATAN (TSK-022C, 2026-05-29):
-Invoice termin di-pindah ke app/finance/ (lihat app.finance.models.Invoice).
-Tabel `project_invoices` di-drop via migration a7c2f5e8b401. Phase completion
-akan trigger `app.finance.service.trigger_invoices_on_phase_complete()`
-setelah TSK-022B selesai.
+CATATAN:
+- ProjectMilestone DROP — diganti ProjectPhase.
+- ProjectInvoice DROP (TSK-022C) — pindah ke app.finance.models.Invoice.
+- Phase completion akan trigger app.finance.service.trigger_invoices_on_phase_complete().
 """
 
 from __future__ import annotations
@@ -20,7 +31,7 @@ import enum
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import Date, ForeignKey, Numeric, String, Text
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
@@ -59,6 +70,9 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     contract_value: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     currency: Mapped[str] = mapped_column(String(3), default="IDR", nullable=False)
 
+    # Counter untuk slug Task (atomic increment via SELECT FOR UPDATE)
+    task_slug_counter: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
 
 class ProjectMember(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Member project dengan allocation %."""
@@ -73,27 +87,117 @@ class ProjectMember(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
-class ProjectMilestone(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    __tablename__ = "project_milestones"
+class PhaseStatus(str, enum.Enum):
+    PLANNED = "PLANNED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
-    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
+
+class ProjectPhase(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Phase per project — replace milestone.
+
+    Phase completion akan trigger Finance untuk invoice termin
+    (lihat app.finance.service.trigger_invoices_on_phase_complete).
+    """
+
+    __tablename__ = "project_phases"
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id"), nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    target_date: Mapped[date] = mapped_column(Date, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    target_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     completed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status: Mapped[PhaseStatus] = mapped_column(
+        String(20), default=PhaseStatus.PLANNED, nullable=False
+    )
     progress_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
 
 
+class ProjectEpic(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Epic = grouping of related tasks dalam phase."""
+
+    __tablename__ = "project_epics"
+
+    phase_id: Mapped[UUID] = mapped_column(
+        ForeignKey("project_phases.id"), nullable=False, index=True
+    )
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="PLANNED", nullable=False)
+    color: Mapped[str | None] = mapped_column(String(20), nullable=True)  # CSS color hint
+
+
 class ProjectTask(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Task per project — slug Jira-style + story_points + assignee + comments."""
+
     __tablename__ = "project_tasks"
 
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
-    milestone_id: Mapped[UUID | None] = mapped_column(ForeignKey("project_milestones.id"), nullable=True)
+    epic_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("project_epics.id"), nullable=True, index=True
+    )
+    slug: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # e.g. WEB-123
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     assignee_id: Mapped[UUID | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="BACKLOG", nullable=False)
     priority: Mapped[str] = mapped_column(String(20), default="MEDIUM", nullable=False)
+    story_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+
+class ProjectSubtask(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Subtask = breakdown task. Slug = {task_slug}.{counter} (e.g. WEB-123.1)."""
+
+    __tablename__ = "project_subtasks"
+
+    task_id: Mapped[UUID] = mapped_column(
+        ForeignKey("project_tasks.id"), nullable=False, index=True
+    )
+    slug: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assignee_id: Mapped[UUID | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="BACKLOG", nullable=False)
+    story_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class ProjectTaskComment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Markdown comment thread per task."""
+
+    __tablename__ = "project_task_comments"
+
+    task_id: Mapped[UUID] = mapped_column(
+        ForeignKey("project_tasks.id"), nullable=False, index=True
+    )
+    author_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)  # markdown raw text
+
+
+class ProjectSubtaskComment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Markdown comment thread per subtask."""
+
+    __tablename__ = "project_subtask_comments"
+
+    subtask_id: Mapped[UUID] = mapped_column(
+        ForeignKey("project_subtasks.id"), nullable=False, index=True
+    )
+    author_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class ProjectDocument(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -109,4 +213,7 @@ class ProjectDocument(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin
     uploaded_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
 
-# ProjectInvoice — REMOVED (TSK-022C). Lihat app.finance.models.Invoice.
+# ─── Backward-compat alias ────────────────────────────────────────────
+# Kode lain (mis. service.py) masih reference ProjectMilestone selama transisi.
+# Akan dihapus setelah service.py & router.py di-refactor penuh ke Phase.
+ProjectMilestone = ProjectPhase

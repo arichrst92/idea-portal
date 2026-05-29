@@ -1,11 +1,15 @@
 /**
- * Project domain API client — TSK-022.
+ * Project domain API client — TSK-022, TSK-022B, TSK-022C.
+ *
+ * Hierarki: Project > Phase > Epic > Task > Subtask + Comments.
+ * Milestone = alias backward-compat (sama dengan Phase).
  */
 
 import { apiClient } from './client';
 
 export type ProjectType = 'CLIENT' | 'INTERNAL' | 'RND';
 export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'TERMINATED';
+export type PhaseStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
@@ -31,8 +35,8 @@ export interface Project extends ProjectListItem {
   client_id: string | null;
   created_at: string;
   updated_at: string;
-  milestone_count: number;
-  completed_milestones: number;
+  phase_count: number;
+  completed_phases: number;
 }
 
 export interface ProjectListResponse {
@@ -55,33 +59,86 @@ export interface Member {
   employee_name: string | null;
 }
 
-export interface Milestone {
+export interface Phase {
   id: string;
   project_id: string;
   name: string;
-  target_date: string;
+  description: string | null;
+  order_index: number;
+  target_date: string | null;
   completed_at: string | null;
+  status: PhaseStatus;
   progress_pct: string;
   is_overdue: boolean;
+  epic_count: number;
+}
+
+// Backward-compat alias
+export type Milestone = Phase;
+
+export interface Epic {
+  id: string;
+  phase_id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  order_index: number;
+  status: string;
+  color: string | null;
+  task_count: number;
+  completed_task_count: number;
 }
 
 export interface Task {
   id: string;
   project_id: string;
-  milestone_id: string | null;
+  epic_id: string | null;
+  slug: string;
   title: string;
   description: string | null;
   assignee_id: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  story_points: number | null;
   due_date: string | null;
   created_at: string;
+  updated_at: string;
   assignee_nik: string | null;
   assignee_name: string | null;
-  milestone_name: string | null;
+  epic_name: string | null;
+  phase_name: string | null;
+  subtask_count: number;
+  completed_subtask_count: number;
+  comment_count: number;
 }
 
-// Invoice TYPE & API — REMOVED (TSK-022C). Lihat src/api/finance.ts.
+export interface Subtask {
+  id: string;
+  task_id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  assignee_id: string | null;
+  status: TaskStatus;
+  story_points: number | null;
+  due_date: string | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  assignee_nik: string | null;
+  assignee_name: string | null;
+  comment_count: number;
+}
+
+export interface Comment {
+  id: string;
+  author_user_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  author_nik: string | null;
+  author_name: string | null;
+}
 
 // ─── Projects API ────────────────────────────────────────────────
 
@@ -152,35 +209,95 @@ export async function removeMember(member_id: string): Promise<void> {
   await apiClient.delete(`/api/v1/projects/members/${member_id}`);
 }
 
-// ─── Milestones ─────────────────────────────────────────────────
+// ─── Phase API (replaces Milestone) ─────────────────────────────
 
-export async function listMilestones(project_id: string): Promise<Milestone[]> {
-  const r = await apiClient.get<Milestone[]>(`/api/v1/projects/${project_id}/milestones`);
+export async function listPhases(project_id: string): Promise<Phase[]> {
+  const r = await apiClient.get<Phase[]>(`/api/v1/projects/${project_id}/phases`);
   return r.data;
 }
 
-export async function createMilestone(
+export async function createPhase(
   project_id: string,
-  data: { name: string; target_date: string },
-): Promise<Milestone> {
-  const r = await apiClient.post<Milestone>(`/api/v1/projects/${project_id}/milestones`, data);
+  data: { name: string; description?: string; target_date?: string; order_index?: number },
+): Promise<Phase> {
+  const r = await apiClient.post<Phase>(`/api/v1/projects/${project_id}/phases`, data);
   return r.data;
 }
 
+export async function updatePhase(
+  phase_id: string,
+  data: Partial<{
+    name: string;
+    description: string;
+    target_date: string;
+    order_index: number;
+    status: PhaseStatus;
+    progress_pct: number;
+    completed_at: string;
+  }>,
+): Promise<Phase> {
+  const r = await apiClient.patch<Phase>(`/api/v1/projects/phases/${phase_id}`, data);
+  return r.data;
+}
+
+export async function deletePhase(phase_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/phases/${phase_id}`);
+}
+
+// Backward-compat aliases (deprecated)
+export const listMilestones = listPhases;
+export const createMilestone = createPhase;
 export async function updateMilestone(
   milestone_id: string,
-  data: { name?: string; target_date?: string; progress_pct?: number; completed_at?: string },
-): Promise<Milestone> {
-  const r = await apiClient.patch<Milestone>(`/api/v1/projects/milestones/${milestone_id}`, data);
+  data: Partial<{ name: string; target_date: string; progress_pct: number; completed_at: string }>,
+): Promise<Phase> {
+  return updatePhase(milestone_id, data as any);
+}
+
+// ─── Epic API ──────────────────────────────────────────────────
+
+export async function listPhaseEpics(phase_id: string): Promise<Epic[]> {
+  const r = await apiClient.get<Epic[]>(`/api/v1/projects/phases/${phase_id}/epics`);
   return r.data;
+}
+
+export async function listProjectEpics(project_id: string): Promise<Epic[]> {
+  const r = await apiClient.get<Epic[]>(`/api/v1/projects/${project_id}/epics`);
+  return r.data;
+}
+
+export async function createEpic(
+  phase_id: string,
+  data: { name: string; description?: string; color?: string; order_index?: number },
+): Promise<Epic> {
+  const r = await apiClient.post<Epic>(`/api/v1/projects/phases/${phase_id}/epics`, data);
+  return r.data;
+}
+
+export async function updateEpic(
+  epic_id: string,
+  data: Partial<{ name: string; description: string; color: string; order_index: number; status: string }>,
+): Promise<Epic> {
+  const r = await apiClient.patch<Epic>(`/api/v1/projects/epics/${epic_id}`, data);
+  return r.data;
+}
+
+export async function deleteEpic(epic_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/epics/${epic_id}`);
 }
 
 // ─── Tasks ──────────────────────────────────────────────────────
 
-export async function listTasks(project_id: string, status?: TaskStatus): Promise<Task[]> {
-  const r = await apiClient.get<Task[]>(`/api/v1/projects/${project_id}/tasks`, {
-    params: { status },
-  });
+export async function listTasks(
+  project_id: string,
+  params: { epic_id?: string; status?: TaskStatus } = {},
+): Promise<Task[]> {
+  const r = await apiClient.get<Task[]>(`/api/v1/projects/${project_id}/tasks`, { params });
+  return r.data;
+}
+
+export async function getTask(task_id: string): Promise<Task> {
+  const r = await apiClient.get<Task>(`/api/v1/projects/tasks/${task_id}`);
   return r.data;
 }
 
@@ -189,10 +306,11 @@ export async function createTask(
   data: {
     title: string;
     description?: string;
-    milestone_id?: string;
+    epic_id?: string;
     assignee_id?: string;
     status?: TaskStatus;
     priority?: TaskPriority;
+    story_points?: number;
     due_date?: string;
   },
 ): Promise<Task> {
@@ -205,10 +323,11 @@ export async function updateTask(
   data: Partial<{
     title: string;
     description: string;
-    milestone_id: string;
+    epic_id: string;
     assignee_id: string;
     status: TaskStatus;
     priority: TaskPriority;
+    story_points: number;
     due_date: string;
   }>,
 ): Promise<Task> {
@@ -216,7 +335,92 @@ export async function updateTask(
   return r.data;
 }
 
-// Invoice API REMOVED (TSK-022C). Pindah ke src/api/finance.ts.
+export async function deleteTask(task_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/tasks/${task_id}`);
+}
+
+// ─── Subtasks ──────────────────────────────────────────────────
+
+export async function listSubtasks(task_id: string): Promise<Subtask[]> {
+  const r = await apiClient.get<Subtask[]>(`/api/v1/projects/tasks/${task_id}/subtasks`);
+  return r.data;
+}
+
+export async function createSubtask(
+  task_id: string,
+  data: {
+    title: string;
+    description?: string;
+    assignee_id?: string;
+    status?: TaskStatus;
+    story_points?: number;
+    due_date?: string;
+    order_index?: number;
+  },
+): Promise<Subtask> {
+  const r = await apiClient.post<Subtask>(`/api/v1/projects/tasks/${task_id}/subtasks`, data);
+  return r.data;
+}
+
+export async function updateSubtask(
+  subtask_id: string,
+  data: Partial<{
+    title: string;
+    description: string;
+    assignee_id: string;
+    status: TaskStatus;
+    story_points: number;
+    due_date: string;
+    order_index: number;
+  }>,
+): Promise<Subtask> {
+  const r = await apiClient.patch<Subtask>(`/api/v1/projects/subtasks/${subtask_id}`, data);
+  return r.data;
+}
+
+export async function deleteSubtask(subtask_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/subtasks/${subtask_id}`);
+}
+
+// ─── Comments (markdown) ───────────────────────────────────────
+
+export async function listTaskComments(task_id: string): Promise<Comment[]> {
+  const r = await apiClient.get<Comment[]>(`/api/v1/projects/tasks/${task_id}/comments`);
+  return r.data;
+}
+
+export async function createTaskComment(task_id: string, body: string): Promise<Comment> {
+  const r = await apiClient.post<Comment>(`/api/v1/projects/tasks/${task_id}/comments`, { body });
+  return r.data;
+}
+
+export async function updateTaskComment(comment_id: string, body: string): Promise<Comment> {
+  const r = await apiClient.patch<Comment>(`/api/v1/projects/task-comments/${comment_id}`, { body });
+  return r.data;
+}
+
+export async function deleteTaskComment(comment_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/task-comments/${comment_id}`);
+}
+
+export async function listSubtaskComments(subtask_id: string): Promise<Comment[]> {
+  const r = await apiClient.get<Comment[]>(`/api/v1/projects/subtasks/${subtask_id}/comments`);
+  return r.data;
+}
+
+export async function createSubtaskComment(subtask_id: string, body: string): Promise<Comment> {
+  const r = await apiClient.post<Comment>(`/api/v1/projects/subtasks/${subtask_id}/comments`, { body });
+  return r.data;
+}
+
+export async function updateSubtaskComment(comment_id: string, body: string): Promise<Comment> {
+  const r = await apiClient.patch<Comment>(`/api/v1/projects/subtask-comments/${comment_id}`, { body });
+  return r.data;
+}
+
+export async function deleteSubtaskComment(comment_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/projects/subtask-comments/${comment_id}`);
+}
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -258,29 +462,29 @@ export const TASK_STATUSES: TaskStatus[] = [
 export function taskStatusColor(s: TaskStatus): string {
   switch (s) {
     case 'BACKLOG':
-      return 'var(--ide-ink3)';
+      return 'var(--ide-ink3, #6e6e73)';
     case 'TODO':
-      return 'var(--ide-blue)';
+      return 'var(--ide-blue, #0071E3)';
     case 'IN_PROGRESS':
-      return 'var(--ide-orange)';
+      return 'var(--ide-orange, #FF9500)';
     case 'IN_REVIEW':
-      return 'var(--ide-purple)';
+      return 'var(--ide-purple, #AF52DE)';
     case 'DONE':
-      return 'var(--ide-green)';
+      return 'var(--ide-green, #34C759)';
     case 'BLOCKED':
-      return 'var(--ide-red)';
+      return 'var(--ide-red, #FF3B30)';
   }
 }
 
 export function priorityColor(p: TaskPriority): string {
   switch (p) {
     case 'LOW':
-      return 'var(--ide-ink3)';
+      return 'var(--ide-ink3, #6e6e73)';
     case 'MEDIUM':
-      return 'var(--ide-blue)';
+      return 'var(--ide-blue, #0071E3)';
     case 'HIGH':
-      return 'var(--ide-orange)';
+      return 'var(--ide-orange, #FF9500)';
     case 'CRITICAL':
-      return 'var(--ide-red)';
+      return 'var(--ide-red, #FF3B30)';
   }
 }
