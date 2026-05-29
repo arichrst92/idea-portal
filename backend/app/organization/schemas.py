@@ -14,9 +14,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
 from app.organization.models import ContractType, EmployeeStatus, EmployeeType
 
-# Forward enum for contract status (derived: ACTIVE, EXPIRING_SOON, EXPIRED, ENDED)
-ContractStatus = Annotated[str, Field(pattern="^(ACTIVE|EXPIRING_SOON|EXPIRED|ENDED)$")]
-
 
 # ─── Reusable types ────────────────────────────────────────────────
 

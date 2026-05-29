@@ -20,8 +20,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 
 from app.core.audit import audit_log
+from app.identity.models import User
+from app.organization.models import Department, Employee
 from app.core.deps import (
     CurrentUser,
     DBSession,
