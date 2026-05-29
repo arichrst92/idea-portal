@@ -164,18 +164,44 @@ class PayrollSlip(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
 
 class Reimbursement(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Reimbursement — transfer TERPISAH dari payroll (knowledge.md sec.12)."""
+    """Reimbursement — transfer TERPISAH dari payroll (knowledge.md sec.12).
+
+    Status flow: PENDING_L1 → PENDING_L2 → APPROVED → TRANSFERRED
+                          → REJECTED / CANCELLED
+    """
 
     __tablename__ = "reimbursements"
 
     employee_id: Mapped[UUID] = mapped_column(ForeignKey("employees.id"), nullable=False, index=True)
     request_date: Mapped[date] = mapped_column(Date, nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, default="OTHER", index=True)
+    # MEDICAL, TRANSPORT, MEAL, BUSINESS_TRIP, COMMUNICATION, ENTERTAINMENT, OTHER
     amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="IDR", nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     receipt_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False)
+    project_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("projects.id"), nullable=True
+    )  # opsional, untuk billable expense
+
+    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False, index=True)
+
+    # Approval audit
+    layer1_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    layer1_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer1_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    layer2_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    layer2_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer2_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejected_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Transfer
     transferred_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    transferred_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    transfer_reference: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
 
 class Vendor(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -189,17 +215,46 @@ class Vendor(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
 
 class ProcurementRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Pengadaan barang dengan approval flow."""
+    """Pengadaan barang dengan approval flow.
+
+    Status flow: PENDING_L1 → PENDING_L2 → APPROVED → ORDERED → DELIVERED
+                          → REJECTED / CANCELLED
+    """
 
     __tablename__ = "procurement_requests"
 
-    requested_by_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    requested_by_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    request_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     item_description: Mapped[str] = mapped_column(Text, nullable=False)
+    item_category: Mapped[str] = mapped_column(String(50), default="OTHER", nullable=False)
+    # IT_EQUIPMENT, OFFICE_SUPPLIES, FURNITURE, SOFTWARE_LICENSE, MARKETING, OTHER
     quantity: Mapped[int] = mapped_column(default=1, nullable=False)
     estimated_amount: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
+    actual_amount: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), default="IDR", nullable=False)
     vendor_id: Mapped[UUID | None] = mapped_column(ForeignKey("vendors.id"), nullable=True)
     is_asset: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False)
+    expected_delivery_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    actual_delivery_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    status: Mapped[str] = mapped_column(String(20), default="PENDING_L1", nullable=False, index=True)
+
+    # Approval audit
+    layer1_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    layer1_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer1_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    layer2_approver_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    layer2_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    layer2_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejected_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # PO + Delivery tracking
+    po_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ordered_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class WorkCalendar(Base, UUIDPrimaryKeyMixin, TimestampMixin):

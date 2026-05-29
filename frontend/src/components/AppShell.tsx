@@ -19,6 +19,7 @@ import {
   CheckSquareOutlined,
   CrownOutlined,
   DashboardOutlined,
+  DollarOutlined,
   FileTextOutlined,
   LockOutlined,
   LogoutOutlined,
@@ -62,6 +63,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/leave', icon: <CalendarOutlined />, label: 'Leave' },
     { key: '/performance', icon: <BarChartOutlined />, label: 'Performance' },
     { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
+    { key: '/finance', icon: <DollarOutlined />, label: 'Finance' },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];

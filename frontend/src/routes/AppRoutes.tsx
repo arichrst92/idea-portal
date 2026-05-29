@@ -23,6 +23,7 @@ import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
 import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
 import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import ContractsListPage from '@/features/contracts/ContractsListPage';
+import FinancePage from '@/features/finance/FinancePage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
 import PerformancePage from '@/features/performance/PerformancePage';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -204,6 +205,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><ProjectDetailPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/finance"
+          element={
+            <RequireAuth>
+              <AppShell><FinancePage /></AppShell>
             </RequireAuth>
           }
         />
