@@ -90,6 +90,7 @@ from app.payroll.leave_router import router as leave_router
 from app.assessment.router import router as assessment_router
 from app.project.router import router as project_router
 from app.payroll.reimbursement_router import router as reimb_proc_router
+from app.payroll.payroll_router import router as payroll_router
 from app.sales.router import router as sales_router
 from app.dashboard.router import router as dashboard_router
 from app.finance.router import router as finance_router
@@ -104,6 +105,7 @@ app.include_router(leave_router, prefix="/api/v1")  # M1.2 TSK-019
 app.include_router(assessment_router, prefix="/api/v1")  # M2.1 TSK-021
 app.include_router(project_router, prefix="/api/v1")  # M2.1 TSK-022
 app.include_router(reimb_proc_router, prefix="/api/v1")  # M2.2 TSK-023
+app.include_router(payroll_router, prefix="/api/v1")  # M1.4 TSK-046
 app.include_router(sales_router, prefix="/api/v1")  # M3.1 TSK-024
 app.include_router(dashboard_router, prefix="/api/v1")  # M3.2 TSK-025
 app.include_router(finance_router, prefix="/api/v1")  # TSK-022C — invoice moved from project

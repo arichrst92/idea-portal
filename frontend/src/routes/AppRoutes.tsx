@@ -26,6 +26,7 @@ import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import ContractsListPage from '@/features/contracts/ContractsListPage';
 import FinancePage from '@/features/finance/FinancePage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
+import PayrollPage from '@/features/payroll/PayrollPage';
 import PerformancePage from '@/features/performance/PerformancePage';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import ProjectsListPage from '@/features/projects/ProjectsListPage';
@@ -213,6 +214,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><FinancePage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/payroll"
+          element={
+            <RequireAuth>
+              <AppShell><PayrollPage /></AppShell>
             </RequireAuth>
           }
         />

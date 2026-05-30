@@ -65,6 +65,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/performance', icon: <BarChartOutlined />, label: 'Performance' },
     { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '/finance', icon: <DollarOutlined />, label: 'Finance' },
+    { key: '/payroll', icon: <DollarOutlined />, label: 'Payroll' },
     { key: '/sales', icon: <FundOutlined />, label: 'Sales' },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
