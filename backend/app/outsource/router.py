@@ -79,8 +79,11 @@ router = APIRouter(tags=["outsource"], prefix="/outsource")
 async def _lookup_employee(session, employee_id: UUID | None):
     if employee_id is None:
         return None, None
+    from app.identity.models import User as _User
     r = await session.execute(
-        select(Employee.nik, Employee.full_name).where(Employee.id == employee_id)
+        select(_User.nik, Employee.full_name)
+        .join(_User, Employee.user_id == _User.id)
+        .where(Employee.id == employee_id)
     )
     row = r.one_or_none()
     return (row[0], row[1]) if row else (None, None)
@@ -280,14 +283,17 @@ MONTHS_ID = [
 
 async def _ts_to_out(session, ts, include_items: bool = False) -> TimesheetOut:
     # Lookup placement details
+    from app.identity.models import User as _User2
     pl_stmt = select(
-        Employee.nik.label("emp_nik"),
+        _User2.nik.label("emp_nik"),
         Employee.full_name.label("emp_name"),
         ClientModel.code.label("cli_code"),
         ClientModel.name.label("cli_name"),
         OutsourcePlacement.role_at_client.label("role"),
     ).select_from(OutsourcePlacement).join(
         Employee, OutsourcePlacement.employee_id == Employee.id,
+    ).join(
+        _User2, Employee.user_id == _User2.id,
     ).join(
         ClientModel, OutsourcePlacement.client_id == ClientModel.id,
     ).where(OutsourcePlacement.id == ts.placement_id)

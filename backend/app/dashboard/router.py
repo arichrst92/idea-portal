@@ -81,14 +81,18 @@ async def people_performance_endpoint(
     period_label = f"{months_id[period.month - 1]} {period.year}"
 
     # All assessments with employee + department
+    from app.identity.models import User as _User
     assess_stmt = (
         select(
             Assessment.id, Assessment.final_score,
-            Employee.id.label("emp_id"), Employee.nik, Employee.full_name,
+            Employee.id.label("emp_id"),
+            _User.nik.label("nik"),
+            Employee.full_name,
             Employee.department_id, Department.code.label("dept_code"),
             Department.name.label("dept_name"),
         )
         .join(Employee, Assessment.employee_id == Employee.id)
+        .join(_User, Employee.user_id == _User.id)
         .outerjoin(Department, Employee.department_id == Department.id)
         .where(
             Assessment.period_id == period.id,

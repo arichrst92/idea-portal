@@ -102,7 +102,9 @@ async def _lookup_employee(session, employee_id: UUID | None) -> tuple[str | Non
     if employee_id is None:
         return None, None
     r = await session.execute(
-        select(Employee.nik, Employee.full_name).where(Employee.id == employee_id)
+        select(User.nik, Employee.full_name)
+        .join(User, Employee.user_id == User.id)
+        .where(Employee.id == employee_id)
     )
     row = r.one_or_none()
     if row is None:

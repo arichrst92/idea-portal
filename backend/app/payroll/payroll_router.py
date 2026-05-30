@@ -68,8 +68,11 @@ MONTHS_ID = [
 async def _lookup_employee(session, employee_id: UUID | None):
     if employee_id is None:
         return None, None
+    from app.identity.models import User as _User
     r = await session.execute(
-        select(Employee.nik, Employee.full_name).where(Employee.id == employee_id)
+        select(_User.nik, Employee.full_name)
+        .join(_User, Employee.user_id == _User.id)
+        .where(Employee.id == employee_id)
     )
     row = r.one_or_none()
     if row is None:
