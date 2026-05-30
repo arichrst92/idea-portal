@@ -26,6 +26,7 @@ from app.organization.models import Employee
 from app.outsource import service
 from app.outsource.models import Client as ClientModel, OutsourcePlacement
 from app.outsource.schemas import (
+    BeritaAcaraOut,
     ClientCreate,
     ClientOut,
     PlacementCreate,
@@ -40,6 +41,8 @@ from app.outsource.schemas import (
     TimesheetReject,
 )
 from app.outsource.service import (
+    BANotFoundError,
+    BAStateError,
     ClientNotFoundError,
     DuplicateClientCodeError,
     DuplicateTimesheetError,
@@ -47,6 +50,7 @@ from app.outsource.service import (
     TimesheetNotFoundError,
     TimesheetStateError,
 )
+from app.core.storage import get_presigned_url
 from app.outsource.models import Timesheet, TimesheetItem  # noqa: F401
 
 router = APIRouter(tags=["outsource"], prefix="/outsource")
@@ -455,3 +459,123 @@ async def reject_timesheet_endpoint(
         after_state={"rejection_reason": data.rejection_reason},
     )
     return await _ts_to_out(session, ts, include_items=True)
+
+
+# ─── Berita Acara endpoints (TSK-105) ─────────────────────────────
+
+
+async def _ba_to_out(session, ba, include_download_url: bool = False) -> BeritaAcaraOut:
+    # Fetch timesheet → placement → employee → client untuk derived fields
+    ts = await session.get(Timesheet, ba.timesheet_id)
+    period_label = None
+    employee_name = None
+    client_name = None
+    if ts:
+        period_label = f"{MONTHS_ID[ts.month - 1]} {ts.year}"
+        placement = await session.get(OutsourcePlacement, ts.placement_id)
+        if placement:
+            employee = await session.get(Employee, placement.employee_id)
+            client = await session.get(ClientModel, placement.client_id)
+            if employee:
+                employee_name = employee.full_name
+            if client:
+                client_name = client.name
+
+    download_url = None
+    if include_download_url and ba.pdf_url:
+        try:
+            download_url = get_presigned_url(ba.pdf_url, expires_in_seconds=3600)
+        except Exception:
+            download_url = None
+
+    return BeritaAcaraOut(
+        id=ba.id, timesheet_id=ba.timesheet_id, ba_no=ba.ba_no,
+        pdf_url=ba.pdf_url, signed_by_ide=ba.signed_by_ide,
+        signed_by_client=ba.signed_by_client, client_signed_at=ba.client_signed_at,
+        created_at=ba.created_at,
+        timesheet_period_label=period_label,
+        employee_name=employee_name, client_name=client_name,
+        download_url=download_url,
+    )
+
+
+@router.post(
+    "/timesheets/{ts_id}/generate-ba",
+    response_model=BeritaAcaraOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_ba_endpoint(
+    request: Request, ts_id: UUID, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> BeritaAcaraOut:
+    """Generate BA PDF from approved timesheet. Idempotent (max 1 BA per ts)."""
+    try:
+        ba = await service.generate_ba(session, ts_id)
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except BAStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail={"code": "PDF_GEN_FAILED", "message": str(e)}) from e
+
+    await audit_log(
+        session=session, actor=user, action="BA_GENERATED",
+        resource_type="berita_acara", resource_id=str(ba.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"ba_no": ba.ba_no, "timesheet_id": str(ts_id)},
+    )
+    return await _ba_to_out(session, ba, include_download_url=True)
+
+
+@router.get(
+    "/timesheets/{ts_id}/ba",
+    response_model=BeritaAcaraOut,
+)
+async def get_ba_for_timesheet_endpoint(
+    ts_id: UUID, session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+) -> BeritaAcaraOut:
+    """Get BA for a timesheet (if generated)."""
+    ba = await service.get_ba_by_timesheet(session, ts_id)
+    if ba is None:
+        raise HTTPException(status_code=404, detail={"code": "NOT_GENERATED", "message": "BA belum di-generate"})
+    return await _ba_to_out(session, ba, include_download_url=True)
+
+
+@router.get(
+    "/ba/{ba_id}/download-url",
+)
+async def get_ba_download_url_endpoint(
+    ba_id: UUID, session: DBSession,
+    expires_in: int = 3600,
+    _user=Depends(require_permission("employee.view")),
+) -> dict:
+    """Presigned URL untuk download BA PDF."""
+    try:
+        ba = await service.get_ba(session, ba_id)
+    except BANotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    if not ba.pdf_url:
+        raise HTTPException(status_code=400, detail={"code": "NO_PDF", "message": "PDF belum di-generate"})
+    url = get_presigned_url(ba.pdf_url, expires_in_seconds=expires_in)
+    return {"url": url, "expires_in_seconds": expires_in}
+
+
+@router.post("/ba/{ba_id}/regenerate", response_model=BeritaAcaraOut)
+async def regenerate_ba_endpoint(
+    request: Request, ba_id: UUID, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> BeritaAcaraOut:
+    """Regenerate PDF (e.g. setelah data correction)."""
+    try:
+        ba = await service.regenerate_ba_pdf(session, ba_id)
+    except BANotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail={"code": "PDF_GEN_FAILED", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="BA_REGENERATED",
+        resource_type="berita_acara", resource_id=str(ba.id),
+        ip_address=request.client.host if request.client else None,
+    )
+    return await _ba_to_out(session, ba, include_download_url=True)

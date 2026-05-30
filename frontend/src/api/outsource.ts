@@ -208,3 +208,45 @@ export function timesheetStatusColor(s: TimesheetStatus): { className: string; l
     case 'REJECTED': return { className: 'ide-tag-red', label: 'Rejected' };
   }
 }
+
+// ─── Berita Acara (TSK-105) ──────────────────────────────────────
+
+export interface BeritaAcara {
+  id: string;
+  timesheet_id: string;
+  ba_no: string;
+  pdf_url: string | null;
+  signed_by_ide: boolean;
+  signed_by_client: boolean;
+  client_signed_at: string | null;
+  created_at: string;
+  timesheet_period_label: string | null;
+  employee_name: string | null;
+  client_name: string | null;
+  download_url: string | null;
+}
+
+export async function generateBA(ts_id: string): Promise<BeritaAcara> {
+  const r = await apiClient.post<BeritaAcara>(`/api/v1/outsource/timesheets/${ts_id}/generate-ba`);
+  return r.data;
+}
+
+export async function getBAForTimesheet(ts_id: string): Promise<BeritaAcara | null> {
+  try {
+    const r = await apiClient.get<BeritaAcara>(`/api/v1/outsource/timesheets/${ts_id}/ba`);
+    return r.data;
+  } catch (e: any) {
+    if (e?.response?.status === 404) return null;
+    throw e;
+  }
+}
+
+export async function getBADownloadUrl(ba_id: string): Promise<{ url: string }> {
+  const r = await apiClient.get<{ url: string }>(`/api/v1/outsource/ba/${ba_id}/download-url`);
+  return r.data;
+}
+
+export async function regenerateBA(ba_id: string): Promise<BeritaAcara> {
+  const r = await apiClient.post<BeritaAcara>(`/api/v1/outsource/ba/${ba_id}/regenerate`);
+  return r.data;
+}

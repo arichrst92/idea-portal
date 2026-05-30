@@ -152,3 +152,25 @@ class TimesheetOut(BaseModel):
     items: list[TimesheetItemOut] = Field(default_factory=list)
     present_count: int = 0
     absent_count: int = 0
+
+
+# ─── Berita Acara (TSK-105) ───────────────────────────────────────
+
+
+class BeritaAcaraOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    timesheet_id: UUID
+    ba_no: str
+    pdf_url: str | None
+    signed_by_ide: bool
+    signed_by_client: bool
+    client_signed_at: date | None
+    created_at: datetime
+
+    # Derived
+    timesheet_period_label: str | None = None
+    employee_name: str | None = None
+    client_name: str | None = None
+    download_url: str | None = None  # presigned

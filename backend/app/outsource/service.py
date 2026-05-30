@@ -380,3 +380,94 @@ async def reject_timesheet(session: AsyncSession, ts_id: UUID) -> Timesheet:
     await session.commit()
     await session.refresh(ts)
     return ts
+
+
+# ─── Berita Acara (TSK-105) ────────────────────────────────────────
+
+
+from app.outsource.models import BeritaAcara  # noqa: E402
+
+
+class BAStateError(Exception):
+    pass
+
+
+class BANotFoundError(Exception):
+    pass
+
+
+async def get_ba_by_timesheet(
+    session: AsyncSession, ts_id: UUID
+) -> BeritaAcara | None:
+    stmt = select(BeritaAcara).where(BeritaAcara.timesheet_id == ts_id)
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def get_ba(session: AsyncSession, ba_id: UUID) -> BeritaAcara:
+    stmt = select(BeritaAcara).where(BeritaAcara.id == ba_id)
+    ba = (await session.execute(stmt)).scalar_one_or_none()
+    if ba is None:
+        raise BANotFoundError(f"BA {ba_id} not found")
+    return ba
+
+
+async def _next_ba_number(session: AsyncSession) -> str:
+    """Generate BA number: BA-{YYYY}-{counter}."""
+    year = date.today().year
+    cnt_stmt = select(func.count(BeritaAcara.id))
+    cnt = int((await session.execute(cnt_stmt)).scalar_one())
+    return f"BA-{year}-{cnt + 1:04d}"
+
+
+async def generate_ba(
+    session: AsyncSession, ts_id: UUID
+) -> BeritaAcara:
+    """Generate BA PDF dari approved timesheet.
+
+    Rules:
+    - Timesheet harus status APPROVED.
+    - Maks 1 BA per timesheet (kalau sudah ada, return existing).
+    """
+    from app.outsource.ba_generator import generate_ba_pdf
+
+    ts = await get_timesheet(session, ts_id)
+    if ts.status != "APPROVED":
+        raise BAStateError(
+            f"Hanya timesheet APPROVED bisa generate BA, current: {ts.status}"
+        )
+
+    existing = await get_ba_by_timesheet(session, ts_id)
+    if existing is not None:
+        return existing
+
+    ba_no = await _next_ba_number(session)
+    object_name = await generate_ba_pdf(session, ts_id, ba_no)
+
+    ba = BeritaAcara(
+        timesheet_id=ts_id,
+        ba_no=ba_no,
+        pdf_url=object_name,
+        signed_by_ide=True,  # Auto-signed by IDE saat generate
+        signed_by_client=False,
+    )
+    session.add(ba)
+    await session.commit()
+    await session.refresh(ba)
+    return ba
+
+
+async def regenerate_ba_pdf(
+    session: AsyncSession, ba_id: UUID
+) -> BeritaAcara:
+    """Regenerate PDF (e.g. after data correction).
+
+    BA tetap, hanya overwrite PDF di MinIO.
+    """
+    from app.outsource.ba_generator import generate_ba_pdf
+
+    ba = await get_ba(session, ba_id)
+    object_name = await generate_ba_pdf(session, ba.timesheet_id, ba.ba_no)
+    ba.pdf_url = object_name
+    await session.commit()
+    await session.refresh(ba)
+    return ba

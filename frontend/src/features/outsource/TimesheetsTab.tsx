@@ -9,7 +9,10 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CloudDownloadOutlined,
+  FilePdfOutlined,
   PlusOutlined,
+  ReloadOutlined,
   SendOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,9 +40,13 @@ import {
   approveTimesheet,
   createTimesheet,
   deleteTimesheetItem,
+  generateBA,
+  getBADownloadUrl,
+  getBAForTimesheet,
   getTimesheet,
   listPlacements,
   listTimesheets,
+  regenerateBA,
   rejectTimesheet,
   submitTimesheet,
   timesheetStatusColor,
@@ -368,6 +375,11 @@ function TimesheetDetailDrawer({
               </Text>
             )}
 
+            {/* BA Panel (TSK-105) — only when APPROVED */}
+            {s.status === 'APPROVED' && tsId && (
+              <BAPanel tsId={tsId} />
+            )}
+
             <Title level={5} style={{ marginTop: 16 }}>
               <CalendarOutlined /> Daily Attendance
             </Title>
@@ -477,5 +489,123 @@ function TimesheetDetailDrawer({
         </Form>
       </Modal>
     </>
+  );
+}
+
+// ─── BA Panel (TSK-105) ────────────────────────────────────────
+
+function BAPanel({ tsId }: { tsId: string }) {
+  const queryClient = useQueryClient();
+  const baQ = useQuery({
+    queryKey: ['ba-for-timesheet', tsId],
+    queryFn: () => getBAForTimesheet(tsId),
+  });
+
+  const generateMut = useMutation({
+    mutationFn: () => generateBA(tsId),
+    onSuccess: () => {
+      message.success('BA berhasil di-generate');
+      queryClient.invalidateQueries({ queryKey: ['ba-for-timesheet', tsId] });
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal generate BA'),
+  });
+
+  const regenerateMut = useMutation({
+    mutationFn: (id: string) => regenerateBA(id),
+    onSuccess: () => {
+      message.success('BA PDF di-regenerate');
+      queryClient.invalidateQueries({ queryKey: ['ba-for-timesheet', tsId] });
+    },
+  });
+
+  const handleDownload = async (baId: string) => {
+    try {
+      const { url } = await getBADownloadUrl(baId);
+      window.open(url, '_blank');
+    } catch (e: any) {
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal generate URL');
+    }
+  };
+
+  if (baQ.isLoading) {
+    return <Spin />;
+  }
+
+  const ba = baQ.data;
+
+  if (!ba) {
+    // BA belum di-generate
+    return (
+      <div style={{
+        marginTop: 14, padding: 14, borderRadius: 8,
+        background: 'rgba(0,113,227,0.05)',
+        border: '1px dashed var(--ide-blue, #0071E3)',
+      }}>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          <div>
+            <Text strong style={{ fontSize: 13 }}>
+              <FilePdfOutlined /> Berita Acara
+            </Text>
+            <div style={{ fontSize: 11, color: 'var(--ide-ink3, #6e6e73)', marginTop: 2 }}>
+              Generate BA PDF dari timesheet ini. PDF akan auto-signed by IDEA Operation.
+            </div>
+          </div>
+          <Button
+            type="primary" icon={<FilePdfOutlined />}
+            loading={generateMut.isPending}
+            onClick={() => generateMut.mutate()}
+          >
+            Generate BA
+          </Button>
+        </Space>
+      </div>
+    );
+  }
+
+  // BA sudah ada
+  return (
+    <div style={{
+      marginTop: 14, padding: 14, borderRadius: 8,
+      background: 'rgba(52,199,89,0.06)',
+      border: '1px solid #34C759',
+    }}>
+      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+        <div>
+          <Space size={6}>
+            <FilePdfOutlined style={{ color: '#34C759', fontSize: 16 }} />
+            <Text strong style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 13 }}>
+              {ba.ba_no}
+            </Text>
+            {ba.signed_by_ide && <Tag color="green">Signed by IDE</Tag>}
+            {ba.signed_by_client ? (
+              <Tag color="blue">Signed by Client</Tag>
+            ) : (
+              <Tag color="default">Awaiting Client Signature</Tag>
+            )}
+          </Space>
+          <div style={{ fontSize: 11, color: 'var(--ide-ink3, #6e6e73)', marginTop: 4 }}>
+            Generated {dayjs(ba.created_at).format('DD MMM YYYY HH:mm')}
+            {ba.client_signed_at && ` · Client signed ${dayjs(ba.client_signed_at).format('DD MMM YYYY')}`}
+          </div>
+        </div>
+        <Space size={4}>
+          <Button
+            type="primary" icon={<CloudDownloadOutlined />}
+            onClick={() => handleDownload(ba.id)}
+          >
+            Download
+          </Button>
+          <Button
+            icon={<ReloadOutlined />}
+            loading={regenerateMut.isPending}
+            onClick={() => regenerateMut.mutate(ba.id)}
+            title="Regenerate kalau data di-update"
+          >
+            Regen
+          </Button>
+        </Space>
+      </Space>
+    </div>
   );
 }
