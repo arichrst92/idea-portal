@@ -12,7 +12,6 @@ from io import BytesIO
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from weasyprint import HTML
 
 from app.core.storage import upload_fileobj
 from app.organization.models import Employee
@@ -166,7 +165,16 @@ async def generate_slip_pdf(
     components = await list_components(session, slip.id)
 
     html = _build_html(slip, period, employee, list(components))
-    pdf_bytes = HTML(string=html).write_pdf()
+    # Lazy import — weasyprint butuh native libs (pango, glib).
+    # Backend tetap bisa start tanpa libs ini; error muncul saat PDF generation.
+    try:
+        from weasyprint import HTML as _HTML
+    except OSError as e:
+        raise RuntimeError(
+            f"WeasyPrint native libs missing. Install di macOS: 'brew install pango libffi'. "
+            f"Detail: {e}"
+        ) from e
+    pdf_bytes = _HTML(string=html).write_pdf()
 
     object_name = f"payroll/{slip.period_id}/slip-{slip.slip_no}.pdf"
     upload_fileobj(
