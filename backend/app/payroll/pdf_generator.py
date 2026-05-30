@@ -37,6 +37,7 @@ def _build_html(
     period: PayrollPeriod,
     employee: Employee | None,
     components: list,
+    nik: str | None = None,
 ) -> str:
     """Generate inline-styled HTML untuk slip gaji."""
     period_label = f"{MONTHS_ID[period.month - 1]} {period.year}"
@@ -46,7 +47,8 @@ def _build_html(
     incomes = [c for c in components if c.component_type == "INCOME"]
     deductions = [c for c in components if c.component_type == "DEDUCTION"]
 
-    nik = employee.nik if employee else "—"
+    # NIK passed in from caller (fetched via User join)
+    nik = nik or "—"
     full_name = employee.full_name if employee else "—"
 
     income_rows = "".join(
@@ -157,14 +159,22 @@ async def generate_slip_pdf(
     slip: PayrollSlip,
 ) -> str:
     """Generate PDF + upload ke MinIO. Returns object_name (MinIO key)."""
+    from sqlalchemy import select as _select
+    from app.identity.models import User as _User
+
     # Fetch period + employee + components
     period = await session.get(PayrollPeriod, slip.period_id)
     if period is None:
         raise ValueError(f"Period {slip.period_id} not found")
     employee = await session.get(Employee, slip.employee_id)
+    # Fetch nik via User
+    nik = None
+    if employee:
+        r = await session.execute(_select(_User.nik).where(_User.id == employee.user_id))
+        nik = r.scalar_one_or_none()
     components = await list_components(session, slip.id)
 
-    html = _build_html(slip, period, employee, list(components))
+    html = _build_html(slip, period, employee, list(components), nik)
     # Lazy import — weasyprint butuh native libs (pango, glib).
     # Backend tetap bisa start tanpa libs ini; error muncul saat PDF generation.
     try:

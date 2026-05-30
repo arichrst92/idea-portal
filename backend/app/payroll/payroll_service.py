@@ -202,18 +202,23 @@ async def generate_slips_for_period(
     if period.status == "LOCKED":
         raise PeriodLockedError(f"Period {period.year}-{period.month:02d} locked")
 
-    # Get all active employees
-    emp_stmt = select(Employee).where(
-        Employee.deleted_at.is_(None),
-        Employee.status.in_([EmployeeStatus.ACTIVE, EmployeeStatus.PROBATION]),
+    # Get all active employees + their nik via User join
+    from app.identity.models import User as _User
+    emp_stmt = (
+        select(Employee, _User.nik.label("nik"))
+        .join(_User, Employee.user_id == _User.id)
+        .where(
+            Employee.deleted_at.is_(None),
+            Employee.status.in_([EmployeeStatus.ACTIVE, EmployeeStatus.PROBATION]),
+        )
     )
-    employees = list((await session.execute(emp_stmt)).scalars().all())
+    employees_with_nik = list((await session.execute(emp_stmt)).all())
 
     generated = 0
     skipped = 0
     errors: list[str] = []
 
-    for emp in employees:
+    for emp, emp_nik in employees_with_nik:
         # Skip kalau sudah punya slip untuk period ini
         existing_stmt = select(PayrollSlip).where(
             PayrollSlip.employee_id == emp.id,
@@ -225,11 +230,11 @@ async def generate_slips_for_period(
 
         config = await get_active_config(session, emp.id)
         if config is None:
-            errors.append(f"{emp.nik}: no payroll config")
+            errors.append(f"{emp_nik}: no payroll config")
             continue
 
         # Build slip + standard components
-        slip_no = f"SLIP-{period.year}{period.month:02d}-{emp.nik}"
+        slip_no = f"SLIP-{period.year}{period.month:02d}-{emp_nik}"
 
         basic = Decimal(str(config.basic_salary))
         allowance = Decimal(str(config.fixed_allowance))

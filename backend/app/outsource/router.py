@@ -614,7 +614,9 @@ async def _complaint_to_out(session, c) -> ClientComplaintOut:
         e = await session.get(Employee, placement.employee_id)
         cl = await session.get(ClientModel, placement.client_id)
         if e:
-            emp_nik = e.nik
+            from app.identity.models import User as _U
+            u_nik = await session.execute(select(_U.nik).where(_U.id == e.user_id))
+            emp_nik = u_nik.scalar_one_or_none()
             emp_name = e.full_name
         if cl:
             cli_code = cl.code
@@ -709,7 +711,9 @@ async def _spo_to_out(session, spo) -> SpoOut:
         e = await session.get(Employee, placement.employee_id)
         cl = await session.get(ClientModel, placement.client_id)
         if e:
-            emp_nik = e.nik
+            from app.identity.models import User as _U
+            u_nik = await session.execute(select(_U.nik).where(_U.id == e.user_id))
+            emp_nik = u_nik.scalar_one_or_none()
             emp_name = e.full_name
         if cl:
             cli_code = cl.code
@@ -918,7 +922,9 @@ async def _kpi_to_out(session, kpi, include_token: bool = False) -> ClientKpiOut
         e = await session.get(Employee, placement.employee_id)
         cl = await session.get(ClientModel, placement.client_id)
         if e:
-            emp_nik = e.nik
+            from app.identity.models import User as _U
+            u_nik = await session.execute(select(_U.nik).where(_U.id == e.user_id))
+            emp_nik = u_nik.scalar_one_or_none()
             emp_name = e.full_name
         if cl:
             cli_code = cl.code

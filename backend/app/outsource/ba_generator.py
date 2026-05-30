@@ -43,6 +43,7 @@ def _build_html(
     employee: Employee,
     client: ClientModel,
     items: list[TimesheetItem],
+    nik: str | None = None,
 ) -> str:
     period_label = f"{MONTHS_ID[timesheet.month - 1]} {timesheet.year}"
     today_str = date.today().strftime("%d %B %Y")
@@ -127,7 +128,7 @@ def _build_html(
   </div>
   <div class="info-row">
     <div class="info-label">Karyawan</div>
-    <div class="info-value">{employee.full_name} ({employee.nik})</div>
+    <div class="info-value">{employee.full_name} ({nik or '—'})</div>
   </div>
   <div class="info-row">
     <div class="info-label">Client</div>
@@ -223,7 +224,14 @@ async def generate_ba_pdf(
     employee = await session.get(Employee, placement.employee_id)
     client = await session.get(ClientModel, placement.client_id)
 
-    html = _build_html(ba_no, ts, placement, employee, client, items)
+    # Fetch nik via User join
+    nik = None
+    if employee:
+        from app.identity.models import User as _User
+        r = await session.execute(select(_User.nik).where(_User.id == employee.user_id))
+        nik = r.scalar_one_or_none()
+
+    html = _build_html(ba_no, ts, placement, employee, client, items, nik)
 
     # Lazy import weasyprint (native libs)
     try:
