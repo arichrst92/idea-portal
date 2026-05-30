@@ -32,12 +32,22 @@ from app.outsource.schemas import (
     PlacementListResponse,
     PlacementOut,
     PlacementUpdate,
+    TimesheetApprove,
+    TimesheetCreate,
+    TimesheetItemOut,
+    TimesheetItemUpsert,
+    TimesheetOut,
+    TimesheetReject,
 )
 from app.outsource.service import (
     ClientNotFoundError,
     DuplicateClientCodeError,
+    DuplicateTimesheetError,
     PlacementNotFoundError,
+    TimesheetNotFoundError,
+    TimesheetStateError,
 )
+from app.outsource.models import Timesheet, TimesheetItem  # noqa: F401
 
 router = APIRouter(tags=["outsource"], prefix="/outsource")
 
@@ -236,3 +246,212 @@ async def create_client_endpoint(
         after_state={"code": c.code, "name": c.name},
     )
     return await _client_to_out(session, c)
+
+
+# ─── Timesheet endpoints (TSK-103+104) ────────────────────────────
+
+
+MONTHS_ID = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+]
+
+
+async def _ts_to_out(session, ts, include_items: bool = False) -> TimesheetOut:
+    # Lookup placement details
+    pl_stmt = select(
+        Employee.nik.label("emp_nik"),
+        Employee.full_name.label("emp_name"),
+        ClientModel.code.label("cli_code"),
+        ClientModel.name.label("cli_name"),
+        OutsourcePlacement.role_at_client.label("role"),
+    ).select_from(OutsourcePlacement).join(
+        Employee, OutsourcePlacement.employee_id == Employee.id,
+    ).join(
+        ClientModel, OutsourcePlacement.client_id == ClientModel.id,
+    ).where(OutsourcePlacement.id == ts.placement_id)
+    pl_row = (await session.execute(pl_stmt)).one_or_none()
+
+    items_out = []
+    present_count = 0
+    absent_count = 0
+    if include_items:
+        items = await service.get_timesheet_items(session, ts.id)
+        items_out = [
+            TimesheetItemOut(
+                id=i.id, timesheet_id=i.timesheet_id,
+                work_date=i.work_date, is_present=i.is_present, notes=i.notes,
+            ) for i in items
+        ]
+        present_count = sum(1 for i in items if i.is_present)
+        absent_count = sum(1 for i in items if not i.is_present)
+
+    return TimesheetOut(
+        id=ts.id, placement_id=ts.placement_id,
+        year=ts.year, month=ts.month,
+        workdays_count=ts.workdays_count, status=ts.status,
+        submitted_at=ts.submitted_at, approved_at=ts.approved_at,
+        created_at=ts.created_at, updated_at=ts.updated_at,
+        period_label=f"{MONTHS_ID[ts.month - 1]} {ts.year}",
+        placement_employee_nik=pl_row.emp_nik if pl_row else None,
+        placement_employee_name=pl_row.emp_name if pl_row else None,
+        placement_client_code=pl_row.cli_code if pl_row else None,
+        placement_client_name=pl_row.cli_name if pl_row else None,
+        placement_role=pl_row.role if pl_row else None,
+        items=items_out,
+        present_count=present_count,
+        absent_count=absent_count,
+    )
+
+
+@router.get("/timesheets", response_model=list[TimesheetOut])
+async def list_timesheets_endpoint(
+    session: DBSession,
+    placement_id: UUID | None = None,
+    status_filter: str | None = Query(None, alias="status"),
+    year: int | None = None,
+    month: int | None = None,
+    _user=Depends(require_permission("employee.view")),
+) -> list[TimesheetOut]:
+    items = await service.list_timesheets(
+        session, placement_id=placement_id, status_filter=status_filter,
+        year=year, month=month,
+    )
+    return [await _ts_to_out(session, ts) for ts in items]
+
+
+@router.get("/timesheets/{ts_id}", response_model=TimesheetOut)
+async def get_timesheet_endpoint(
+    ts_id: UUID, session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+) -> TimesheetOut:
+    try:
+        ts = await service.get_timesheet(session, ts_id)
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    return await _ts_to_out(session, ts, include_items=True)
+
+
+@router.post(
+    "/timesheets", response_model=TimesheetOut, status_code=status.HTTP_201_CREATED,
+)
+async def create_timesheet_endpoint(
+    request: Request, data: TimesheetCreate, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> TimesheetOut:
+    try:
+        ts = await service.create_timesheet(session, data.placement_id, data.year, data.month)
+    except DuplicateTimesheetError as e:
+        raise HTTPException(status_code=409, detail={"code": "DUPLICATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_CREATED",
+        resource_type="timesheet", resource_id=str(ts.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"placement_id": str(data.placement_id), "year": data.year, "month": data.month},
+    )
+    return await _ts_to_out(session, ts, include_items=True)
+
+
+@router.post(
+    "/timesheets/{ts_id}/items", response_model=TimesheetItemOut,
+)
+async def upsert_item_endpoint(
+    request: Request, ts_id: UUID, data: TimesheetItemUpsert, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> TimesheetItemOut:
+    try:
+        item = await service.upsert_item(
+            session, ts_id, data.work_date, data.is_present, data.notes,
+        )
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except TimesheetStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_ITEM_UPSERT",
+        resource_type="timesheet_item", resource_id=str(item.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"work_date": str(data.work_date), "is_present": data.is_present},
+    )
+    return TimesheetItemOut(
+        id=item.id, timesheet_id=item.timesheet_id,
+        work_date=item.work_date, is_present=item.is_present, notes=item.notes,
+    )
+
+
+@router.delete(
+    "/timesheets/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_item_endpoint(
+    request: Request, item_id: UUID, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> None:
+    try:
+        await service.delete_item(session, item_id)
+    except TimesheetStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_ITEM_DELETED",
+        resource_type="timesheet_item", resource_id=str(item_id),
+        ip_address=request.client.host if request.client else None,
+    )
+
+
+@router.post("/timesheets/{ts_id}/submit", response_model=TimesheetOut)
+async def submit_timesheet_endpoint(
+    request: Request, ts_id: UUID, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> TimesheetOut:
+    try:
+        ts = await service.submit_timesheet(session, ts_id)
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except TimesheetStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_SUBMITTED",
+        resource_type="timesheet", resource_id=str(ts.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"workdays_count": ts.workdays_count},
+    )
+    return await _ts_to_out(session, ts, include_items=True)
+
+
+@router.post("/timesheets/{ts_id}/approve", response_model=TimesheetOut)
+async def approve_timesheet_endpoint(
+    request: Request, ts_id: UUID, data: TimesheetApprove, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> TimesheetOut:
+    try:
+        ts = await service.approve_timesheet(session, ts_id)
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except TimesheetStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_APPROVED",
+        resource_type="timesheet", resource_id=str(ts.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"notes": data.notes, "workdays_count": ts.workdays_count},
+    )
+    return await _ts_to_out(session, ts, include_items=True)
+
+
+@router.post("/timesheets/{ts_id}/reject", response_model=TimesheetOut)
+async def reject_timesheet_endpoint(
+    request: Request, ts_id: UUID, data: TimesheetReject, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> TimesheetOut:
+    try:
+        ts = await service.reject_timesheet(session, ts_id)
+    except TimesheetNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except TimesheetStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="TIMESHEET_REJECTED",
+        resource_type="timesheet", resource_id=str(ts.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"rejection_reason": data.rejection_reason},
+    )
+    return await _ts_to_out(session, ts, include_items=True)

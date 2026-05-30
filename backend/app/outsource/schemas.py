@@ -93,3 +93,62 @@ class ClientOut(BaseModel):
 
     placement_count: int = 0
     active_placement_count: int = 0
+
+
+# ─── Timesheet (TSK-103+104) ───────────────────────────────────────
+
+
+class TimesheetCreate(BaseModel):
+    placement_id: UUID
+    year: Annotated[int, Field(ge=2020, le=2099)]
+    month: Annotated[int, Field(ge=1, le=12)]
+
+
+class TimesheetItemUpsert(BaseModel):
+    work_date: date
+    is_present: bool = True
+    notes: str | None = None
+
+
+class TimesheetItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    timesheet_id: UUID
+    work_date: date
+    is_present: bool
+    notes: str | None
+
+
+class TimesheetApprove(BaseModel):
+    notes: str | None = None
+
+
+class TimesheetReject(BaseModel):
+    rejection_reason: Annotated[str, StringConstraints(min_length=5, max_length=1000)]
+
+
+class TimesheetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    placement_id: UUID
+    year: int
+    month: int
+    workdays_count: int
+    status: str
+    submitted_at: date | None
+    approved_at: date | None
+    created_at: datetime
+    updated_at: datetime
+
+    # Derived
+    period_label: str | None = None
+    placement_employee_nik: str | None = None
+    placement_employee_name: str | None = None
+    placement_client_code: str | None = None
+    placement_client_name: str | None = None
+    placement_role: str | None = None
+    items: list[TimesheetItemOut] = Field(default_factory=list)
+    present_count: int = 0
+    absent_count: int = 0

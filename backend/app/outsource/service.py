@@ -185,3 +185,198 @@ def days_until_end(p: OutsourcePlacement) -> int | None:
 def duration_days(p: OutsourcePlacement) -> int:
     end = p.end_date or date.today()
     return (end - p.start_date).days
+
+
+# ─── Timesheet (TSK-103+104) ───────────────────────────────────────
+
+
+from app.outsource.models import Timesheet, TimesheetItem  # noqa: E402
+
+
+class TimesheetNotFoundError(Exception):
+    pass
+
+
+class TimesheetStateError(Exception):
+    pass
+
+
+class DuplicateTimesheetError(Exception):
+    pass
+
+
+async def list_timesheets(
+    session: AsyncSession,
+    placement_id: UUID | None = None,
+    status_filter: str | None = None,
+    year: int | None = None,
+    month: int | None = None,
+) -> list[Timesheet]:
+    stmt = select(Timesheet)
+    if placement_id is not None:
+        stmt = stmt.where(Timesheet.placement_id == placement_id)
+    if status_filter is not None:
+        stmt = stmt.where(Timesheet.status == status_filter)
+    if year is not None:
+        stmt = stmt.where(Timesheet.year == year)
+    if month is not None:
+        stmt = stmt.where(Timesheet.month == month)
+    stmt = stmt.order_by(Timesheet.year.desc(), Timesheet.month.desc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_timesheet(session: AsyncSession, ts_id: UUID) -> Timesheet:
+    stmt = select(Timesheet).where(Timesheet.id == ts_id)
+    result = await session.execute(stmt)
+    ts = result.scalar_one_or_none()
+    if ts is None:
+        raise TimesheetNotFoundError(f"Timesheet {ts_id} not found")
+    return ts
+
+
+async def get_timesheet_items(
+    session: AsyncSession, ts_id: UUID
+) -> list[TimesheetItem]:
+    stmt = (
+        select(TimesheetItem)
+        .where(TimesheetItem.timesheet_id == ts_id)
+        .order_by(TimesheetItem.work_date)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def create_timesheet(
+    session: AsyncSession, placement_id: UUID, year: int, month: int
+) -> Timesheet:
+    """Check uniqueness placement+year+month."""
+    existing_stmt = select(Timesheet).where(
+        Timesheet.placement_id == placement_id,
+        Timesheet.year == year,
+        Timesheet.month == month,
+    )
+    existing = (await session.execute(existing_stmt)).scalar_one_or_none()
+    if existing is not None:
+        raise DuplicateTimesheetError(
+            f"Timesheet untuk placement+{year}-{month:02d} sudah ada"
+        )
+
+    ts = Timesheet(
+        placement_id=placement_id,
+        year=year, month=month,
+        workdays_count=0, status="DRAFT",
+    )
+    session.add(ts)
+    await session.commit()
+    await session.refresh(ts)
+    return ts
+
+
+async def upsert_item(
+    session: AsyncSession,
+    ts_id: UUID,
+    work_date: date,
+    is_present: bool,
+    notes: str | None,
+) -> TimesheetItem:
+    ts = await get_timesheet(session, ts_id)
+    if ts.status not in ("DRAFT", "REJECTED"):
+        raise TimesheetStateError(
+            f"Tidak bisa edit items kalau status {ts.status}"
+        )
+    # Upsert
+    stmt = select(TimesheetItem).where(
+        TimesheetItem.timesheet_id == ts_id,
+        TimesheetItem.work_date == work_date,
+    )
+    existing = (await session.execute(stmt)).scalar_one_or_none()
+    if existing is None:
+        item = TimesheetItem(
+            timesheet_id=ts_id, work_date=work_date,
+            is_present=is_present, notes=notes,
+        )
+        session.add(item)
+    else:
+        existing.is_present = is_present
+        existing.notes = notes
+        item = existing
+
+    # Recompute workdays_count
+    cnt_stmt = select(func.count(TimesheetItem.id)).where(
+        TimesheetItem.timesheet_id == ts_id,
+        TimesheetItem.is_present.is_(True),
+    )
+    # Need to commit changes first then recount
+    await session.flush()
+    cnt = int((await session.execute(cnt_stmt)).scalar_one())
+    ts.workdays_count = cnt
+
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+async def delete_item(
+    session: AsyncSession, item_id: UUID
+) -> None:
+    stmt = select(TimesheetItem).where(TimesheetItem.id == item_id)
+    item = (await session.execute(stmt)).scalar_one_or_none()
+    if item is None:
+        return
+    ts = await get_timesheet(session, item.timesheet_id)
+    if ts.status not in ("DRAFT", "REJECTED"):
+        raise TimesheetStateError(
+            f"Tidak bisa hapus item kalau status {ts.status}"
+        )
+    await session.delete(item)
+    # Recount
+    cnt_stmt = select(func.count(TimesheetItem.id)).where(
+        TimesheetItem.timesheet_id == ts.id,
+        TimesheetItem.is_present.is_(True),
+    )
+    await session.flush()
+    ts.workdays_count = int((await session.execute(cnt_stmt)).scalar_one())
+    await session.commit()
+
+
+async def submit_timesheet(session: AsyncSession, ts_id: UUID) -> Timesheet:
+    """DRAFT/REJECTED → SUBMITTED."""
+    ts = await get_timesheet(session, ts_id)
+    if ts.status not in ("DRAFT", "REJECTED"):
+        raise TimesheetStateError(
+            f"Hanya DRAFT/REJECTED bisa submit, current: {ts.status}"
+        )
+    ts.status = "SUBMITTED"
+    ts.submitted_at = date.today()
+    await session.commit()
+    await session.refresh(ts)
+    return ts
+
+
+async def approve_timesheet(session: AsyncSession, ts_id: UUID) -> Timesheet:
+    """SUBMITTED → APPROVED."""
+    ts = await get_timesheet(session, ts_id)
+    if ts.status != "SUBMITTED":
+        raise TimesheetStateError(
+            f"Hanya SUBMITTED bisa approve, current: {ts.status}"
+        )
+    ts.status = "APPROVED"
+    ts.approved_at = date.today()
+    await session.commit()
+    await session.refresh(ts)
+    return ts
+
+
+async def reject_timesheet(session: AsyncSession, ts_id: UUID) -> Timesheet:
+    """SUBMITTED → REJECTED (back to employee)."""
+    ts = await get_timesheet(session, ts_id)
+    if ts.status != "SUBMITTED":
+        raise TimesheetStateError(
+            f"Hanya SUBMITTED bisa reject, current: {ts.status}"
+        )
+    ts.status = "REJECTED"
+    ts.submitted_at = None  # Reset supaya bisa re-submit
+    await session.commit()
+    await session.refresh(ts)
+    return ts

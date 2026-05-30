@@ -114,3 +114,97 @@ export async function createOutsourceClient(data: {
   const r = await apiClient.post<OutsourceClient>('/api/v1/outsource/clients', data);
   return r.data;
 }
+
+// ─── Timesheet (TSK-103+104) ────────────────────────────────────
+
+export type TimesheetStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+
+export interface TimesheetItem {
+  id: string;
+  timesheet_id: string;
+  work_date: string;
+  is_present: boolean;
+  notes: string | null;
+}
+
+export interface Timesheet {
+  id: string;
+  placement_id: string;
+  year: number;
+  month: number;
+  workdays_count: number;
+  status: TimesheetStatus;
+  submitted_at: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  period_label: string | null;
+  placement_employee_nik: string | null;
+  placement_employee_name: string | null;
+  placement_client_code: string | null;
+  placement_client_name: string | null;
+  placement_role: string | null;
+  items: TimesheetItem[];
+  present_count: number;
+  absent_count: number;
+}
+
+export async function listTimesheets(params: {
+  placement_id?: string;
+  status?: TimesheetStatus;
+  year?: number;
+  month?: number;
+} = {}): Promise<Timesheet[]> {
+  const r = await apiClient.get<Timesheet[]>('/api/v1/outsource/timesheets', { params });
+  return r.data;
+}
+
+export async function getTimesheet(id: string): Promise<Timesheet> {
+  const r = await apiClient.get<Timesheet>(`/api/v1/outsource/timesheets/${id}`);
+  return r.data;
+}
+
+export async function createTimesheet(data: {
+  placement_id: string;
+  year: number;
+  month: number;
+}): Promise<Timesheet> {
+  const r = await apiClient.post<Timesheet>('/api/v1/outsource/timesheets', data);
+  return r.data;
+}
+
+export async function upsertTimesheetItem(
+  ts_id: string,
+  data: { work_date: string; is_present: boolean; notes?: string },
+): Promise<TimesheetItem> {
+  const r = await apiClient.post<TimesheetItem>(`/api/v1/outsource/timesheets/${ts_id}/items`, data);
+  return r.data;
+}
+
+export async function deleteTimesheetItem(item_id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/outsource/timesheets/items/${item_id}`);
+}
+
+export async function submitTimesheet(id: string): Promise<Timesheet> {
+  const r = await apiClient.post<Timesheet>(`/api/v1/outsource/timesheets/${id}/submit`);
+  return r.data;
+}
+
+export async function approveTimesheet(id: string, notes?: string): Promise<Timesheet> {
+  const r = await apiClient.post<Timesheet>(`/api/v1/outsource/timesheets/${id}/approve`, { notes });
+  return r.data;
+}
+
+export async function rejectTimesheet(id: string, rejection_reason: string): Promise<Timesheet> {
+  const r = await apiClient.post<Timesheet>(`/api/v1/outsource/timesheets/${id}/reject`, { rejection_reason });
+  return r.data;
+}
+
+export function timesheetStatusColor(s: TimesheetStatus): { className: string; label: string } {
+  switch (s) {
+    case 'DRAFT': return { className: 'ide-tag-gray', label: 'Draft' };
+    case 'SUBMITTED': return { className: 'ide-tag-orange', label: 'Submitted' };
+    case 'APPROVED': return { className: 'ide-tag-green', label: 'Approved' };
+    case 'REJECTED': return { className: 'ide-tag-red', label: 'Rejected' };
+  }
+}

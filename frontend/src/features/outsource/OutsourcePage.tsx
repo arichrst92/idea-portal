@@ -8,10 +8,13 @@
 
 import {
   ApartmentOutlined,
+  CalendarOutlined,
   DeleteOutlined,
   PlusOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+
+import { TimesheetsTab } from './TimesheetsTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
@@ -435,6 +438,7 @@ export default function OutsourcePage() {
         defaultActiveKey="placements"
         items={[
           { key: 'placements', label: <span><TeamOutlined /> Placements</span>, children: <PlacementsTab /> },
+          { key: 'timesheets', label: <span><CalendarOutlined /> Timesheets</span>, children: <TimesheetsTab /> },
           { key: 'clients', label: <span><ApartmentOutlined /> Clients</span>, children: <ClientsTab /> },
         ]}
       />
