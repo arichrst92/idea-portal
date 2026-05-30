@@ -55,7 +55,6 @@ import {
   listTasks,
   projectStatusColor,
   projectTypeColor,
-  taskStatusColor,
   TASK_STATUSES,
   updatePhase,
   type Phase,
@@ -63,6 +62,7 @@ import {
   type TaskStatus,
 } from '@/api/projects';
 
+import { KanbanBoard } from './components/KanbanBoard';
 import { KanbanCard } from './components/KanbanCard';
 import { TaskDrawer } from './components/TaskDrawer';
 
@@ -547,9 +547,10 @@ function PhaseContent({
   );
 }
 
-// ─── KANBAN TAB (flat board) ──────────────────────────────────────
+// ─── KANBAN TAB (drag-drop board, TSK-064 polish) ────────────────
 
 function KanbanTab({ projectId }: { projectId: string }) {
+  const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -558,52 +559,45 @@ function KanbanTab({ projectId }: { projectId: string }) {
     queryFn: () => listTasks(projectId),
   });
 
+  const updateMut = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
+      const { updateTask } = await import('@/api/projects');
+      return updateTask(id, { status });
+    },
+    // Optimistic update — instant UI feedback
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+      const previous = queryClient.getQueryData<Task[]>(['tasks', projectId]);
+      queryClient.setQueryData<Task[]>(['tasks', projectId], (old) =>
+        (old ?? []).map((t) => (t.id === id ? { ...t, status } : t)),
+      );
+      return { previous };
+    },
+    onError: (e: any, _vars, ctx) => {
+      // Rollback on error
+      if (ctx?.previous) {
+        queryClient.setQueryData(['tasks', projectId], ctx.previous);
+      }
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal update status');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    },
+  });
+
   const tasks = query.data ?? [];
-  const groupedByStatus: Record<TaskStatus, Task[]> = {
-    BACKLOG: [], TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [],
-  };
-  tasks.forEach((t) => groupedByStatus[t.status].push(t));
 
   return (
     <div>
       <Text type="secondary" style={{ fontSize: 12 }}>
-        {tasks.length} tasks total · klik card untuk buka detail + comments
+        {tasks.length} tasks total · drag card antar column untuk update status · klik card untuk detail
       </Text>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))',
-          gap: 12,
-          marginTop: 12,
-          overflowX: 'auto',
-        }}
-      >
-        {TASK_STATUSES.map((status) => (
-          <div
-            key={status}
-            style={{
-              background: 'rgba(0,0,0,0.025)',
-              borderRadius: 10,
-              padding: 10,
-              minHeight: 200,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text strong style={{ fontSize: 11, color: taskStatusColor(status) }}>
-                {status}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                {groupedByStatus[status].length}
-              </Text>
-            </div>
-            {groupedByStatus[status].map((t) => (
-              <KanbanCard
-                key={t.id} task={t}
-                onClick={() => { setActiveTask(t); setDrawerOpen(true); }}
-              />
-            ))}
-          </div>
-        ))}
+      <div style={{ marginTop: 12 }}>
+        <KanbanBoard
+          tasks={tasks}
+          onCardClick={(t) => { setActiveTask(t); setDrawerOpen(true); }}
+          onStatusChange={(id, status) => updateMut.mutate({ id, status })}
+        />
       </div>
       <TaskDrawer
         task={activeTask} open={drawerOpen}
