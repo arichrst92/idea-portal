@@ -44,12 +44,15 @@ import {
   createOutsourceClient,
   createPlacement,
   deletePlacement,
+  listAmendments,
   listOutsourceClients,
   listPlacements,
+  renewPlacement as renewPlacementApi,
   updatePlacement,
   type BillingType,
   type OutsourceClient,
   type Placement,
+  type PlacementAmendment,
 } from '@/api/outsource';
 
 const { Text, Title } = Typography;
@@ -87,6 +90,9 @@ function PlacementsTab() {
   const [clientFilter, setClientFilter] = useState<string | undefined>();
   const [createOpen, setCreateOpen] = useState(false);
   const [form] = Form.useForm();
+  const [renewPlacement, setRenewPlacement] = useState<Placement | null>(null);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewForm] = Form.useForm();
 
   const placementsQ = useQuery({
     queryKey: ['placements', activeFilter, clientFilter],
@@ -202,9 +208,17 @@ function PlacementsTab() {
       ),
     },
     {
-      title: 'Actions', key: 'act', width: 110, align: 'center',
+      title: 'Actions', key: 'act', width: 170, align: 'center',
       render: (_, r) => (
         <Space size={4}>
+          {r.is_active && (
+            <Tooltip title="Renew / Amend (rate or end_date)">
+              <Button size="small" type="primary"
+                onClick={() => { setRenewPlacement(r); setRenewOpen(true); }}>
+                Renew
+              </Button>
+            </Tooltip>
+          )}
           {r.is_active ? (
             <Tooltip title="End placement">
               <Button size="small"
@@ -320,7 +334,132 @@ function PlacementsTab() {
           </Button>
         </Form>
       </Modal>
+
+      <RenewPlacementModal
+        placement={renewPlacement}
+        open={renewOpen}
+        onClose={() => { setRenewOpen(false); setRenewPlacement(null); renewForm.resetFields(); }}
+        form={renewForm}
+      />
     </div>
+  );
+}
+
+// ─── Renew Placement Modal (TSK-107) ─────────────────────────────
+
+function RenewPlacementModal({
+  placement, open, onClose, form,
+}: {
+  placement: Placement | null;
+  open: boolean;
+  onClose: () => void;
+  form: any;
+}) {
+  const queryClient = useQueryClient();
+
+  const amendmentsQ = useQuery({
+    queryKey: ['amendments', placement?.id],
+    queryFn: () => listAmendments(placement!.id),
+    enabled: !!placement && open,
+  });
+
+  const renewMut = useMutation({
+    mutationFn: (data: any) => renewPlacementApi(placement!.id, data),
+    onSuccess: () => {
+      message.success('Placement diperbarui');
+      queryClient.invalidateQueries({ queryKey: ['placements'] });
+      queryClient.invalidateQueries({ queryKey: ['amendments', placement?.id] });
+      onClose();
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal renew'),
+  });
+
+  if (!placement) return null;
+
+  return (
+    <Modal
+      title={`Renew / Amend — ${placement.employee_name} → ${placement.client_code}`}
+      open={open} onCancel={onClose} footer={null} destroyOnClose width={680}
+    >
+      <div style={{
+        background: 'rgba(0,113,227,0.05)', padding: 12, borderRadius: 8,
+        marginBottom: 14, fontSize: 12,
+      }}>
+        <strong>Current:</strong>{' '}
+        End date <strong>{placement.end_date ? dayjs(placement.end_date).format('DD MMM YY') : 'open-ended'}</strong>{' '}
+        · Rate <strong>Rp {Number(placement.billing_rate).toLocaleString('id-ID')}</strong>{' '}
+        ({placement.billing_type === 'FLAT' ? '/bulan' : '/hari'})
+      </div>
+
+      <Form
+        form={form} layout="vertical"
+        initialValues={{ effective_date: dayjs().format('YYYY-MM-DD') }}
+        onFinish={(v) => renewMut.mutate(v)}
+      >
+        <Form.Item label="Effective Date" name="effective_date" rules={[{ required: true }]}>
+          <Input placeholder="YYYY-MM-DD" />
+        </Form.Item>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Form.Item label="New End Date (opsional)" name="new_end_date">
+            <Input placeholder="YYYY-MM-DD" />
+          </Form.Item>
+          <Form.Item label="New Billing Rate (opsional)" name="new_billing_rate">
+            <InputNumber
+              min={0} style={{ width: '100%' }}
+              formatter={(v) => (v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
+              parser={(v) => (v ? Number(v.replace(/[^0-9]/g, '')) : 0) as any}
+            />
+          </Form.Item>
+        </div>
+        <Form.Item label="Document URL (MinIO obj, opsional)" name="document_url">
+          <Input placeholder="outsource/amendments/AMD-xxx.pdf" />
+        </Form.Item>
+        <Form.Item label="Notes" name="notes">
+          <Input.TextArea autoSize={{ minRows: 2, maxRows: 4 }} />
+        </Form.Item>
+        <Button type="primary" htmlType="submit" loading={renewMut.isPending} block>
+          Apply Amendment
+        </Button>
+      </Form>
+
+      {(amendmentsQ.data ?? []).length > 0 && (
+        <>
+          <Text strong style={{ fontSize: 12, display: 'block', marginTop: 18, marginBottom: 8 }}>
+            History ({amendmentsQ.data!.length})
+          </Text>
+          <Space direction="vertical" size={6} style={{ width: '100%' }}>
+            {amendmentsQ.data!.map((a: PlacementAmendment) => (
+              <div key={a.id} style={{
+                background: 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 6,
+                fontSize: 11,
+              }}>
+                <Space>
+                  <Text strong style={{
+                    fontFamily: 'ui-monospace, Menlo, monospace',
+                    color: 'var(--ide-blue, #0071E3)',
+                  }}>{a.amendment_no}</Text>
+                  <Text type="secondary">{dayjs(a.effective_date).format('DD MMM YY')}</Text>
+                  <Text type="secondary">by {a.created_by_nik ?? '—'}</Text>
+                </Space>
+                <div style={{ marginTop: 4 }}>
+                  {a.old_end_date !== a.new_end_date && a.new_end_date && (
+                    <span>End: {a.old_end_date ?? 'open'} → <strong>{a.new_end_date}</strong>{' · '}</span>
+                  )}
+                  {a.old_billing_rate !== a.new_billing_rate && a.new_billing_rate && (
+                    <span>
+                      Rate: Rp {Number(a.old_billing_rate ?? 0).toLocaleString('id-ID')} →{' '}
+                      <strong>Rp {Number(a.new_billing_rate).toLocaleString('id-ID')}</strong>
+                    </span>
+                  )}
+                </div>
+                {a.notes && <div style={{ marginTop: 4, color: 'var(--ide-ink3, #6e6e73)' }}>{a.notes}</div>}
+              </div>
+            ))}
+          </Space>
+        </>
+      )}
+    </Modal>
   );
 }
 

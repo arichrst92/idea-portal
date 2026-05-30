@@ -33,8 +33,10 @@ from app.outsource.schemas import (
     ClientCreate,
     ClientOut,
     PlacementCreate,
+    PlacementAmendmentOut,
     PlacementListResponse,
     PlacementOut,
+    PlacementRenewRequest,
     PlacementUpdate,
     SpoCreate,
     SpoOut,
@@ -52,6 +54,7 @@ from app.outsource.service import (
     ComplaintNotFoundError,
     DuplicateClientCodeError,
     DuplicateTimesheetError,
+    PlacementAmendmentError,
     PlacementNotFoundError,
     SpoNotFoundError,
     SpoStateError,
@@ -769,3 +772,125 @@ async def create_spo_endpoint(
         },
     )
     return await _spo_to_out(session, spo)
+
+
+# ─── Contract Alerts (TSK-106) ────────────────────────────────────
+
+
+@router.get("/placements-expiring")
+async def placements_expiring_endpoint(
+    session: DBSession,
+    days: int = 30,
+    _user=Depends(require_permission("employee.view")),
+) -> dict:
+    """Active placements ending within N days. Used for sidebar badge + alerts.
+
+    Returns:
+      {
+        h7_count: int,    # expiring in <=7 days
+        h30_count: int,   # expiring in <=30 days (includes h7)
+        items: [{ placement_id, employee_nik, name, client_code, end_date,
+                  days_until_end, severity }]
+      }
+    """
+    placements = await service.list_expiring_placements(session, days_window=days)
+    today = _date.today()
+
+    h7_count = 0
+    h30_count = 0
+    items = []
+    for p in placements:
+        days_left = (p.end_date - today).days if p.end_date else 0
+        emp_nik, emp_name = await _lookup_employee(session, p.employee_id)
+        cli_code, _ = await _lookup_client(session, p.client_id)
+        severity = "h7" if days_left <= 7 else "h30"
+        if severity == "h7":
+            h7_count += 1
+        h30_count += 1
+        items.append({
+            "placement_id": str(p.id),
+            "employee_nik": emp_nik,
+            "employee_name": emp_name,
+            "client_code": cli_code,
+            "role": p.role_at_client,
+            "end_date": p.end_date.isoformat() if p.end_date else None,
+            "days_until_end": days_left,
+            "severity": severity,
+        })
+    return {
+        "h7_count": h7_count,
+        "h30_count": h30_count,
+        "items": items,
+    }
+
+
+# ─── Placement Amendment / Renewal (TSK-107) ──────────────────────
+
+
+async def _amendment_to_out(session, a) -> PlacementAmendmentOut:
+    nik = None
+    if a.created_by_user_id:
+        from app.identity.models import User
+        r = await session.execute(select(User.nik).where(User.id == a.created_by_user_id))
+        nik = r.scalar_one_or_none()
+
+    download_url = None
+    if a.document_url:
+        try:
+            download_url = get_presigned_url(a.document_url, expires_in_seconds=3600)
+        except Exception:
+            download_url = None
+
+    return PlacementAmendmentOut(
+        id=a.id, placement_id=a.placement_id, amendment_no=a.amendment_no,
+        effective_date=a.effective_date,
+        old_end_date=a.old_end_date, old_billing_rate=a.old_billing_rate,
+        new_end_date=a.new_end_date, new_billing_rate=a.new_billing_rate,
+        document_url=a.document_url, notes=a.notes,
+        created_by_user_id=a.created_by_user_id, created_at=a.created_at,
+        created_by_nik=nik, download_url=download_url,
+    )
+
+
+@router.post("/placements/{placement_id}/renew", response_model=PlacementAmendmentOut)
+async def renew_placement_endpoint(
+    request: Request, placement_id: UUID, data: PlacementRenewRequest,
+    session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> PlacementAmendmentOut:
+    """Snapshot current rate/end_date + apply new values. Returns amendment record."""
+    try:
+        _, amendment = await service.renew_placement(
+            session, placement_id,
+            effective_date=data.effective_date,
+            new_end_date=data.new_end_date,
+            new_billing_rate=data.new_billing_rate,
+            document_url=data.document_url,
+            notes=data.notes,
+            created_by_user_id=user.id,
+        )
+    except PlacementNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except PlacementAmendmentError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID", "message": str(e)}) from e
+
+    await audit_log(
+        session=session, actor=user, action="PLACEMENT_RENEWED",
+        resource_type="placement_amendment", resource_id=str(amendment.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "amendment_no": amendment.amendment_no,
+            "new_end_date": str(amendment.new_end_date) if amendment.new_end_date else None,
+            "new_billing_rate": float(amendment.new_billing_rate) if amendment.new_billing_rate else None,
+        },
+    )
+    return await _amendment_to_out(session, amendment)
+
+
+@router.get("/placements/{placement_id}/amendments", response_model=list[PlacementAmendmentOut])
+async def list_amendments_endpoint(
+    placement_id: UUID, session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+) -> list[PlacementAmendmentOut]:
+    items = await service.list_amendments(session, placement_id)
+    return [await _amendment_to_out(session, a) for a in items]

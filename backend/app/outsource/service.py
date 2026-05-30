@@ -182,6 +182,30 @@ def days_until_end(p: OutsourcePlacement) -> int | None:
     return (p.end_date - date.today()).days
 
 
+async def list_expiring_placements(
+    session: AsyncSession,
+    days_window: int = 30,
+) -> list[OutsourcePlacement]:
+    """Active placements dengan end_date dalam N hari ke depan (untuk alert)."""
+    from datetime import timedelta as _td
+
+    today = date.today()
+    cutoff = today + _td(days=days_window)
+    stmt = (
+        select(OutsourcePlacement)
+        .where(
+            OutsourcePlacement.deleted_at.is_(None),
+            OutsourcePlacement.is_active.is_(True),
+            OutsourcePlacement.end_date.is_not(None),
+            OutsourcePlacement.end_date >= today,
+            OutsourcePlacement.end_date <= cutoff,
+        )
+        .order_by(OutsourcePlacement.end_date.asc())
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
 def duration_days(p: OutsourcePlacement) -> int:
     end = p.end_date or date.today()
     return (end - p.start_date).days
@@ -616,6 +640,87 @@ async def _next_spo_level_for_placement(
     raise SpoStateError(
         "SP-O3 sudah issued — replacement karyawan diperlukan sebelum SP-O baru"
     )
+
+
+# ─── Placement Amendment (TSK-107) ─────────────────────────────────
+
+
+from app.outsource.models import PlacementAmendment  # noqa: E402
+
+
+class PlacementAmendmentError(Exception):
+    pass
+
+
+async def _next_amendment_no(session: AsyncSession, placement_id: UUID) -> str:
+    """Generate amendment number: PLACEMENT-{first8}-AMD-{N}."""
+    cnt_stmt = select(func.count(PlacementAmendment.id)).where(
+        PlacementAmendment.placement_id == placement_id,
+    )
+    cnt = int((await session.execute(cnt_stmt)).scalar_one())
+    return f"AMD-{str(placement_id)[:8]}-{cnt + 1}"
+
+
+async def list_amendments(
+    session: AsyncSession, placement_id: UUID,
+) -> list[PlacementAmendment]:
+    stmt = (
+        select(PlacementAmendment)
+        .where(PlacementAmendment.placement_id == placement_id)
+        .order_by(PlacementAmendment.effective_date.desc())
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def renew_placement(
+    session: AsyncSession,
+    placement_id: UUID,
+    effective_date: date,
+    new_end_date: date | None,
+    new_billing_rate: Decimal | None,
+    document_url: str | None,
+    notes: str | None,
+    created_by_user_id: UUID | None,
+) -> tuple[OutsourcePlacement, PlacementAmendment]:
+    """Renew/amend placement.
+
+    1. Snapshot current rate & end_date into PlacementAmendment.
+    2. Apply new values ke placement.
+    3. Return both for audit display.
+    """
+    placement = await get_placement(session, placement_id)
+
+    if new_end_date is None and new_billing_rate is None:
+        raise PlacementAmendmentError(
+            "Minimal 1 perubahan diperlukan (end_date atau billing_rate)"
+        )
+
+    amendment_no = await _next_amendment_no(session, placement_id)
+
+    amendment = PlacementAmendment(
+        placement_id=placement_id,
+        amendment_no=amendment_no,
+        effective_date=effective_date,
+        old_end_date=placement.end_date,
+        old_billing_rate=Decimal(str(placement.billing_rate)) if placement.billing_rate else None,
+        new_end_date=new_end_date,
+        new_billing_rate=new_billing_rate,
+        document_url=document_url,
+        notes=notes,
+        created_by_user_id=created_by_user_id,
+    )
+    session.add(amendment)
+
+    # Apply changes
+    if new_end_date is not None:
+        placement.end_date = new_end_date
+    if new_billing_rate is not None:
+        placement.billing_rate = new_billing_rate
+
+    await session.commit()
+    await session.refresh(placement)
+    await session.refresh(amendment)
+    return placement, amendment
 
 
 async def create_spo(

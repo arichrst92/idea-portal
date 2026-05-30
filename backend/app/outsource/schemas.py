@@ -237,6 +237,37 @@ class SpoCreate(BaseModel):
     # Level auto-assigned dari history (SP-O1 → SP-O2 → SP-O3)
 
 
+# ─── Placement Amendment (TSK-107) ────────────────────────────────
+
+
+class PlacementRenewRequest(BaseModel):
+    effective_date: date
+    new_end_date: date | None = None
+    new_billing_rate: Annotated[Decimal, Field(ge=0)] | None = None
+    document_url: str | None = None
+    notes: str | None = None
+
+
+class PlacementAmendmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    placement_id: UUID
+    amendment_no: str
+    effective_date: date
+    old_end_date: date | None
+    old_billing_rate: Decimal | None
+    new_end_date: date | None
+    new_billing_rate: Decimal | None
+    document_url: str | None
+    notes: str | None
+    created_by_user_id: UUID | None
+    created_at: datetime
+
+    created_by_nik: str | None = None
+    download_url: str | None = None
+
+
 class SpoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

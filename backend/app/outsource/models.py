@@ -68,6 +68,34 @@ class OutsourcePlacement(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
 
+class PlacementAmendment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Riwayat amendment placement (TSK-107).
+
+    Snapshot of rate/end_date change. History audit log + attach
+    document amendment (PDF kontrak amandemen).
+    """
+
+    __tablename__ = "placement_amendments"
+
+    placement_id: Mapped[UUID] = mapped_column(
+        ForeignKey("outsource_placements.id"), nullable=False, index=True,
+    )
+    amendment_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    effective_date: Mapped[date] = mapped_column(Date, nullable=False)
+
+    old_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    old_billing_rate: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
+
+    new_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    new_billing_rate: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
+
+    document_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True,
+    )
+
+
 class Timesheet(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Timesheet bulanan."""
 

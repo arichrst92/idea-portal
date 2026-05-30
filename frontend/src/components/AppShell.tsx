@@ -40,6 +40,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { logout } from '@/api/auth';
+import { getExpiringPlacements } from '@/api/outsource';
 import { getMyTasksDueSummary } from '@/api/projects';
 import {
   executiveColor,
@@ -61,7 +62,12 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-function getMenuItems(isExecutive: boolean, dueTaskBadge: number = 0) {
+function getMenuItems(
+  isExecutive: boolean,
+  dueTaskBadge: number = 0,
+  expiringPlacementBadge: number = 0,
+  h7PlacementCount: number = 0,
+) {
   // Project menu label with badge for overdue + due-soon task count (TSK-075)
   const projectLabel = dueTaskBadge > 0 ? (
     <Tooltip title={`${dueTaskBadge} task overdue / due soon`}>
@@ -76,6 +82,23 @@ function getMenuItems(isExecutive: boolean, dueTaskBadge: number = 0) {
     </Tooltip>
   ) : 'Projects';
 
+  // Outsource menu label with badge for expiring placement (TSK-106)
+  const outsourceLabel = expiringPlacementBadge > 0 ? (
+    <Tooltip title={`${expiringPlacementBadge} placement expiring in 30d (${h7PlacementCount} urgent ≤7d)`}>
+      <span>
+        Outsource{' '}
+        <Badge
+          count={expiringPlacementBadge}
+          size="small"
+          style={{
+            background: h7PlacementCount > 0 ? 'var(--ide-red, #FF3B30)' : 'var(--ide-orange, #FF9500)',
+            marginLeft: 6,
+          }}
+        />
+      </span>
+    </Tooltip>
+  ) : 'Outsource';
+
   const items: any[] = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
@@ -89,7 +112,7 @@ function getMenuItems(isExecutive: boolean, dueTaskBadge: number = 0) {
     { key: '/finance', icon: <DollarOutlined />, label: 'Finance' },
     { key: '/payroll', icon: <DollarOutlined />, label: 'Payroll' },
     { key: '/sales', icon: <FundOutlined />, label: 'Sales' },
-    { key: '/outsource', icon: <TeamOutlined />, label: 'Outsource' },
+    { key: '/outsource', icon: <TeamOutlined />, label: outsourceLabel },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
@@ -134,7 +157,17 @@ export function AppShell({ children }: AppShellProps) {
     (dueQuery.data?.due_h1_count ?? 0) +
     (dueQuery.data?.due_h3_count ?? 0);
 
-  const menuItems = getMenuItems(isExecutive, dueBadge);
+  // TSK-106: poll expiring placement count every 5 min
+  const expiringQ = useQuery({
+    queryKey: ['expiring-placements'],
+    queryFn: () => getExpiringPlacements(30),
+    refetchInterval: 5 * 60_000,
+    enabled: !!user,
+  });
+  const expiringBadge = expiringQ.data?.h30_count ?? 0;
+  const h7Count = expiringQ.data?.h7_count ?? 0;
+
+  const menuItems = getMenuItems(isExecutive, dueBadge, expiringBadge, h7Count);
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);

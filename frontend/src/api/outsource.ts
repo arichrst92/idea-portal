@@ -350,3 +350,71 @@ export function spoLevelColor(s: SpoLevelType): string {
     case 'SP-O3': return '#AF52DE';
   }
 }
+
+// ─── Contract Alerts (TSK-106) ──────────────────────────────────
+
+export interface ExpiringPlacementItem {
+  placement_id: string;
+  employee_nik: string | null;
+  employee_name: string | null;
+  client_code: string | null;
+  role: string;
+  end_date: string | null;
+  days_until_end: number;
+  severity: 'h7' | 'h30';
+}
+
+export interface ExpiringPlacementResponse {
+  h7_count: number;
+  h30_count: number;
+  items: ExpiringPlacementItem[];
+}
+
+export async function getExpiringPlacements(days: number = 30): Promise<ExpiringPlacementResponse> {
+  const r = await apiClient.get<ExpiringPlacementResponse>('/api/v1/outsource/placements-expiring', {
+    params: { days },
+  });
+  return r.data;
+}
+
+// ─── Placement Amendment (TSK-107) ──────────────────────────────
+
+export interface PlacementAmendment {
+  id: string;
+  placement_id: string;
+  amendment_no: string;
+  effective_date: string;
+  old_end_date: string | null;
+  old_billing_rate: string | null;
+  new_end_date: string | null;
+  new_billing_rate: string | null;
+  document_url: string | null;
+  notes: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+  created_by_nik: string | null;
+  download_url: string | null;
+}
+
+export async function renewPlacement(
+  placement_id: string,
+  data: {
+    effective_date: string;
+    new_end_date?: string;
+    new_billing_rate?: number;
+    document_url?: string;
+    notes?: string;
+  },
+): Promise<PlacementAmendment> {
+  const r = await apiClient.post<PlacementAmendment>(
+    `/api/v1/outsource/placements/${placement_id}/renew`, data,
+  );
+  return r.data;
+}
+
+export async function listAmendments(placement_id: string): Promise<PlacementAmendment[]> {
+  const r = await apiClient.get<PlacementAmendment[]>(
+    `/api/v1/outsource/placements/${placement_id}/amendments`,
+  );
+  return r.data;
+}
