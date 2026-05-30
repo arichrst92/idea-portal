@@ -27,12 +27,17 @@ from app.outsource import service
 from app.outsource.models import Client as ClientModel, OutsourcePlacement
 from app.outsource.schemas import (
     BeritaAcaraOut,
+    ClientComplaintCreate,
+    ClientComplaintOut,
+    ClientComplaintUpdate,
     ClientCreate,
     ClientOut,
     PlacementCreate,
     PlacementListResponse,
     PlacementOut,
     PlacementUpdate,
+    SpoCreate,
+    SpoOut,
     TimesheetApprove,
     TimesheetCreate,
     TimesheetItemOut,
@@ -44,9 +49,12 @@ from app.outsource.service import (
     BANotFoundError,
     BAStateError,
     ClientNotFoundError,
+    ComplaintNotFoundError,
     DuplicateClientCodeError,
     DuplicateTimesheetError,
     PlacementNotFoundError,
+    SpoNotFoundError,
+    SpoStateError,
     TimesheetNotFoundError,
     TimesheetStateError,
 )
@@ -579,3 +587,185 @@ async def regenerate_ba_endpoint(
         ip_address=request.client.host if request.client else None,
     )
     return await _ba_to_out(session, ba, include_download_url=True)
+
+
+# ─── Client Complaint endpoints (TSK-148) ─────────────────────────
+
+
+async def _complaint_to_out(session, c) -> ClientComplaintOut:
+    placement = await session.get(OutsourcePlacement, c.placement_id)
+    emp_nik = emp_name = cli_code = cli_name = role = None
+    if placement:
+        e = await session.get(Employee, placement.employee_id)
+        cl = await session.get(ClientModel, placement.client_id)
+        if e:
+            emp_nik = e.nik
+            emp_name = e.full_name
+        if cl:
+            cli_code = cl.code
+            cli_name = cl.name
+        role = placement.role_at_client
+
+    logged_nik = None
+    if c.logged_by_user_id:
+        from app.identity.models import User
+        r = await session.execute(select(User.nik).where(User.id == c.logged_by_user_id))
+        logged_nik = r.scalar_one_or_none()
+
+    spo_cnt = await service.count_spo_for_complaint(session, c.id)
+
+    return ClientComplaintOut(
+        id=c.id, placement_id=c.placement_id,
+        complaint_date=c.complaint_date, severity=c.severity,
+        description=c.description, logged_by_user_id=c.logged_by_user_id,
+        resolved_at=c.resolved_at, created_at=c.created_at,
+        placement_employee_nik=emp_nik, placement_employee_name=emp_name,
+        placement_client_code=cli_code, placement_client_name=cli_name,
+        placement_role=role, logged_by_nik=logged_nik,
+        spo_count=spo_cnt,
+    )
+
+
+@router.get("/complaints", response_model=list[ClientComplaintOut])
+async def list_complaints_endpoint(
+    session: DBSession,
+    placement_id: UUID | None = None,
+    resolved: bool | None = None,
+    _user=Depends(require_permission("employee.view")),
+) -> list[ClientComplaintOut]:
+    complaints = await service.list_complaints(
+        session, placement_id=placement_id, resolved=resolved,
+    )
+    return [await _complaint_to_out(session, c) for c in complaints]
+
+
+@router.post(
+    "/complaints", response_model=ClientComplaintOut, status_code=status.HTTP_201_CREATED,
+)
+async def create_complaint_endpoint(
+    request: Request, data: ClientComplaintCreate, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ClientComplaintOut:
+    c = await service.create_complaint(
+        session,
+        placement_id=data.placement_id,
+        complaint_date=data.complaint_date,
+        severity=data.severity,
+        description=data.description,
+        logged_by_user_id=user.id,
+    )
+    await audit_log(
+        session=session, actor=user, action="CLIENT_COMPLAINT_LOGGED",
+        resource_type="client_complaint", resource_id=str(c.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "placement_id": str(data.placement_id),
+            "severity": data.severity,
+            "complaint_date": str(data.complaint_date),
+        },
+    )
+    return await _complaint_to_out(session, c)
+
+
+@router.post("/complaints/{comp_id}/resolve", response_model=ClientComplaintOut)
+async def resolve_complaint_endpoint(
+    request: Request, comp_id: UUID, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ClientComplaintOut:
+    try:
+        c = await service.resolve_complaint(session, comp_id)
+    except ComplaintNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="CLIENT_COMPLAINT_RESOLVED",
+        resource_type="client_complaint", resource_id=str(c.id),
+        ip_address=request.client.host if request.client else None,
+    )
+    return await _complaint_to_out(session, c)
+
+
+# ─── SP-O endpoints (TSK-148) ─────────────────────────────────────
+
+
+async def _spo_to_out(session, spo) -> SpoOut:
+    placement = await session.get(OutsourcePlacement, spo.placement_id)
+    emp_nik = emp_name = cli_code = cli_name = role = None
+    if placement:
+        e = await session.get(Employee, placement.employee_id)
+        cl = await session.get(ClientModel, placement.client_id)
+        if e:
+            emp_nik = e.nik
+            emp_name = e.full_name
+        if cl:
+            cli_code = cl.code
+            cli_name = cl.name
+        role = placement.role_at_client
+
+    comp_sev = comp_desc = None
+    if spo.triggered_by_complaint_id:
+        from app.outsource.models import ClientComplaint
+        comp = await session.get(ClientComplaint, spo.triggered_by_complaint_id)
+        if comp:
+            comp_sev = comp.severity
+            comp_desc = comp.description[:200] if comp.description else None
+
+    level_value = spo.level.value if hasattr(spo.level, "value") else str(spo.level)
+
+    return SpoOut(
+        id=spo.id, placement_id=spo.placement_id, level=level_value,
+        issued_date=spo.issued_date,
+        triggered_by_complaint_id=spo.triggered_by_complaint_id,
+        reason=spo.reason, evaluation_end_date=spo.evaluation_end_date,
+        triggers_replacement=spo.triggers_replacement,
+        created_at=spo.created_at,
+        placement_employee_nik=emp_nik, placement_employee_name=emp_name,
+        placement_client_code=cli_code, placement_client_name=cli_name,
+        placement_role=role,
+        complaint_severity=comp_sev, complaint_description=comp_desc,
+    )
+
+
+@router.get("/spo", response_model=list[SpoOut])
+async def list_spo_endpoint(
+    session: DBSession,
+    placement_id: UUID | None = None,
+    complaint_id: UUID | None = None,
+    _user=Depends(require_permission("employee.view")),
+) -> list[SpoOut]:
+    spos = await service.list_spos(
+        session, placement_id=placement_id, complaint_id=complaint_id,
+    )
+    return [await _spo_to_out(session, s) for s in spos]
+
+
+@router.post("/spo", response_model=SpoOut, status_code=status.HTTP_201_CREATED)
+async def create_spo_endpoint(
+    request: Request, data: SpoCreate, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> SpoOut:
+    """Auto-assign level: SP-O1 → SP-O2 → SP-O3.
+    SP-O3 triggers replacement flag. After SP-O3, must replace karyawan
+    sebelum SP-O baru bisa di-issue."""
+    try:
+        spo = await service.create_spo(
+            session,
+            placement_id=data.placement_id,
+            triggered_by_complaint_id=data.triggered_by_complaint_id,
+            issued_date=data.issued_date,
+            reason=data.reason,
+        )
+    except SpoStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+
+    level_value = spo.level.value if hasattr(spo.level, "value") else str(spo.level)
+    await audit_log(
+        session=session, actor=user, action="SPO_ISSUED",
+        resource_type="warning_letter_outsource", resource_id=str(spo.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "level": level_value,
+            "placement_id": str(spo.placement_id),
+            "triggers_replacement": spo.triggers_replacement,
+        },
+    )
+    return await _spo_to_out(session, spo)

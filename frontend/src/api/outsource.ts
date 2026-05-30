@@ -250,3 +250,103 @@ export async function regenerateBA(ba_id: string): Promise<BeritaAcara> {
   const r = await apiClient.post<BeritaAcara>(`/api/v1/outsource/ba/${ba_id}/regenerate`);
   return r.data;
 }
+
+// ─── Client Complaint + SP-O (TSK-148) ──────────────────────────
+
+export type ComplaintSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type SpoLevelType = 'SP-O1' | 'SP-O2' | 'SP-O3';
+
+export interface ClientComplaint {
+  id: string;
+  placement_id: string;
+  complaint_date: string;
+  severity: ComplaintSeverity;
+  description: string;
+  logged_by_user_id: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  placement_employee_nik: string | null;
+  placement_employee_name: string | null;
+  placement_client_code: string | null;
+  placement_client_name: string | null;
+  placement_role: string | null;
+  logged_by_nik: string | null;
+  spo_count: number;
+}
+
+export interface SpOOutsource {
+  id: string;
+  placement_id: string;
+  level: SpoLevelType;
+  issued_date: string;
+  triggered_by_complaint_id: string | null;
+  reason: string;
+  evaluation_end_date: string | null;
+  triggers_replacement: boolean;
+  created_at: string;
+  placement_employee_nik: string | null;
+  placement_employee_name: string | null;
+  placement_client_code: string | null;
+  placement_client_name: string | null;
+  placement_role: string | null;
+  complaint_severity: string | null;
+  complaint_description: string | null;
+}
+
+export async function listComplaints(params: {
+  placement_id?: string;
+  resolved?: boolean;
+} = {}): Promise<ClientComplaint[]> {
+  const r = await apiClient.get<ClientComplaint[]>('/api/v1/outsource/complaints', { params });
+  return r.data;
+}
+
+export async function createComplaint(data: {
+  placement_id: string;
+  complaint_date: string;
+  severity: ComplaintSeverity;
+  description: string;
+}): Promise<ClientComplaint> {
+  const r = await apiClient.post<ClientComplaint>('/api/v1/outsource/complaints', data);
+  return r.data;
+}
+
+export async function resolveComplaint(id: string): Promise<ClientComplaint> {
+  const r = await apiClient.post<ClientComplaint>(`/api/v1/outsource/complaints/${id}/resolve`);
+  return r.data;
+}
+
+export async function listSpo(params: {
+  placement_id?: string;
+  complaint_id?: string;
+} = {}): Promise<SpOOutsource[]> {
+  const r = await apiClient.get<SpOOutsource[]>('/api/v1/outsource/spo', { params });
+  return r.data;
+}
+
+export async function createSpo(data: {
+  placement_id: string;
+  triggered_by_complaint_id?: string;
+  issued_date: string;
+  reason: string;
+}): Promise<SpOOutsource> {
+  const r = await apiClient.post<SpOOutsource>('/api/v1/outsource/spo', data);
+  return r.data;
+}
+
+export function severityColor(s: ComplaintSeverity): string {
+  switch (s) {
+    case 'LOW': return '#6e6e73';
+    case 'MEDIUM': return '#FF9500';
+    case 'HIGH': return '#FF3B30';
+    case 'CRITICAL': return '#AF52DE';
+  }
+}
+
+export function spoLevelColor(s: SpoLevelType): string {
+  switch (s) {
+    case 'SP-O1': return '#FF9500';
+    case 'SP-O2': return '#FF3B30';
+    case 'SP-O3': return '#AF52DE';
+  }
+}

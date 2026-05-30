@@ -174,3 +174,87 @@ class BeritaAcaraOut(BaseModel):
     employee_name: str | None = None
     client_name: str | None = None
     download_url: str | None = None  # presigned
+
+
+# ─── Client Complaint (TSK-148) ───────────────────────────────────
+
+
+class ComplaintSeverity:
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class ClientComplaintCreate(BaseModel):
+    placement_id: UUID
+    complaint_date: date
+    severity: Annotated[str, StringConstraints(pattern="^(LOW|MEDIUM|HIGH|CRITICAL)$")] = "MEDIUM"
+    description: Annotated[str, StringConstraints(min_length=10, max_length=2000)]
+
+
+class ClientComplaintUpdate(BaseModel):
+    resolved_at: date | None = None
+    description: str | None = None
+
+
+class ClientComplaintOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    placement_id: UUID
+    complaint_date: date
+    severity: str
+    description: str
+    logged_by_user_id: UUID | None
+    resolved_at: date | None
+    created_at: datetime
+
+    # Derived
+    placement_employee_nik: str | None = None
+    placement_employee_name: str | None = None
+    placement_client_code: str | None = None
+    placement_client_name: str | None = None
+    placement_role: str | None = None
+    logged_by_nik: str | None = None
+    spo_count: int = 0  # SP-O yang sudah di-issue dari complaint ini
+
+
+# ─── SP-O Outsource (TSK-148) ─────────────────────────────────────
+
+
+class SpoLevel:
+    SPO1 = "SP-O1"
+    SPO2 = "SP-O2"
+    SPO3 = "SP-O3"
+
+
+class SpoCreate(BaseModel):
+    placement_id: UUID
+    triggered_by_complaint_id: UUID | None = None
+    issued_date: date
+    reason: Annotated[str, StringConstraints(min_length=10, max_length=2000)]
+    # Level auto-assigned dari history (SP-O1 → SP-O2 → SP-O3)
+
+
+class SpoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    placement_id: UUID
+    level: str
+    issued_date: date
+    triggered_by_complaint_id: UUID | None
+    reason: str
+    evaluation_end_date: date | None
+    triggers_replacement: bool
+    created_at: datetime
+
+    # Derived
+    placement_employee_nik: str | None = None
+    placement_employee_name: str | None = None
+    placement_client_code: str | None = None
+    placement_client_name: str | None = None
+    placement_role: str | None = None
+    complaint_severity: str | None = None
+    complaint_description: str | None = None

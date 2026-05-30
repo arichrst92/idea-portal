@@ -471,3 +471,181 @@ async def regenerate_ba_pdf(
     await session.commit()
     await session.refresh(ba)
     return ba
+
+
+# ─── Client Complaint + SP-O (TSK-148) ─────────────────────────────
+
+
+from datetime import timedelta as _td  # noqa: E402
+from app.outsource.models import (  # noqa: E402
+    ClientComplaint,
+    SpoLevel,
+    WarningLetterOutsource,
+)
+
+
+class ComplaintNotFoundError(Exception):
+    pass
+
+
+class SpoNotFoundError(Exception):
+    pass
+
+
+class SpoStateError(Exception):
+    pass
+
+
+# Complaint CRUD
+
+
+async def list_complaints(
+    session: AsyncSession,
+    placement_id: UUID | None = None,
+    resolved: bool | None = None,
+) -> list[ClientComplaint]:
+    stmt = select(ClientComplaint)
+    if placement_id is not None:
+        stmt = stmt.where(ClientComplaint.placement_id == placement_id)
+    if resolved is True:
+        stmt = stmt.where(ClientComplaint.resolved_at.is_not(None))
+    elif resolved is False:
+        stmt = stmt.where(ClientComplaint.resolved_at.is_(None))
+    stmt = stmt.order_by(ClientComplaint.complaint_date.desc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_complaint(session: AsyncSession, comp_id: UUID) -> ClientComplaint:
+    stmt = select(ClientComplaint).where(ClientComplaint.id == comp_id)
+    c = (await session.execute(stmt)).scalar_one_or_none()
+    if c is None:
+        raise ComplaintNotFoundError(f"Complaint {comp_id} not found")
+    return c
+
+
+async def create_complaint(
+    session: AsyncSession,
+    placement_id: UUID,
+    complaint_date: date,
+    severity: str,
+    description: str,
+    logged_by_user_id: UUID | None,
+) -> ClientComplaint:
+    c = ClientComplaint(
+        placement_id=placement_id,
+        complaint_date=complaint_date,
+        severity=severity,
+        description=description,
+        logged_by_user_id=logged_by_user_id,
+    )
+    session.add(c)
+    await session.commit()
+    await session.refresh(c)
+    return c
+
+
+async def resolve_complaint(
+    session: AsyncSession, comp_id: UUID, resolved_at: date | None = None
+) -> ClientComplaint:
+    c = await get_complaint(session, comp_id)
+    c.resolved_at = resolved_at or date.today()
+    await session.commit()
+    await session.refresh(c)
+    return c
+
+
+async def count_spo_for_complaint(
+    session: AsyncSession, comp_id: UUID
+) -> int:
+    stmt = select(func.count(WarningLetterOutsource.id)).where(
+        WarningLetterOutsource.triggered_by_complaint_id == comp_id,
+    )
+    return int((await session.execute(stmt)).scalar_one())
+
+
+# SP-O CRUD
+
+
+async def list_spos(
+    session: AsyncSession,
+    placement_id: UUID | None = None,
+    complaint_id: UUID | None = None,
+) -> list[WarningLetterOutsource]:
+    stmt = select(WarningLetterOutsource)
+    if placement_id is not None:
+        stmt = stmt.where(WarningLetterOutsource.placement_id == placement_id)
+    if complaint_id is not None:
+        stmt = stmt.where(WarningLetterOutsource.triggered_by_complaint_id == complaint_id)
+    stmt = stmt.order_by(WarningLetterOutsource.issued_date.desc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_spo(session: AsyncSession, spo_id: UUID) -> WarningLetterOutsource:
+    stmt = select(WarningLetterOutsource).where(WarningLetterOutsource.id == spo_id)
+    spo = (await session.execute(stmt)).scalar_one_or_none()
+    if spo is None:
+        raise SpoNotFoundError(f"SP-O {spo_id} not found")
+    return spo
+
+
+async def _next_spo_level_for_placement(
+    session: AsyncSession, placement_id: UUID
+) -> SpoLevel:
+    """Determine next SP-O level for this placement.
+
+    Sequence: no prior → SPO1, has SPO1 → SPO2, has SPO2 → SPO3.
+    SPO3 already issued → raise (must replace employee first).
+    """
+    stmt = (
+        select(WarningLetterOutsource.level)
+        .where(WarningLetterOutsource.placement_id == placement_id)
+        .order_by(WarningLetterOutsource.issued_date.desc())
+        .limit(1)
+    )
+    last_level = (await session.execute(stmt)).scalar_one_or_none()
+
+    if last_level is None:
+        return SpoLevel.SPO1
+    if last_level == SpoLevel.SPO1:
+        return SpoLevel.SPO2
+    if last_level == SpoLevel.SPO2:
+        return SpoLevel.SPO3
+    # last_level == SPO3
+    raise SpoStateError(
+        "SP-O3 sudah issued — replacement karyawan diperlukan sebelum SP-O baru"
+    )
+
+
+async def create_spo(
+    session: AsyncSession,
+    placement_id: UUID,
+    triggered_by_complaint_id: UUID | None,
+    issued_date: date,
+    reason: str,
+) -> WarningLetterOutsource:
+    """Auto-assign level dari placement history."""
+    level = await _next_spo_level_for_placement(session, placement_id)
+
+    # SP-O2 has 2-week eval period
+    eval_end = None
+    if level == SpoLevel.SPO2:
+        eval_end = issued_date + _td(days=14)
+
+    # SP-O3 triggers replacement
+    triggers_replacement = (level == SpoLevel.SPO3)
+
+    spo = WarningLetterOutsource(
+        placement_id=placement_id,
+        level=level,
+        issued_date=issued_date,
+        triggered_by_complaint_id=triggered_by_complaint_id,
+        reason=reason,
+        evaluation_end_date=eval_end,
+        triggers_replacement=triggers_replacement,
+    )
+    session.add(spo)
+    await session.commit()
+    await session.refresh(spo)
+    return spo

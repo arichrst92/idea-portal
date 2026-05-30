@@ -14,6 +14,7 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 
+import { SpoTab } from './SpoTab';
 import { TimesheetsTab } from './TimesheetsTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -439,6 +440,7 @@ export default function OutsourcePage() {
         items={[
           { key: 'placements', label: <span><TeamOutlined /> Placements</span>, children: <PlacementsTab /> },
           { key: 'timesheets', label: <span><CalendarOutlined /> Timesheets</span>, children: <TimesheetsTab /> },
+          { key: 'spo', label: <span>⚠️ Complaints / SP-O</span>, children: <SpoTab /> },
           { key: 'clients', label: <span><ApartmentOutlined /> Clients</span>, children: <ClientsTab /> },
         ]}
       />
