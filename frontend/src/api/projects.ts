@@ -443,7 +443,7 @@ export interface MyTasksDueSummary {
 }
 
 export async function getMyTasksDueSummary(): Promise<MyTasksDueSummary> {
-  const r = await apiClient.get<MyTasksDueSummary>('/api/v1/projects/my-tasks-due-summary');
+  const r = await apiClient.get<MyTasksDueSummary>('/api/v1/me/project-tasks-due');
   return r.data;
 }
 

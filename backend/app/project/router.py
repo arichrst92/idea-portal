@@ -940,7 +940,7 @@ async def delete_subtask_comment_endpoint(
 # ─── Task deadline notifications (TSK-075) ────────────────────────
 
 
-@router.get("/projects/my-tasks-due-summary")
+@router.get("/me/project-tasks-due")
 async def my_tasks_due_summary_endpoint(
     session: DBSession,
     user: CurrentUser,
