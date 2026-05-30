@@ -497,6 +497,199 @@ async def regenerate_ba_pdf(
     return ba
 
 
+# ─── Client KPI Assessment (TSK-108) ──────────────────────────────
+
+
+import secrets  # noqa: E402
+
+from app.outsource.models import ClientKpiAssessment  # noqa: E402
+
+
+class KpiNotFoundError(Exception):
+    pass
+
+
+class KpiStateError(Exception):
+    pass
+
+
+def _generate_kpi_token() -> str:
+    """URL-safe random token, 32 bytes (~43 chars base64url)."""
+    return secrets.token_urlsafe(32)
+
+
+async def list_kpi_assessments(
+    session: AsyncSession,
+    placement_id: UUID | None = None,
+    client_id: UUID | None = None,
+    submitted: bool | None = None,
+) -> list[ClientKpiAssessment]:
+    stmt = select(ClientKpiAssessment)
+    if placement_id is not None:
+        stmt = stmt.where(ClientKpiAssessment.placement_id == placement_id)
+    elif client_id is not None:
+        # Join via placement
+        stmt = (
+            select(ClientKpiAssessment)
+            .join(OutsourcePlacement, ClientKpiAssessment.placement_id == OutsourcePlacement.id)
+            .where(OutsourcePlacement.client_id == client_id)
+        )
+    if submitted is True:
+        stmt = stmt.where(ClientKpiAssessment.submitted_at.is_not(None))
+    elif submitted is False:
+        stmt = stmt.where(ClientKpiAssessment.submitted_at.is_(None))
+    stmt = stmt.order_by(ClientKpiAssessment.sent_at.desc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_kpi_by_token(
+    session: AsyncSession, token: str
+) -> ClientKpiAssessment:
+    stmt = select(ClientKpiAssessment).where(ClientKpiAssessment.token == token)
+    kpi = (await session.execute(stmt)).scalar_one_or_none()
+    if kpi is None:
+        raise KpiNotFoundError(f"Token tidak valid")
+    return kpi
+
+
+async def get_kpi(session: AsyncSession, kpi_id: UUID) -> ClientKpiAssessment:
+    stmt = select(ClientKpiAssessment).where(ClientKpiAssessment.id == kpi_id)
+    kpi = (await session.execute(stmt)).scalar_one_or_none()
+    if kpi is None:
+        raise KpiNotFoundError(f"KPI {kpi_id} not found")
+    return kpi
+
+
+async def create_kpi_request(
+    session: AsyncSession,
+    placement_id: UUID,
+    assessment_period: str,
+    expires_in_days: int,
+    created_by_user_id: UUID | None,
+) -> ClientKpiAssessment:
+    from datetime import timedelta as _td2
+
+    # Validate placement exists
+    await get_placement(session, placement_id)
+
+    token = _generate_kpi_token()
+    today = date.today()
+    expires = today + _td2(days=expires_in_days)
+
+    kpi = ClientKpiAssessment(
+        placement_id=placement_id,
+        assessment_period=assessment_period,
+        token=token,
+        token_expires_at=expires,
+        sent_at=today,
+        created_by_user_id=created_by_user_id,
+    )
+    session.add(kpi)
+    await session.commit()
+    await session.refresh(kpi)
+    return kpi
+
+
+async def submit_kpi(
+    session: AsyncSession,
+    token: str,
+    scores: dict,
+    feedback: str | None,
+) -> ClientKpiAssessment:
+    """Submit KPI via public token. Validate not expired & not yet submitted."""
+    kpi = await get_kpi_by_token(session, token)
+
+    if kpi.submitted_at is not None:
+        raise KpiStateError("KPI sudah di-submit sebelumnya")
+    if kpi.token_expires_at < date.today():
+        raise KpiStateError("Token expired")
+
+    # Apply scores
+    kpi.score_quality = scores["score_quality"]
+    kpi.score_communication = scores["score_communication"]
+    kpi.score_attendance = scores["score_attendance"]
+    kpi.score_professionalism = scores["score_professionalism"]
+    kpi.score_initiative = scores["score_initiative"]
+
+    # Compute overall (average)
+    total = sum([
+        float(kpi.score_quality), float(kpi.score_communication),
+        float(kpi.score_attendance), float(kpi.score_professionalism),
+        float(kpi.score_initiative),
+    ])
+    kpi.overall_score = Decimal(str(round(total / 5, 2)))
+
+    kpi.feedback = feedback
+    kpi.submitted_at = date.today()
+
+    await session.commit()
+    await session.refresh(kpi)
+    return kpi
+
+
+def is_kpi_expired(kpi: ClientKpiAssessment) -> bool:
+    return kpi.submitted_at is None and kpi.token_expires_at < date.today()
+
+
+# ─── Client Dashboard (TSK-109) ────────────────────────────────────
+
+
+async def get_client_dashboard(
+    session: AsyncSession, client_id: UUID
+) -> dict:
+    """Aggregate per-client view: placements, contracts, upcoming renewals, KPI avg."""
+    from datetime import timedelta as _td3
+
+    today = date.today()
+    h30 = today + _td3(days=30)
+
+    # Get client
+    client = await get_client(session, client_id)
+
+    # All placements
+    placements_stmt = (
+        select(OutsourcePlacement)
+        .where(
+            OutsourcePlacement.client_id == client_id,
+            OutsourcePlacement.deleted_at.is_(None),
+        )
+        .order_by(OutsourcePlacement.start_date.desc())
+    )
+    placements = list((await session.execute(placements_stmt)).scalars().all())
+
+    active_count = sum(1 for p in placements if p.is_active)
+    expiring_30d = sum(
+        1 for p in placements
+        if p.is_active and p.end_date and today <= p.end_date <= h30
+    )
+
+    # KPI assessments per client
+    kpis = await list_kpi_assessments(session, client_id=client_id, submitted=True)
+    avg_overall = None
+    if kpis:
+        scores = [float(k.overall_score) for k in kpis if k.overall_score is not None]
+        if scores:
+            avg_overall = round(sum(scores) / len(scores), 2)
+
+    # Monthly billing total (sum across active placements)
+    monthly_total = sum(
+        float(compute_monthly_billing(p))
+        for p in placements if p.is_active
+    )
+
+    return {
+        "client": client,
+        "placement_count": len(placements),
+        "active_count": active_count,
+        "expiring_30d": expiring_30d,
+        "kpi_count": len(kpis),
+        "kpi_avg_overall": avg_overall,
+        "monthly_billing_estimate": monthly_total,
+        "placements": placements,
+    }
+
+
 # ─── Client Complaint + SP-O (TSK-148) ─────────────────────────────
 
 

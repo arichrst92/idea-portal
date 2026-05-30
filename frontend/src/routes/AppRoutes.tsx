@@ -24,6 +24,7 @@ import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
 import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
 import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import OutsourcePage from '@/features/outsource/OutsourcePage';
+import PublicKpiPage from '@/features/outsource/PublicKpiPage';
 import ContractsListPage from '@/features/contracts/ContractsListPage';
 import FinancePage from '@/features/finance/FinancePage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
@@ -56,6 +57,7 @@ function AppRoutes() {
       <GlobalSearch />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/public/client-kpi/:token" element={<PublicKpiPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route

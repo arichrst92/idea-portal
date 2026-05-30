@@ -135,6 +135,42 @@ class BeritaAcara(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     client_signed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
+class ClientKpiAssessment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """KPI assessment dari client untuk outsource karyawan (TSK-108).
+
+    Workflow:
+    1. Operation generate token → kirim link ke client PIC.
+    2. Client buka link (no login) → isi form rating 1-5 per kategori.
+    3. Submit → save scores + invalidate token (used_at).
+    """
+
+    __tablename__ = "client_kpi_assessments"
+
+    placement_id: Mapped[UUID] = mapped_column(
+        ForeignKey("outsource_placements.id"), nullable=False, index=True,
+    )
+    assessment_period: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Format: 2026-05 (year-month)
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    token_expires_at: Mapped[date] = mapped_column(Date, nullable=False)
+
+    # Rating 1-5 (Pydantic validate)
+    score_quality: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    score_communication: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    score_attendance: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    score_professionalism: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    score_initiative: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    overall_score: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+
+    feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    sent_at: Mapped[date] = mapped_column(Date, nullable=False)
+    submitted_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    created_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True,
+    )
+
+
 class ClientComplaint(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Client complaint → feed SP-O flow (US-OP-011)."""
 

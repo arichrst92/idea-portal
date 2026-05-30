@@ -418,3 +418,95 @@ export async function listAmendments(placement_id: string): Promise<PlacementAme
   );
   return r.data;
 }
+
+// ─── Client KPI (TSK-108) ────────────────────────────────────────
+
+export interface ClientKpiAssessment {
+  id: string;
+  placement_id: string;
+  assessment_period: string;
+  token: string | null;
+  token_expires_at: string;
+  score_quality: string | null;
+  score_communication: string | null;
+  score_attendance: string | null;
+  score_professionalism: string | null;
+  score_initiative: string | null;
+  overall_score: string | null;
+  feedback: string | null;
+  sent_at: string;
+  submitted_at: string | null;
+  created_at: string;
+  placement_employee_nik: string | null;
+  placement_employee_name: string | null;
+  placement_client_code: string | null;
+  placement_client_name: string | null;
+  placement_role: string | null;
+  is_expired: boolean;
+}
+
+export interface PublicKpiContext {
+  assessment_period: string;
+  employee_name: string | null;
+  client_name: string | null;
+  role: string | null;
+  expires_at: string;
+  is_submitted: boolean;
+}
+
+export async function listKpiAssessments(params: {
+  placement_id?: string;
+  client_id?: string;
+  submitted?: boolean;
+} = {}): Promise<ClientKpiAssessment[]> {
+  const r = await apiClient.get<ClientKpiAssessment[]>('/api/v1/outsource/kpi', { params });
+  return r.data;
+}
+
+export async function createKpiRequest(data: {
+  placement_id: string;
+  assessment_period: string;
+  expires_in_days?: number;
+}): Promise<ClientKpiAssessment> {
+  const r = await apiClient.post<ClientKpiAssessment>('/api/v1/outsource/kpi', data);
+  return r.data;
+}
+
+// Public — no auth header needed but apiClient still sends, backend will ignore
+export async function getPublicKpiContext(token: string): Promise<PublicKpiContext> {
+  const r = await apiClient.get<PublicKpiContext>(`/api/v1/public/client-kpi/${token}`);
+  return r.data;
+}
+
+export async function submitPublicKpi(
+  token: string,
+  data: {
+    score_quality: number;
+    score_communication: number;
+    score_attendance: number;
+    score_professionalism: number;
+    score_initiative: number;
+    feedback?: string;
+  },
+): Promise<PublicKpiContext> {
+  const r = await apiClient.post<PublicKpiContext>(`/api/v1/public/client-kpi/${token}/submit`, data);
+  return r.data;
+}
+
+// ─── Client Dashboard (TSK-109) ──────────────────────────────────
+
+export interface ClientDashboard {
+  client: OutsourceClient;
+  placement_count: number;
+  active_count: number;
+  expiring_30d: number;
+  kpi_count: number;
+  kpi_avg_overall: number | null;
+  monthly_billing_estimate: number;
+  placements: Placement[];
+}
+
+export async function getClientDashboard(client_id: string): Promise<ClientDashboard> {
+  const r = await apiClient.get<ClientDashboard>(`/api/v1/outsource/clients/${client_id}/dashboard`);
+  return r.data;
+}

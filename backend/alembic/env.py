@@ -51,10 +51,11 @@ from app.project.models import (  # noqa: F401  — Project & Work (9 post TSK-0
     ProjectTaskComment,
 )
 from app.finance.models import Invoice  # noqa: F401  — Finance (TSK-022C)
-from app.outsource.models import (  # noqa: F401  — Outsource (8)
+from app.outsource.models import (  # noqa: F401  — Outsource (9)
     BeritaAcara,
     Client,
     ClientComplaint,
+    ClientKpiAssessment,
     OutsourcePlacement,
     PlacementAmendment,
     Timesheet,

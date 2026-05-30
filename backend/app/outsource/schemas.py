@@ -220,6 +220,68 @@ class ClientComplaintOut(BaseModel):
     spo_count: int = 0  # SP-O yang sudah di-issue dari complaint ini
 
 
+# ─── Client KPI Assessment (TSK-108) ──────────────────────────────
+
+
+class ClientKpiCreate(BaseModel):
+    """Operation issues KPI request — generates token + sent_at, no scores yet."""
+
+    placement_id: UUID
+    assessment_period: Annotated[str, StringConstraints(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")]
+    # YYYY-MM format
+    expires_in_days: int = 14
+
+
+class ClientKpiSubmit(BaseModel):
+    """Submitted by client via public endpoint."""
+
+    score_quality: Annotated[Decimal, Field(ge=1, le=5)]
+    score_communication: Annotated[Decimal, Field(ge=1, le=5)]
+    score_attendance: Annotated[Decimal, Field(ge=1, le=5)]
+    score_professionalism: Annotated[Decimal, Field(ge=1, le=5)]
+    score_initiative: Annotated[Decimal, Field(ge=1, le=5)]
+    feedback: str | None = None
+
+
+class ClientKpiOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    placement_id: UUID
+    assessment_period: str
+    token: str | None  # only exposed to Operation
+    token_expires_at: date
+    score_quality: Decimal | None
+    score_communication: Decimal | None
+    score_attendance: Decimal | None
+    score_professionalism: Decimal | None
+    score_initiative: Decimal | None
+    overall_score: Decimal | None
+    feedback: str | None
+    sent_at: date
+    submitted_at: date | None
+    created_at: datetime
+
+    # Derived
+    placement_employee_nik: str | None = None
+    placement_employee_name: str | None = None
+    placement_client_code: str | None = None
+    placement_client_name: str | None = None
+    placement_role: str | None = None
+    is_expired: bool = False
+
+
+class PublicKpiContext(BaseModel):
+    """What public endpoint exposes BEFORE submission (no token in response)."""
+
+    assessment_period: str
+    employee_name: str | None
+    client_name: str | None
+    role: str | None
+    expires_at: date
+    is_submitted: bool
+
+
 # ─── SP-O Outsource (TSK-148) ─────────────────────────────────────
 
 

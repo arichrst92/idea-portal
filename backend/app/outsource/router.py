@@ -33,11 +33,15 @@ from app.outsource.schemas import (
     ClientCreate,
     ClientOut,
     PlacementCreate,
+    ClientKpiCreate,
+    ClientKpiOut,
+    ClientKpiSubmit,
     PlacementAmendmentOut,
     PlacementListResponse,
     PlacementOut,
     PlacementRenewRequest,
     PlacementUpdate,
+    PublicKpiContext,
     SpoCreate,
     SpoOut,
     TimesheetApprove,
@@ -54,6 +58,8 @@ from app.outsource.service import (
     ComplaintNotFoundError,
     DuplicateClientCodeError,
     DuplicateTimesheetError,
+    KpiNotFoundError,
+    KpiStateError,
     PlacementAmendmentError,
     PlacementNotFoundError,
     SpoNotFoundError,
@@ -894,3 +900,192 @@ async def list_amendments_endpoint(
 ) -> list[PlacementAmendmentOut]:
     items = await service.list_amendments(session, placement_id)
     return [await _amendment_to_out(session, a) for a in items]
+
+
+# ─── Client KPI Assessment (TSK-108) ──────────────────────────────
+
+
+async def _kpi_to_out(session, kpi, include_token: bool = False) -> ClientKpiOut:
+    placement = await session.get(OutsourcePlacement, kpi.placement_id)
+    emp_nik = emp_name = cli_code = cli_name = role = None
+    if placement:
+        e = await session.get(Employee, placement.employee_id)
+        cl = await session.get(ClientModel, placement.client_id)
+        if e:
+            emp_nik = e.nik
+            emp_name = e.full_name
+        if cl:
+            cli_code = cl.code
+            cli_name = cl.name
+        role = placement.role_at_client
+
+    return ClientKpiOut(
+        id=kpi.id, placement_id=kpi.placement_id,
+        assessment_period=kpi.assessment_period,
+        token=kpi.token if include_token else None,
+        token_expires_at=kpi.token_expires_at,
+        score_quality=kpi.score_quality,
+        score_communication=kpi.score_communication,
+        score_attendance=kpi.score_attendance,
+        score_professionalism=kpi.score_professionalism,
+        score_initiative=kpi.score_initiative,
+        overall_score=kpi.overall_score,
+        feedback=kpi.feedback,
+        sent_at=kpi.sent_at, submitted_at=kpi.submitted_at,
+        created_at=kpi.created_at,
+        placement_employee_nik=emp_nik, placement_employee_name=emp_name,
+        placement_client_code=cli_code, placement_client_name=cli_name,
+        placement_role=role,
+        is_expired=service.is_kpi_expired(kpi),
+    )
+
+
+@router.get("/kpi", response_model=list[ClientKpiOut])
+async def list_kpi_endpoint(
+    session: DBSession,
+    placement_id: UUID | None = None,
+    client_id: UUID | None = None,
+    submitted: bool | None = None,
+    _user=Depends(require_permission("employee.view")),
+) -> list[ClientKpiOut]:
+    items = await service.list_kpi_assessments(
+        session, placement_id=placement_id, client_id=client_id, submitted=submitted,
+    )
+    return [await _kpi_to_out(session, k, include_token=True) for k in items]
+
+
+@router.post("/kpi", response_model=ClientKpiOut, status_code=status.HTTP_201_CREATED)
+async def create_kpi_endpoint(
+    request: Request, data: ClientKpiCreate, session: DBSession,
+    user=Depends(require_permission("employee.edit")),
+) -> ClientKpiOut:
+    """Operation creates KPI request → token URL untuk dikirim ke client PIC."""
+    try:
+        kpi = await service.create_kpi_request(
+            session,
+            placement_id=data.placement_id,
+            assessment_period=data.assessment_period,
+            expires_in_days=data.expires_in_days,
+            created_by_user_id=user.id,
+        )
+    except PlacementNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    await audit_log(
+        session=session, actor=user, action="CLIENT_KPI_REQUESTED",
+        resource_type="client_kpi_assessment", resource_id=str(kpi.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "placement_id": str(data.placement_id),
+            "assessment_period": data.assessment_period,
+            "expires_at": str(kpi.token_expires_at),
+        },
+    )
+    return await _kpi_to_out(session, kpi, include_token=True)
+
+
+# ─── Public KPI endpoints (NO AUTH) ───────────────────────────────
+
+
+public_router = APIRouter(tags=["public-client-kpi"], prefix="/public/client-kpi")
+
+
+@public_router.get("/{token}", response_model=PublicKpiContext)
+async def public_kpi_context_endpoint(
+    token: str, session: DBSession,
+) -> PublicKpiContext:
+    """Get KPI context (employee + client) untuk display sebelum submit."""
+    try:
+        kpi = await service.get_kpi_by_token(session, token)
+    except KpiNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "INVALID_TOKEN", "message": str(e)}) from e
+
+    placement = await session.get(OutsourcePlacement, kpi.placement_id)
+    emp_name = cli_name = role = None
+    if placement:
+        e = await session.get(Employee, placement.employee_id)
+        cl = await session.get(ClientModel, placement.client_id)
+        if e:
+            emp_name = e.full_name
+        if cl:
+            cli_name = cl.name
+        role = placement.role_at_client
+
+    return PublicKpiContext(
+        assessment_period=kpi.assessment_period,
+        employee_name=emp_name,
+        client_name=cli_name,
+        role=role,
+        expires_at=kpi.token_expires_at,
+        is_submitted=kpi.submitted_at is not None,
+    )
+
+
+@public_router.post("/{token}/submit", response_model=PublicKpiContext)
+async def public_kpi_submit_endpoint(
+    token: str, data: ClientKpiSubmit, session: DBSession,
+) -> PublicKpiContext:
+    """Client submits ratings via token (no auth)."""
+    try:
+        kpi = await service.submit_kpi(
+            session, token,
+            scores={
+                "score_quality": data.score_quality,
+                "score_communication": data.score_communication,
+                "score_attendance": data.score_attendance,
+                "score_professionalism": data.score_professionalism,
+                "score_initiative": data.score_initiative,
+            },
+            feedback=data.feedback,
+        )
+    except KpiNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "INVALID_TOKEN", "message": str(e)}) from e
+    except KpiStateError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": str(e)}) from e
+
+    placement = await session.get(OutsourcePlacement, kpi.placement_id)
+    emp_name = cli_name = role = None
+    if placement:
+        e = await session.get(Employee, placement.employee_id)
+        cl = await session.get(ClientModel, placement.client_id)
+        if e:
+            emp_name = e.full_name
+        if cl:
+            cli_name = cl.name
+        role = placement.role_at_client
+
+    return PublicKpiContext(
+        assessment_period=kpi.assessment_period,
+        employee_name=emp_name,
+        client_name=cli_name,
+        role=role,
+        expires_at=kpi.token_expires_at,
+        is_submitted=True,
+    )
+
+
+# ─── Client Dashboard (TSK-109) ───────────────────────────────────
+
+
+@router.get("/clients/{client_id}/dashboard")
+async def client_dashboard_endpoint(
+    client_id: UUID, session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+) -> dict:
+    """Aggregate view per client: placements, contracts, KPI, billing."""
+    try:
+        data = await service.get_client_dashboard(session, client_id)
+    except ClientNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+
+    placements_out = [await _placement_to_out(session, p) for p in data["placements"]]
+
+    return {
+        "client": await _client_to_out(session, data["client"]),
+        "placement_count": data["placement_count"],
+        "active_count": data["active_count"],
+        "expiring_30d": data["expiring_30d"],
+        "kpi_count": data["kpi_count"],
+        "kpi_avg_overall": data["kpi_avg_overall"],
+        "monthly_billing_estimate": data["monthly_billing_estimate"],
+        "placements": placements_out,
+    }

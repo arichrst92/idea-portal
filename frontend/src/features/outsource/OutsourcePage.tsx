@@ -14,6 +14,7 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 
+import { ClientDashboardDrawer } from './ClientDashboardDrawer';
 import { SpoTab } from './SpoTab';
 import { TimesheetsTab } from './TimesheetsTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -469,6 +470,8 @@ function ClientsTab() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [dashOpen, setDashOpen] = useState(false);
 
   const query = useQuery({ queryKey: ['outsource-clients'], queryFn: listOutsourceClients });
 
@@ -507,6 +510,15 @@ function ClientsTab() {
           <Text strong>{r.active_placement_count}</Text>
           <Text type="secondary" style={{ fontSize: 11 }}>/ {r.placement_count}</Text>
         </Space>
+      ),
+    },
+    {
+      title: 'Dashboard', key: 'dash', width: 110, align: 'center',
+      render: (_, r) => (
+        <Button size="small" type="primary"
+          onClick={() => { setActiveClientId(r.id); setDashOpen(true); }}>
+          View
+        </Button>
       ),
     },
   ];
@@ -558,6 +570,12 @@ function ClientsTab() {
           </Button>
         </Form>
       </Modal>
+
+      <ClientDashboardDrawer
+        clientId={activeClientId}
+        open={dashOpen}
+        onClose={() => { setDashOpen(false); setActiveClientId(null); }}
+      />
     </div>
   );
 }
