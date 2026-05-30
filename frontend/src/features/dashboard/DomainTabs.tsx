@@ -27,7 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
-import { fetchDashboardOverview } from '@/api/dashboard';
+import { fetchDashboardOverview, fetchEbitda, type EbitdaMonth } from '@/api/dashboard';
 
 const { Text, Title } = Typography;
 
@@ -318,12 +318,8 @@ export function FinanceTab() {
         </Col>
       </Row>
 
-      <Card style={{ borderRadius: 10, background: 'rgba(52,199,89,0.04)' }} title="EBITDA Snapshot (TSK-151 — placeholder)">
-        <Empty
-          description="EBITDA calculation akan dibangun di TSK-151. Saat ini placeholder."
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      </Card>
+      <EbitdaCard />
+
 
       <Card style={{ borderRadius: 10 }}>
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -358,5 +354,133 @@ export function OutsourceTab() {
         />
       </Card>
     </Space>
+  );
+}
+
+// ─── EBITDA Card (TSK-151) ────────────────────────────────────────
+
+function EbitdaCard() {
+  const q = useQuery({
+    queryKey: ['dashboard', 'ebitda'],
+    queryFn: () => fetchEbitda(12),
+    refetchInterval: 5 * 60_000,
+  });
+
+  if (q.isLoading) return <Card title="EBITDA — 12 month trend" style={{ borderRadius: 10 }}><Spin /></Card>;
+  if (!q.data || q.data.months.length === 0) {
+    return (
+      <Card title="EBITDA — 12 month trend" style={{ borderRadius: 10 }}>
+        <Empty description="Belum ada data untuk EBITDA" />
+      </Card>
+    );
+  }
+
+  const months = q.data.months;
+  const summary = q.data.summary;
+  const maxRev = Math.max(...months.map((m: EbitdaMonth) => Math.max(m.revenue, m.cost)), 1);
+
+  return (
+    <Card
+      title="EBITDA — 12 month trend"
+      extra={
+        <Space size={16}>
+          <Text type="secondary" style={{ fontSize: 11 }}>Avg Margin</Text>
+          <Text strong style={{ color: summary.avg_margin_pct >= 0 ? '#34C759' : '#FF3B30' }}>
+            {summary.avg_margin_pct}%
+          </Text>
+        </Space>
+      }
+      style={{ borderRadius: 10 }}
+    >
+      {/* Summary strip */}
+      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={12} sm={8}>
+          <Text type="secondary" style={{ fontSize: 11 }}>Total Revenue</Text>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#0071E3' }}>
+            {fmtIDR(summary.total_revenue)}
+          </div>
+        </Col>
+        <Col xs={12} sm={8}>
+          <Text type="secondary" style={{ fontSize: 11 }}>Total Cost</Text>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#FF9500' }}>
+            {fmtIDR(summary.total_cost)}
+          </div>
+        </Col>
+        <Col xs={12} sm={8}>
+          <Text type="secondary" style={{ fontSize: 11 }}>Total EBITDA</Text>
+          <div style={{
+            fontSize: 18, fontWeight: 800,
+            color: summary.total_ebitda >= 0 ? '#34C759' : '#FF3B30',
+          }}>
+            {fmtIDR(summary.total_ebitda)}
+          </div>
+        </Col>
+      </Row>
+
+      {/* Bar chart — SVG-based */}
+      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <svg width={Math.max(months.length * 60, 600)} height={220} style={{ minWidth: '100%' }}>
+          {months.map((m: EbitdaMonth, i: number) => {
+            const x = i * 60 + 30;
+            const revHeight = (m.revenue / maxRev) * 150;
+            const costHeight = (m.cost / maxRev) * 150;
+            const ebitdaY = 180 - (m.ebitda / maxRev) * 150;
+            return (
+              <g key={`${m.year}-${m.month}`}>
+                {/* Revenue bar */}
+                <rect
+                  x={x} y={180 - revHeight} width={20} height={revHeight}
+                  fill="#0071E3" opacity={0.75} rx={2}
+                />
+                {/* Cost bar */}
+                <rect
+                  x={x + 22} y={180 - costHeight} width={20} height={costHeight}
+                  fill="#FF9500" opacity={0.75} rx={2}
+                />
+                {/* EBITDA line marker */}
+                <circle cx={x + 21} cy={ebitdaY} r={4}
+                  fill={m.ebitda >= 0 ? '#34C759' : '#FF3B30'} />
+                {/* Month label */}
+                <text x={x + 21} y={200} fontSize={9} textAnchor="middle"
+                  fill="#86868B" fontFamily="-apple-system, sans-serif">
+                  {m.label.split(' ')[0]}
+                </text>
+                {/* Margin % */}
+                <text x={x + 21} y={213} fontSize={8} textAnchor="middle"
+                  fill={m.margin_pct >= 0 ? '#34C759' : '#FF3B30'} fontWeight={600}>
+                  {m.margin_pct}%
+                </text>
+              </g>
+            );
+          })}
+          {/* Connect EBITDA dots with polyline */}
+          <polyline
+            fill="none"
+            stroke="#34C759"
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+            points={months.map((m: EbitdaMonth, i: number) =>
+              `${i * 60 + 51},${180 - (m.ebitda / maxRev) * 150}`
+            ).join(' ')}
+          />
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <Space size={20} style={{ marginTop: 8, fontSize: 11 }}>
+        <Space size={4}>
+          <span style={{ width: 10, height: 10, background: '#0071E3', display: 'inline-block', borderRadius: 2 }} />
+          <Text type="secondary">Revenue (Invoice + Outsource)</Text>
+        </Space>
+        <Space size={4}>
+          <span style={{ width: 10, height: 10, background: '#FF9500', display: 'inline-block', borderRadius: 2 }} />
+          <Text type="secondary">Cost (Payroll + Reimburse + Procurement)</Text>
+        </Space>
+        <Space size={4}>
+          <span style={{ width: 10, height: 10, background: '#34C759', display: 'inline-block', borderRadius: '50%' }} />
+          <Text type="secondary">EBITDA</Text>
+        </Space>
+      </Space>
+    </Card>
   );
 }

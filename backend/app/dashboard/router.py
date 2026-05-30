@@ -34,6 +34,162 @@ from app.separation.models import EmployeeSeparation, SeparationStatus
 router = APIRouter(tags=["dashboard"], prefix="/dashboard")
 
 
+# ─── EBITDA endpoint (TSK-151) ─────────────────────────────────────
+
+
+@router.get("/ebitda")
+async def ebitda_endpoint(
+    session: DBSession,
+    months: int = 12,
+    _user=Depends(require_permission("financial_report.view")),
+) -> dict[str, Any]:
+    """EBITDA per bulan untuk N bulan terakhir.
+
+    Sources:
+    - Revenue: Invoice.total_amount yang status PAID (paid_at di bulan tsb)
+               + Invoice yang issue_date di bulan tsb (accrual basis).
+    - Cost:
+      * Payroll: PayrollSlip.gross_income per period
+      * Reimbursement: Reimbursement.amount status TRANSFERRED
+      * Procurement: ProcurementRequest.actual_amount status DELIVERED
+      * Outsource billing (revenue stream terpisah): OutsourcePlacement
+        FLAT_MONTHLY rate atau PER_WORKDAY × 22
+
+    EBITDA = Revenue - OpEx (sebelum interest/tax/depreciation/amortization).
+    Implementation: D&A diasumsikan 0 untuk MVP.
+    """
+    from collections import defaultdict
+    from datetime import date as _date
+
+    from app.finance.models import Invoice, InvoiceStatus
+    from app.payroll.models import PayrollPeriod, PayrollSlip
+    from app.payroll.models import Reimbursement, ProcurementRequest
+    from app.outsource.models import OutsourcePlacement, BillingType
+
+    today = _date.today()
+    # Window: most recent N months
+    window = []
+    for i in range(months):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        window.append((y, m))
+    window.reverse()
+
+    # Build per-month buckets
+    rev_invoice: dict[tuple[int, int], float] = defaultdict(float)
+    rev_outsource: dict[tuple[int, int], float] = defaultdict(float)
+    cost_payroll: dict[tuple[int, int], float] = defaultdict(float)
+    cost_reimb: dict[tuple[int, int], float] = defaultdict(float)
+    cost_proc: dict[tuple[int, int], float] = defaultdict(float)
+
+    # Revenue from Invoice — accrual basis (issue_date)
+    inv_stmt = select(Invoice).where(
+        Invoice.deleted_at.is_(None),
+        Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.PAID]),
+        Invoice.issue_date.is_not(None),
+    )
+    for inv in (await session.execute(inv_stmt)).scalars().all():
+        key = (inv.issue_date.year, inv.issue_date.month)
+        if key in [(y, m) for y, m in window]:
+            rev_invoice[key] += float(inv.total_amount)
+
+    # Outsource billing — monthly recurring for active placements
+    placement_stmt = select(OutsourcePlacement).where(
+        OutsourcePlacement.deleted_at.is_(None),
+    )
+    placements = list((await session.execute(placement_stmt)).scalars().all())
+    for y, m in window:
+        first_of_month = _date(y, m, 1)
+        # Determine next month start
+        if m == 12:
+            next_month_start = _date(y + 1, 1, 1)
+        else:
+            next_month_start = _date(y, m + 1, 1)
+        for p in placements:
+            if p.start_date <= next_month_start and (p.end_date is None or p.end_date >= first_of_month):
+                rate = float(p.billing_rate)
+                if p.billing_type == BillingType.FLAT_MONTHLY:
+                    rev_outsource[(y, m)] += rate
+                elif p.billing_type == BillingType.PER_WORKDAY:
+                    rev_outsource[(y, m)] += rate * 22
+
+    # Cost — Payroll
+    slip_stmt = (
+        select(PayrollSlip, PayrollPeriod)
+        .join(PayrollPeriod, PayrollSlip.period_id == PayrollPeriod.id)
+    )
+    for slip, period in (await session.execute(slip_stmt)).all():
+        key = (period.year, period.month)
+        if key in [(y, m) for y, m in window]:
+            cost_payroll[key] += float(slip.gross_income)
+
+    # Cost — Reimbursement (TRANSFERRED)
+    reimb_stmt = select(Reimbursement).where(
+        Reimbursement.status == "TRANSFERRED",
+        Reimbursement.transferred_at.is_not(None),
+    )
+    for r in (await session.execute(reimb_stmt)).scalars().all():
+        if r.transferred_at:
+            key = (r.transferred_at.year, r.transferred_at.month)
+            if key in [(y, m) for y, m in window]:
+                cost_reimb[key] += float(r.amount)
+
+    # Cost — Procurement (DELIVERED)
+    proc_stmt = select(ProcurementRequest).where(
+        ProcurementRequest.status == "DELIVERED",
+        ProcurementRequest.actual_delivery_date.is_not(None),
+    )
+    for p in (await session.execute(proc_stmt)).scalars().all():
+        if p.actual_delivery_date and p.actual_amount:
+            key = (p.actual_delivery_date.year, p.actual_delivery_date.month)
+            if key in [(y, m) for y, m in window]:
+                cost_proc[key] += float(p.actual_amount)
+
+    months_data = []
+    total_revenue = 0.0
+    total_cost = 0.0
+    total_ebitda = 0.0
+    for y, m in window:
+        key = (y, m)
+        rev = rev_invoice[key] + rev_outsource[key]
+        cost = cost_payroll[key] + cost_reimb[key] + cost_proc[key]
+        ebitda = rev - cost
+        margin = (ebitda / rev * 100) if rev > 0 else 0
+        months_data.append({
+            "year": y,
+            "month": m,
+            "label": f"{['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][m-1]} {y}",
+            "revenue": rev,
+            "revenue_invoice": rev_invoice[key],
+            "revenue_outsource": rev_outsource[key],
+            "cost": cost,
+            "cost_payroll": cost_payroll[key],
+            "cost_reimb": cost_reimb[key],
+            "cost_proc": cost_proc[key],
+            "ebitda": ebitda,
+            "margin_pct": round(margin, 2),
+        })
+        total_revenue += rev
+        total_cost += cost
+        total_ebitda += ebitda
+
+    avg_margin = (total_ebitda / total_revenue * 100) if total_revenue > 0 else 0
+
+    return {
+        "months": months_data,
+        "summary": {
+            "total_revenue": total_revenue,
+            "total_cost": total_cost,
+            "total_ebitda": total_ebitda,
+            "avg_margin_pct": round(avg_margin, 2),
+            "period_count": len(months_data),
+        },
+    }
+
+
 # ─── Overview endpoint ─────────────────────────────────────────────
 
 

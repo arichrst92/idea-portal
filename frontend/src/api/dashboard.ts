@@ -81,3 +81,38 @@ export async function fetchRecentActivity(limit = 20): Promise<RecentActivityIte
   });
   return res.data;
 }
+
+// ─── EBITDA (TSK-151) ───────────────────────────────────────────
+
+export interface EbitdaMonth {
+  year: number;
+  month: number;
+  label: string;
+  revenue: number;
+  revenue_invoice: number;
+  revenue_outsource: number;
+  cost: number;
+  cost_payroll: number;
+  cost_reimb: number;
+  cost_proc: number;
+  ebitda: number;
+  margin_pct: number;
+}
+
+export interface EbitdaResponse {
+  months: EbitdaMonth[];
+  summary: {
+    total_revenue: number;
+    total_cost: number;
+    total_ebitda: number;
+    avg_margin_pct: number;
+    period_count: number;
+  };
+}
+
+export async function fetchEbitda(months: number = 12): Promise<EbitdaResponse> {
+  const res = await apiClient.get<EbitdaResponse>('/api/v1/dashboard/ebitda', {
+    params: { months },
+  });
+  return res.data;
+}

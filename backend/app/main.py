@@ -91,6 +91,7 @@ from app.assessment.router import router as assessment_router
 from app.project.router import router as project_router
 from app.project.document_router import router as project_document_router
 from app.project.cr_router import router as project_cr_router
+from app.outsource.router import router as outsource_router
 from app.payroll.reimbursement_router import router as reimb_proc_router
 from app.payroll.payroll_router import router as payroll_router
 from app.sales.router import router as sales_router
@@ -108,6 +109,7 @@ app.include_router(assessment_router, prefix="/api/v1")  # M2.1 TSK-021
 app.include_router(project_router, prefix="/api/v1")  # M2.1 TSK-022
 app.include_router(project_document_router, prefix="/api/v1")  # M2.1 TSK-068
 app.include_router(project_cr_router, prefix="/api/v1")  # M2.1 TSK-070
+app.include_router(outsource_router, prefix="/api/v1")  # M2.3 TSK-100
 app.include_router(reimb_proc_router, prefix="/api/v1")  # M2.2 TSK-023
 app.include_router(payroll_router, prefix="/api/v1")  # M1.4 TSK-046
 app.include_router(sales_router, prefix="/api/v1")  # M3.1 TSK-024

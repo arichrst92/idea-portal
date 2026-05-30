@@ -89,6 +89,7 @@ function getMenuItems(isExecutive: boolean, dueTaskBadge: number = 0) {
     { key: '/finance', icon: <DollarOutlined />, label: 'Finance' },
     { key: '/payroll', icon: <DollarOutlined />, label: 'Payroll' },
     { key: '/sales', icon: <FundOutlined />, label: 'Sales' },
+    { key: '/outsource', icon: <TeamOutlined />, label: 'Outsource' },
     { key: '/separations', icon: <PoweroffOutlined />, label: 'Separation' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Pengaturan' },
   ];
