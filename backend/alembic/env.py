@@ -38,8 +38,9 @@ from app.assessment.models import (  # noqa: F401  — Assessment & Performance 
     OkrObjective,
     WarningLetter,
 )
-from app.project.models import (  # noqa: F401  — Project & Work (8 post TSK-022B)
+from app.project.models import (  # noqa: F401  — Project & Work (9 post TSK-070)
     Project,
+    ProjectChangeRequest,
     ProjectDocument,
     ProjectEpic,
     ProjectMember,

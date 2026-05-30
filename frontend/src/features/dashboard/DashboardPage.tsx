@@ -33,13 +33,23 @@ import {
   Space,
   Spin,
   Statistic,
+  Tabs,
   Tag,
   Timeline,
   Typography,
 } from 'antd';
 
 import { fetchDashboardOverview, fetchRecentActivity } from '@/api/dashboard';
+import { getPersonaLabel } from '@/lib/persona';
 import { useAuthStore } from '@/store/auth';
+
+import {
+  FinanceTab,
+  OutsourceTab,
+  PeopleTab,
+  SalesTab,
+  TechnologyTab,
+} from './DomainTabs';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -199,12 +209,6 @@ export default function DashboardPage() {
     refetchInterval: 60_000, // refresh tiap 1 menit
   });
 
-  const activityQ = useQuery({
-    queryKey: ['dashboard', 'activity'],
-    queryFn: () => fetchRecentActivity(15),
-    refetchInterval: 60_000,
-  });
-
   if (overviewQ.isLoading) {
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
@@ -231,11 +235,6 @@ export default function DashboardPage() {
   }
 
   const data = overviewQ.data!;
-  const activities = activityQ.data ?? [];
-
-  // Top 5 dept by headcount
-  const topDept = data.employees.by_department.slice(0, 5);
-  const maxDeptCount = Math.max(...topDept.map((d) => d.count), 1);
 
   return (
     <div style={{ padding: '20px 24px', maxWidth: 1440, margin: '0 auto' }}>
@@ -250,13 +249,52 @@ export default function DashboardPage() {
             <>
               {' · '}
               <Text type="secondary">
-                Selamat datang, <strong>{user.nik}</strong> ({user.roles[0]?.name ?? '—'})
+                Selamat datang, <strong>{getPersonaLabel(user)}</strong>
               </Text>
             </>
           )}
         </Paragraph>
       </div>
 
+      <Tabs
+        defaultActiveKey="overview"
+        size="large"
+        items={[
+          { key: 'overview', label: '🏠 Overview', children: <OverviewTabContent /> },
+          { key: 'people', label: '👥 People', children: <PeopleTab /> },
+          { key: 'technology', label: '🛠️ Technology', children: <TechnologyTab /> },
+          { key: 'sales', label: '💼 Sales', children: <SalesTab /> },
+          { key: 'finance', label: '💰 Finance', children: <FinanceTab /> },
+          { key: 'outsource', label: '🏢 Outsource', children: <OutsourceTab /> },
+        ]}
+      />
+    </div>
+  );
+}
+
+// Overview tab content — original dashboard content extracted ke sub-component
+function OverviewTabContent() {
+  const overviewQ = useQuery({
+    queryKey: ['dashboard', 'overview'],
+    queryFn: fetchDashboardOverview,
+    refetchInterval: 60_000,
+  });
+  const activityQ = useQuery({
+    queryKey: ['dashboard', 'activity'],
+    queryFn: () => fetchRecentActivity(15),
+    refetchInterval: 60_000,
+  });
+
+  if (overviewQ.isLoading) return <Spin tip="Memuat..." />;
+  if (!overviewQ.data) return <Empty />;
+
+  const data = overviewQ.data;
+  const activities = activityQ.data ?? [];
+  const topDept = data.employees.by_department.slice(0, 5);
+  const maxDeptCount = Math.max(...topDept.map((d) => d.count), 1);
+
+  return (
+    <>
       {/* KPI Row 1 — People */}
       <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
         <Col xs={12} sm={8} md={6} lg={4}>
@@ -544,6 +582,6 @@ export default function DashboardPage() {
           </Card>
         </Col>
       </Row>
-    </div>
+    </>
   );
 }

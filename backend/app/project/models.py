@@ -200,6 +200,80 @@ class ProjectSubtaskComment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelet
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class CRStatus(str, enum.Enum):
+    """Change Request status flow (TSK-070)."""
+
+    DRAFT = "DRAFT"
+    PENDING_L1 = "PENDING_L1"  # Atasan langsung / PM
+    PENDING_L2 = "PENDING_L2"  # GM/C-Level
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+
+class CRImpact(str, enum.Enum):
+    """Impact category for change request."""
+
+    SCOPE = "SCOPE"
+    TIMELINE = "TIMELINE"
+    COST = "COST"
+    MIXED = "MIXED"
+
+
+class ProjectChangeRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Change Request per project — 2-layer approval; trigger Finance & Sales.
+
+    Workflow:
+      DRAFT → submit → PENDING_L1 → approve → PENDING_L2 → approve → APPROVED
+                                          → reject → REJECTED
+    Setelah APPROVED:
+      - Kalau cost_delta != 0 → notify Finance (untuk addendum invoice)
+      - Kalau scope ke client project → notify Sales (untuk update lead/proposal)
+    """
+
+    __tablename__ = "project_change_requests"
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id"), nullable=False, index=True
+    )
+    cr_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    impact_category: Mapped[CRImpact] = mapped_column(
+        String(20), default=CRImpact.MIXED, nullable=False
+    )
+    scope_delta: Mapped[str | None] = mapped_column(Text, nullable=True)
+    timeline_delta_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cost_delta: Mapped[float] = mapped_column(Numeric(15, 2), default=0, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="IDR", nullable=False)
+
+    requester_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    status: Mapped[CRStatus] = mapped_column(
+        String(20), default=CRStatus.DRAFT, nullable=False, index=True
+    )
+
+    layer1_approver_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    layer1_approved_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    layer1_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    layer2_approver_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    layer2_approved_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    layer2_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    rejected_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    sales_notified_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    finance_notified_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+
 class ProjectDocument(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Dokumentasi teknis per project (US-TK-003)."""
 

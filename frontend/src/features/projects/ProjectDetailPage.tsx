@@ -62,6 +62,7 @@ import {
   type TaskStatus,
 } from '@/api/projects';
 
+import { ChangeRequestsTab } from './components/ChangeRequestsTab';
 import { DocumentsTab } from './components/DocumentsTab';
 import { GanttTab } from './components/GanttTab';
 import { KanbanBoard } from './components/KanbanBoard';
@@ -198,6 +199,7 @@ export default function ProjectDetailPage() {
           { key: 'board', label: 'Board (Kanban)', children: <KanbanTab projectId={id} /> },
           { key: 'gantt', label: 'Gantt', children: <GanttTab projectId={id} /> },
           { key: 'documents', label: 'Documents', children: <DocumentsTab projectId={id} /> },
+          { key: 'cr', label: 'Change Requests', children: <ChangeRequestsTab projectId={id} /> },
           { key: 'members', label: 'Members', children: <MembersTab projectId={id} /> },
         ]}
       />
