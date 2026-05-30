@@ -39,10 +39,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 
+from datetime import date as _date, timedelta as _timedelta
+
 from app.core.audit import audit_log
-from app.core.deps import DBSession, require_permission
+from app.core.deps import CurrentUser, DBSession, require_permission
 from app.identity.models import User
 from app.organization.models import Employee
+from app.project.models import ProjectTask as _ProjectTask
 from app.project import service
 from app.project.models import ProjectStatus, ProjectType
 from app.project.schemas import (
@@ -932,3 +935,69 @@ async def delete_subtask_comment_endpoint(
         resource_type="project_subtask_comment", resource_id=str(comment_id),
         ip_address=request.client.host if request.client else None,
     )
+
+
+# ─── Task deadline notifications (TSK-075) ────────────────────────
+
+
+@router.get("/projects/my-tasks-due-summary")
+async def my_tasks_due_summary_endpoint(
+    session: DBSession,
+    user: CurrentUser,
+) -> dict:
+    """Summary deadline task untuk current user as assignee.
+
+    Returns:
+      {
+        overdue_count: int,
+        due_h1_count: int,   # due today + tomorrow
+        due_h3_count: int,   # due in 2-3 days
+        items: [{ task_id, slug, title, due_date, status, project_id }]
+      }
+    """
+    # Map user → employee
+    if user.employee_id is None:
+        return {"overdue_count": 0, "due_h1_count": 0, "due_h3_count": 0, "items": []}
+
+    today = _date.today()
+    h1_cutoff = today + _timedelta(days=1)
+    h3_cutoff = today + _timedelta(days=3)
+
+    stmt = (
+        select(_ProjectTask)
+        .where(
+            _ProjectTask.assignee_id == user.employee_id,
+            _ProjectTask.deleted_at.is_(None),
+            _ProjectTask.due_date.is_not(None),
+            _ProjectTask.status.notin_(["DONE"]),
+            _ProjectTask.due_date <= h3_cutoff,
+        )
+        .order_by(_ProjectTask.due_date.asc())
+        .limit(50)
+    )
+    tasks = list((await session.execute(stmt)).scalars().all())
+
+    overdue = [t for t in tasks if t.due_date < today]
+    due_h1 = [t for t in tasks if today <= t.due_date <= h1_cutoff]
+    due_h3 = [t for t in tasks if h1_cutoff < t.due_date <= h3_cutoff]
+
+    items = [
+        {
+            "task_id": str(t.id),
+            "slug": t.slug,
+            "title": t.title,
+            "due_date": t.due_date.isoformat(),
+            "status": t.status,
+            "project_id": str(t.project_id),
+            "is_overdue": t.due_date < today,
+            "days_until_due": (t.due_date - today).days,
+        }
+        for t in tasks
+    ]
+
+    return {
+        "overdue_count": len(overdue),
+        "due_h1_count": len(due_h1),
+        "due_h3_count": len(due_h3),
+        "items": items,
+    }

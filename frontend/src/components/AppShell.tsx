@@ -34,11 +34,19 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Space, Typography } from 'antd';
+import { Avatar, Badge, Button, Drawer, Dropdown, Layout, Menu, Space, Tooltip, Typography } from 'antd';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { logout } from '@/api/auth';
+import { getMyTasksDueSummary } from '@/api/projects';
+import {
+  executiveColor,
+  getTopRole,
+  isExecutiveRole,
+  isWakilDirektur,
+} from '@/lib/persona';
 import { useResponsive } from '@/lib/useResponsive';
 import { broadcastLogout } from '@/lib/sessionBroadcast';
 import { useAuthStore } from '@/store/auth';
@@ -53,8 +61,22 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-function getMenuItems(isExecutive: boolean) {
-  const items = [
+function getMenuItems(isExecutive: boolean, dueTaskBadge: number = 0) {
+  // Project menu label with badge for overdue + due-soon task count (TSK-075)
+  const projectLabel = dueTaskBadge > 0 ? (
+    <Tooltip title={`${dueTaskBadge} task overdue / due soon`}>
+      <span>
+        Projects{' '}
+        <Badge
+          count={dueTaskBadge}
+          size="small"
+          style={{ background: 'var(--ide-orange, #FF9500)', marginLeft: 6 }}
+        />
+      </span>
+    </Tooltip>
+  ) : 'Projects';
+
+  const items: any[] = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/employees', icon: <TeamOutlined />, label: 'Karyawan' },
     { key: '/org-chart', icon: <ApartmentOutlined />, label: 'Org Chart' },
@@ -63,7 +85,7 @@ function getMenuItems(isExecutive: boolean) {
     { key: '/contracts', icon: <FileTextOutlined />, label: 'Contracts' },
     { key: '/leave', icon: <CalendarOutlined />, label: 'Leave' },
     { key: '/performance', icon: <BarChartOutlined />, label: 'Performance' },
-    { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
+    { key: '/projects', icon: <ProjectOutlined />, label: projectLabel },
     { key: '/finance', icon: <DollarOutlined />, label: 'Finance' },
     { key: '/payroll', icon: <DollarOutlined />, label: 'Payroll' },
     { key: '/sales', icon: <FundOutlined />, label: 'Sales' },
@@ -94,11 +116,24 @@ export function AppShell({ children }: AppShellProps) {
   // Mobile drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const isExecutive = user?.roles.some(
-    (r) => r.code === 'DIREKTUR_UTAMA' || r.code === 'WAKIL_DIREKTUR_UTAMA',
-  ) ?? false;
+  const isExecutive = isExecutiveRole(user);
+  const isWakil = isWakilDirektur(user);
+  const topRole = getTopRole(user);
+  const avatarBg = executiveColor(user);
 
-  const menuItems = getMenuItems(isExecutive);
+  // TSK-075: poll due task count every 60s
+  const dueQuery = useQuery({
+    queryKey: ['my-tasks-due-summary'],
+    queryFn: getMyTasksDueSummary,
+    refetchInterval: 60_000,
+    enabled: !!user,
+  });
+  const dueBadge =
+    (dueQuery.data?.overdue_count ?? 0) +
+    (dueQuery.data?.due_h1_count ?? 0) +
+    (dueQuery.data?.due_h3_count ?? 0);
+
+  const menuItems = getMenuItems(isExecutive, dueBadge);
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
@@ -177,8 +212,10 @@ export function AppShell({ children }: AppShellProps) {
         },
         {
           key: 'role',
-          icon: isExecutive ? <CrownOutlined /> : <UserOutlined />,
-          label: user?.roles[0]?.name ?? '—',
+          icon: isExecutive ? <CrownOutlined style={{ color: avatarBg }} /> : <UserOutlined />,
+          label: topRole
+            ? `${topRole.name}${isWakil ? ' ⚖️' : ''}`
+            : '—',
           disabled: true,
         },
         { type: 'divider' as const },
@@ -276,17 +313,31 @@ export function AppShell({ children }: AppShellProps) {
             />
 
             <Dropdown overlay={userMenu} trigger={['click']} placement="bottomRight">
-              <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
+              <Space style={{ cursor: 'pointer', padding: '0 8px' }} title={topRole?.name ?? ''}>
                 <Avatar
                   size={32}
                   style={{
-                    background: isExecutive ? 'var(--purple)' : 'var(--blue)',
+                    background: avatarBg,
+                    border: isWakil ? '2px solid var(--ide-purple, #AF52DE)' : 'none',
                   }}
                   icon={isExecutive ? <CrownOutlined /> : <UserOutlined />}
                 />
                 {!isMobile && (
                   <Text strong style={{ fontSize: 13 }}>
                     {user?.nik ?? '—'}
+                    {isWakil && (
+                      <span style={{
+                        marginLeft: 6,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        background: 'var(--ide-teal-bg, rgba(50,173,230,0.12))',
+                        color: 'var(--ide-teal, #32ADE6)',
+                      }}>
+                        WAKIL
+                      </span>
+                    )}
                   </Text>
                 )}
               </Space>

@@ -422,6 +422,31 @@ export async function deleteSubtaskComment(comment_id: string): Promise<void> {
   await apiClient.delete(`/api/v1/projects/subtask-comments/${comment_id}`);
 }
 
+// ─── Task Deadline (TSK-075) ───────────────────────────────────
+
+export interface DueTaskItem {
+  task_id: string;
+  slug: string;
+  title: string;
+  due_date: string;
+  status: TaskStatus;
+  project_id: string;
+  is_overdue: boolean;
+  days_until_due: number;
+}
+
+export interface MyTasksDueSummary {
+  overdue_count: number;
+  due_h1_count: number;
+  due_h3_count: number;
+  items: DueTaskItem[];
+}
+
+export async function getMyTasksDueSummary(): Promise<MyTasksDueSummary> {
+  const r = await apiClient.get<MyTasksDueSummary>('/api/v1/projects/my-tasks-due-summary');
+  return r.data;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 
 export function projectTypeColor(t: ProjectType): { className: string; label: string } {
