@@ -34,6 +34,154 @@ from app.separation.models import EmployeeSeparation, SeparationStatus
 router = APIRouter(tags=["dashboard"], prefix="/dashboard")
 
 
+# ─── People Performance Overview (TSK-152) ─────────────────────────
+
+
+@router.get("/people-performance")
+async def people_performance_endpoint(
+    session: DBSession,
+    period_id: str | None = None,  # if None, use latest
+    top_n: int = 5,
+    _user=Depends(require_permission("assessment.view")),
+) -> dict[str, Any]:
+    """People Performance Overview untuk Executive.
+
+    Returns:
+      - period: meta of period used
+      - distribution: bell curve buckets (GREEN/YELLOW/ORANGE/RED + counts)
+      - dept_avg: list of {dept_code, dept_name, avg_score, employee_count}
+      - top_performers: top N employees by final_score (with dept context)
+      - bottom_performers: bottom N (only with score < 70)
+      - summary: total_assessed, avg_score, median_score, std_dev
+    """
+    import statistics
+
+    # Resolve period
+    if period_id:
+        from uuid import UUID as _UUID
+        period_stmt = select(AssessmentPeriod).where(AssessmentPeriod.id == _UUID(period_id))
+    else:
+        period_stmt = (
+            select(AssessmentPeriod)
+            .order_by(AssessmentPeriod.year.desc(), AssessmentPeriod.month.desc())
+            .limit(1)
+        )
+    period = (await session.execute(period_stmt)).scalar_one_or_none()
+    if period is None:
+        return {
+            "period": None, "distribution": {"GREEN": 0, "YELLOW": 0, "ORANGE": 0, "RED": 0},
+            "dept_avg": [], "top_performers": [], "bottom_performers": [],
+            "summary": {"total_assessed": 0, "avg_score": 0, "median_score": 0, "std_dev": 0},
+        }
+
+    months_id = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ]
+    period_label = f"{months_id[period.month - 1]} {period.year}"
+
+    # All assessments with employee + department
+    assess_stmt = (
+        select(
+            Assessment.id, Assessment.final_score,
+            Employee.id.label("emp_id"), Employee.nik, Employee.full_name,
+            Employee.department_id, Department.code.label("dept_code"),
+            Department.name.label("dept_name"),
+        )
+        .join(Employee, Assessment.employee_id == Employee.id)
+        .outerjoin(Department, Employee.department_id == Department.id)
+        .where(
+            Assessment.period_id == period.id,
+            Assessment.final_score.is_not(None),
+        )
+    )
+    rows = (await session.execute(assess_stmt)).all()
+
+    scores = [float(r.final_score) for r in rows if r.final_score is not None]
+
+    # Bell distribution
+    dist = {"GREEN": 0, "YELLOW": 0, "ORANGE": 0, "RED": 0}
+    for s in scores:
+        if s >= 70:
+            dist["GREEN"] += 1
+        elif s >= 60:
+            dist["YELLOW"] += 1
+        elif s >= 50:
+            dist["ORANGE"] += 1
+        else:
+            dist["RED"] += 1
+
+    # Dept avg
+    from collections import defaultdict
+    dept_scores: dict[str, list[float]] = defaultdict(list)
+    dept_meta: dict[str, dict] = {}
+    for r in rows:
+        if r.dept_code:
+            dept_scores[r.dept_code].append(float(r.final_score))
+            dept_meta[r.dept_code] = {"code": r.dept_code, "name": r.dept_name}
+
+    dept_avg = []
+    for code, score_list in dept_scores.items():
+        meta = dept_meta[code]
+        avg = sum(score_list) / len(score_list) if score_list else 0
+        dept_avg.append({
+            "code": meta["code"], "name": meta["name"],
+            "avg_score": round(avg, 2),
+            "employee_count": len(score_list),
+            "color": "GREEN" if avg >= 70 else "YELLOW" if avg >= 60 else "ORANGE" if avg >= 50 else "RED",
+        })
+    dept_avg.sort(key=lambda x: x["avg_score"], reverse=True)
+
+    # Top & bottom performers
+    sorted_rows = sorted(rows, key=lambda r: float(r.final_score), reverse=True)
+    top_performers = [
+        {
+            "employee_id": str(r.emp_id),
+            "nik": r.nik,
+            "name": r.full_name,
+            "final_score": float(r.final_score),
+            "dept_code": r.dept_code,
+            "dept_name": r.dept_name,
+        }
+        for r in sorted_rows[:top_n]
+    ]
+    bottom_performers = [
+        {
+            "employee_id": str(r.emp_id),
+            "nik": r.nik,
+            "name": r.full_name,
+            "final_score": float(r.final_score),
+            "dept_code": r.dept_code,
+            "dept_name": r.dept_name,
+        }
+        for r in sorted_rows[-top_n:][::-1]
+        if float(r.final_score) < 70
+    ]
+
+    # Summary
+    summary = {
+        "total_assessed": len(scores),
+        "avg_score": round(sum(scores) / len(scores), 2) if scores else 0,
+        "median_score": round(statistics.median(scores), 2) if scores else 0,
+        "std_dev": round(statistics.stdev(scores), 2) if len(scores) > 1 else 0,
+        "min_score": round(min(scores), 2) if scores else 0,
+        "max_score": round(max(scores), 2) if scores else 0,
+    }
+
+    return {
+        "period": {
+            "id": str(period.id),
+            "year": period.year, "month": period.month,
+            "label": period_label,
+        },
+        "distribution": dist,
+        "dept_avg": dept_avg,
+        "top_performers": top_performers,
+        "bottom_performers": bottom_performers,
+        "summary": summary,
+    }
+
+
 # ─── EBITDA endpoint (TSK-151) ─────────────────────────────────────
 
 

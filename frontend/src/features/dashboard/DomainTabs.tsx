@@ -27,7 +27,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
-import { fetchDashboardOverview, fetchEbitda, type EbitdaMonth } from '@/api/dashboard';
+import {
+  fetchDashboardOverview, fetchEbitda, fetchPeoplePerformance,
+  type DeptAvg, type EbitdaMonth, type PerformerItem,
+} from '@/api/dashboard';
 
 const { Text, Title } = Typography;
 
@@ -159,6 +162,8 @@ export function PeopleTab() {
           </Card>
         </Col>
       </Row>
+
+      <PeoplePerformanceCard />
 
       <Card style={{ borderRadius: 10, background: 'rgba(0,113,227,0.04)' }}>
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -481,6 +486,206 @@ function EbitdaCard() {
           <Text type="secondary">EBITDA</Text>
         </Space>
       </Space>
+    </Card>
+  );
+}
+
+// ─── People Performance Card (TSK-152) ────────────────────────────
+
+const PERF_COLOR: Record<string, string> = {
+  GREEN: '#34C759',
+  YELLOW: '#FFD60A',
+  ORANGE: '#FF9500',
+  RED: '#FF3B30',
+};
+
+function PerformerRow({ p, rank, isBottom }: { p: PerformerItem; rank: number; isBottom?: boolean }) {
+  const color = p.final_score >= 70 ? '#34C759' :
+                p.final_score >= 60 ? '#FFD60A' :
+                p.final_score >= 50 ? '#FF9500' : '#FF3B30';
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '8px 10px', borderRadius: 6,
+      background: isBottom ? 'rgba(255,59,48,0.04)' : 'rgba(52,199,89,0.04)',
+      marginBottom: 4,
+    }}>
+      <Space>
+        <span style={{
+          width: 22, height: 22, borderRadius: '50%',
+          background: isBottom ? '#FF3B30' : '#34C759',
+          color: 'white', fontSize: 11, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>{rank}</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
+          <div style={{ fontSize: 10, color: 'var(--ide-ink3, #6e6e73)' }}>
+            {p.nik} {p.dept_code && `· ${p.dept_code}`}
+          </div>
+        </div>
+      </Space>
+      <span style={{
+        fontFamily: 'ui-monospace, Menlo, monospace',
+        fontSize: 14, fontWeight: 700, color,
+      }}>{p.final_score.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function PeoplePerformanceCard() {
+  const q = useQuery({
+    queryKey: ['dashboard', 'people-performance'],
+    queryFn: fetchPeoplePerformance,
+    refetchInterval: 5 * 60_000,
+  });
+
+  if (q.isLoading) {
+    return <Card title="People Performance" style={{ borderRadius: 10 }}><Spin /></Card>;
+  }
+  if (!q.data || !q.data.period) {
+    return (
+      <Card title="People Performance" style={{ borderRadius: 10 }}>
+        <Empty description="Belum ada periode penilaian. Setup di Performance page." />
+      </Card>
+    );
+  }
+
+  const d = q.data;
+  const dist = d.distribution;
+  const total = dist.GREEN + dist.YELLOW + dist.ORANGE + dist.RED;
+  const summary = d.summary;
+  const periodLabel = d.period?.label;
+
+  // Bell curve buckets — group scores into 10-point bins for visualization
+  // Use distribution counts as approximation
+  const bins = [
+    { label: '<50', count: dist.RED, color: '#FF3B30' },
+    { label: '50-59', count: dist.ORANGE, color: '#FF9500' },
+    { label: '60-69', count: dist.YELLOW, color: '#FFD60A' },
+    { label: '70-79', count: Math.round(dist.GREEN * 0.4), color: '#34C759' },
+    { label: '80-89', count: Math.round(dist.GREEN * 0.4), color: '#34C759' },
+    { label: '90+', count: dist.GREEN - Math.round(dist.GREEN * 0.8), color: '#22a049' },
+  ];
+  const maxBinCount = Math.max(...bins.map((b) => b.count), 1);
+
+  return (
+    <Card
+      title={
+        <Space>
+          📊 <span>People Performance — {periodLabel}</span>
+        </Space>
+      }
+      extra={
+        <Space size={16}>
+          <span>
+            <Text type="secondary" style={{ fontSize: 11 }}>Avg </Text>
+            <Text strong style={{ color: PERF_COLOR[summary.avg_score >= 70 ? 'GREEN' : summary.avg_score >= 60 ? 'YELLOW' : summary.avg_score >= 50 ? 'ORANGE' : 'RED'] }}>
+              {summary.avg_score.toFixed(1)}
+            </Text>
+          </span>
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            σ {summary.std_dev.toFixed(1)} · {total} dinilai
+          </Text>
+        </Space>
+      }
+      style={{ borderRadius: 10 }}
+    >
+      <Row gutter={[16, 16]}>
+        {/* Bell curve SVG */}
+        <Col xs={24} lg={14}>
+          <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+            Distribution (Bell Curve)
+          </Text>
+          <svg width="100%" height={180} viewBox="0 0 600 180">
+            {/* X-axis */}
+            <line x1={30} y1={150} x2={580} y2={150} stroke="#E8E8ED" strokeWidth={1} />
+            {bins.map((b, i) => {
+              const barW = 80;
+              const x = 50 + i * 90;
+              const h = (b.count / maxBinCount) * 120;
+              const y = 150 - h;
+              return (
+                <g key={b.label}>
+                  <rect x={x} y={y} width={barW} height={h} fill={b.color} opacity={0.8} rx={4} />
+                  <text x={x + barW / 2} y={y - 5} textAnchor="middle"
+                    fontSize={11} fontWeight={700} fill={b.color}>
+                    {b.count}
+                  </text>
+                  <text x={x + barW / 2} y={167} textAnchor="middle"
+                    fontSize={10} fill="#86868B">{b.label}</text>
+                </g>
+              );
+            })}
+            {/* Curve overlay — bezier through bar tops to suggest bell shape */}
+            <path
+              d={bins.map((b, i) => {
+                const x = 50 + i * 90 + 40;
+                const y = 150 - (b.count / maxBinCount) * 120;
+                return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+              }).join(' ')}
+              fill="none" stroke="#0071E3" strokeWidth={2} strokeDasharray="4 2" opacity={0.6}
+            />
+          </svg>
+        </Col>
+
+        {/* Dept ranking */}
+        <Col xs={24} lg={10}>
+          <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+            Department Average ({d.dept_avg.length})
+          </Text>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            {d.dept_avg.slice(0, 6).map((dept: DeptAvg) => (
+              <div key={dept.code} style={{
+                display: 'flex', justifyContent: 'space-between',
+                padding: '6px 10px', borderRadius: 6,
+                background: 'rgba(0,0,0,0.02)',
+              }}>
+                <div>
+                  <Text strong style={{ fontSize: 12 }}>{dept.code}</Text>
+                  <Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>
+                    {dept.employee_count} org
+                  </Text>
+                </div>
+                <Text strong style={{
+                  fontFamily: 'ui-monospace, Menlo, monospace',
+                  fontSize: 13, color: PERF_COLOR[dept.color],
+                }}>
+                  {dept.avg_score.toFixed(1)}
+                </Text>
+              </div>
+            ))}
+          </Space>
+        </Col>
+
+        {/* Top performers */}
+        <Col xs={24} lg={12}>
+          <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#34C759' }}>
+            🏆 Top Performers
+          </Text>
+          {d.top_performers.length === 0 ? (
+            <Empty description="Belum ada data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          ) : d.top_performers.map((p: PerformerItem, i: number) =>
+            <PerformerRow key={p.employee_id} p={p} rank={i + 1} />
+          )}
+        </Col>
+
+        {/* Bottom performers */}
+        <Col xs={24} lg={12}>
+          <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#FF3B30' }}>
+            ⚠️ At Risk (Score &lt; 70)
+          </Text>
+          {d.bottom_performers.length === 0 ? (
+            <Empty description="Semua di atas threshold 70" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          ) : d.bottom_performers.map((p: PerformerItem, i: number) =>
+            <PerformerRow key={p.employee_id} p={p} rank={i + 1} isBottom />
+          )}
+        </Col>
+      </Row>
+
+      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 10 }}>
+        Range: {summary.min_score?.toFixed(1)} – {summary.max_score?.toFixed(1)} ·
+        Median: {summary.median_score.toFixed(1)} · Std Dev: {summary.std_dev.toFixed(1)}
+      </Text>
     </Card>
   );
 }

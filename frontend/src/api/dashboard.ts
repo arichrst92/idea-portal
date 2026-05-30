@@ -116,3 +116,43 @@ export async function fetchEbitda(months: number = 12): Promise<EbitdaResponse> 
   });
   return res.data;
 }
+
+// ─── People Performance (TSK-152) ──────────────────────────────
+
+export interface DeptAvg {
+  code: string;
+  name: string;
+  avg_score: number;
+  employee_count: number;
+  color: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+}
+
+export interface PerformerItem {
+  employee_id: string;
+  nik: string;
+  name: string;
+  final_score: number;
+  dept_code: string | null;
+  dept_name: string | null;
+}
+
+export interface PeoplePerformanceResponse {
+  period: { id: string; year: number; month: number; label: string } | null;
+  distribution: { GREEN: number; YELLOW: number; ORANGE: number; RED: number };
+  dept_avg: DeptAvg[];
+  top_performers: PerformerItem[];
+  bottom_performers: PerformerItem[];
+  summary: {
+    total_assessed: number;
+    avg_score: number;
+    median_score: number;
+    std_dev: number;
+    min_score?: number;
+    max_score?: number;
+  };
+}
+
+export async function fetchPeoplePerformance(): Promise<PeoplePerformanceResponse> {
+  const res = await apiClient.get<PeoplePerformanceResponse>('/api/v1/dashboard/people-performance');
+  return res.data;
+}
