@@ -190,12 +190,14 @@ async def lock_period(session: AsyncSession, period_id: UUID) -> PayrollPeriod:
 
 async def generate_slips_for_period(
     session: AsyncSession, period_id: UUID
-) -> tuple[int, int, list[str]]:
+):
     """Generate PayrollSlip + standard components untuk semua employee ACTIVE
-    yang punya config.
+    yang punya config. Plus auto-inject pending SalesCommissions sebagai
+    variable INCOME line (TSK-194).
 
-    Returns: (generated_count, skipped_count, errors)
+    Returns: GenerateSlipsResponse
     """
+    from app.payroll.payroll_schemas import GenerateSlipsResponse
     period = await get_period(session, period_id)
     if period.status == "LOCKED":
         raise PeriodLockedError(f"Period {period.year}-{period.month:02d} locked")
@@ -272,10 +274,78 @@ async def generate_slips_for_period(
                 component_type="DEDUCTION", is_variable=False, amount=bpjs_jht,
             ))
         session.add_all(components)
+
+        # ─── TSK-194: inject pending sales commission sebagai variable INCOME ──
+        # Sales commission ada di SalesCommission, link via sales_user_id → users.id
+        # Employee → User: via User.employee_id == emp.id
+        commission_total, applied_count = await _apply_pending_commissions_to_slip(
+            session, slip.id, emp.id, period_id,
+        )
+        if commission_total > 0:
+            # Update slip totals
+            slip.gross_income = Decimal(str(slip.gross_income)) + commission_total
+            slip.take_home_pay = (
+                Decimal(str(slip.gross_income)) - Decimal(str(slip.total_deductions))
+            )
         generated += 1
 
     await session.commit()
-    return generated, skipped, errors
+    return GenerateSlipsResponse(
+        period_id=period_id,
+        generated=generated,
+        skipped=skipped,
+        errors=errors,
+    )
+
+
+async def _apply_pending_commissions_to_slip(
+    session: AsyncSession,
+    slip_id: UUID,
+    employee_id: UUID,
+    period_id: UUID,
+) -> tuple[Decimal, int]:
+    """Pull pending SalesCommission untuk employee ini → create PayrollComponent
+    variable INCOME. Mark commission as APPLIED + set target_payroll_period_id.
+
+    Returns: (total_commission_amount, applied_count)
+    """
+    from app.identity.models import User
+    from app.sales.models import SalesCommission
+
+    # Find user_id for this employee
+    user_stmt = select(User.id).where(User.employee_id == employee_id)
+    user_id_row = (await session.execute(user_stmt)).scalar_one_or_none()
+    if user_id_row is None:
+        return Decimal("0"), 0
+
+    # Pending commissions untuk user ini (status PENDING + no target_payroll_period_id)
+    comm_stmt = select(SalesCommission).where(
+        SalesCommission.sales_user_id == user_id_row,
+        SalesCommission.status == "PENDING",
+        SalesCommission.target_payroll_period_id.is_(None),
+    )
+    commissions = list((await session.execute(comm_stmt)).scalars().all())
+    if not commissions:
+        return Decimal("0"), 0
+
+    total = Decimal("0")
+    for comm in commissions:
+        amount = Decimal(str(comm.commission_amount))
+        total += amount
+        component = PayrollComponent(
+            slip_id=slip_id,
+            code=f"SALES_COMMISSION_{str(comm.lead_id)[:8]}",
+            name="Komisi Sales (Closed Won)",
+            component_type="INCOME",
+            is_variable=True,
+            amount=amount,
+            source_reference=f"sales_commission:{comm.id}",
+        )
+        session.add(component)
+        comm.target_payroll_period_id = period_id
+        comm.status = "APPLIED"
+
+    return total, len(commissions)
 
 
 # ─── Slip Read ─────────────────────────────────────────────────────

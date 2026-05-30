@@ -50,6 +50,8 @@ from app.payroll.payroll_service import (
     PeriodNotFoundError,
     SlipNotFoundError,
 )
+from app.payroll.pdf_generator import generate_slip_pdf
+from app.core.storage import get_presigned_url
 
 router = APIRouter(tags=["payroll"], prefix="/payroll")
 
@@ -376,6 +378,62 @@ async def set_pph21_endpoint(
         after_state={"pph21_amount": float(data.pph21_amount)},
     )
     return await _slip_to_out(session, s, include_components=True)
+
+
+@router.post("/slips/{slip_id}/generate-pdf", response_model=PayrollSlipOut)
+async def generate_pdf_endpoint(
+    request: Request,
+    slip_id: UUID,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> PayrollSlipOut:
+    """Generate PDF, upload ke MinIO, set slip.pdf_url."""
+    try:
+        s = await service.get_slip(session, slip_id)
+    except SlipNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+
+    try:
+        object_name = await generate_slip_pdf(session, s)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail={"code": "PDF_GEN_FAILED", "message": str(e)}
+        ) from e
+
+    s.pdf_url = object_name
+    await session.commit()
+    await session.refresh(s)
+
+    await audit_log(
+        session=session, actor=user, action="PAYROLL_SLIP_PDF_GENERATED",
+        resource_type="payroll_slip", resource_id=str(s.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"pdf_url": object_name},
+    )
+    return await _slip_to_out(session, s, include_components=True)
+
+
+@router.get("/slips/{slip_id}/pdf-url")
+async def get_pdf_url_endpoint(
+    slip_id: UUID,
+    session: DBSession,
+    expires_in: int = 3600,
+    _user=Depends(require_permission("payroll.view")),
+) -> dict:
+    """Presigned URL untuk download PDF slip."""
+    try:
+        s = await service.get_slip(session, slip_id)
+    except SlipNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+
+    if not s.pdf_url:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "PDF_NOT_GENERATED", "message": "PDF belum di-generate. Call POST /generate-pdf dulu."},
+        )
+
+    url = get_presigned_url(s.pdf_url, expires_in_seconds=expires_in)
+    return {"url": url, "expires_in_seconds": expires_in}
 
 
 @router.delete("/components/{component_id}", status_code=status.HTTP_204_NO_CONTENT)

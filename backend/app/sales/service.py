@@ -196,12 +196,74 @@ async def transition_stage(
             status="PENDING",
         )
         session.add(commission)
+        await session.flush()  # supaya commission.id ada
+
+        # TSK-194: try inject ke active slip kalau ada
+        # (active = period status DRAFT/REVIEWING dengan slip ke sales user)
+        await _try_inject_commission_to_active_slip(session, commission)
 
     await session.commit()
     await session.refresh(lead)
     if commission:
         await session.refresh(commission)
     return lead, commission
+
+
+async def _try_inject_commission_to_active_slip(
+    session: AsyncSession, commission: "SalesCommission"
+) -> bool:
+    """Best-effort: kalau ada active slip (period DRAFT/REVIEWING) untuk
+    sales user, langsung tambah PayrollComponent INCOME + update slip totals
+    + mark commission APPLIED. Returns True kalau injected.
+    """
+    from app.identity.models import User
+    from app.payroll.models import (
+        PayrollComponent, PayrollPeriod, PayrollSlip,
+    )
+
+    # User → Employee
+    user = await session.get(User, commission.sales_user_id)
+    if user is None or user.employee_id is None:
+        return False
+
+    # Active period (DRAFT or REVIEWING)
+    period_stmt = (
+        select(PayrollPeriod)
+        .where(PayrollPeriod.status.in_(["DRAFT", "REVIEWING"]))
+        .order_by(PayrollPeriod.year.desc(), PayrollPeriod.month.desc())
+        .limit(1)
+    )
+    period = (await session.execute(period_stmt)).scalar_one_or_none()
+    if period is None:
+        return False  # No active period, akan di-apply di next generate_slips
+
+    # Slip untuk employee ini di period tersebut
+    slip_stmt = select(PayrollSlip).where(
+        PayrollSlip.employee_id == user.employee_id,
+        PayrollSlip.period_id == period.id,
+    )
+    slip = (await session.execute(slip_stmt)).scalar_one_or_none()
+    if slip is None:
+        return False  # No slip yet, akan di-apply di next generate_slips
+
+    # Inject component
+    amount = Decimal(str(commission.commission_amount))
+    component = PayrollComponent(
+        slip_id=slip.id,
+        code=f"SALES_COMMISSION_{str(commission.lead_id)[:8]}",
+        name="Komisi Sales (Closed Won)",
+        component_type="INCOME",
+        is_variable=True,
+        amount=amount,
+        source_reference=f"sales_commission:{commission.id}",
+    )
+    session.add(component)
+    slip.gross_income = Decimal(str(slip.gross_income)) + amount
+    slip.take_home_pay = Decimal(str(slip.gross_income)) - Decimal(str(slip.total_deductions))
+
+    commission.target_payroll_period_id = period.id
+    commission.status = "APPLIED"
+    return True
 
 
 # ─── Lead Activity ─────────────────────────────────────────────────

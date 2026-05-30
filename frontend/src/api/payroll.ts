@@ -184,6 +184,23 @@ export async function deleteComponent(component_id: string): Promise<void> {
   await apiClient.delete(`/api/v1/payroll/components/${component_id}`);
 }
 
+// ─── PDF (TSK-051) ──────────────────────────────────────────────
+
+export async function generateSlipPdf(slip_id: string): Promise<PayrollSlip> {
+  const r = await apiClient.post<PayrollSlip>(`/api/v1/payroll/slips/${slip_id}/generate-pdf`);
+  return r.data;
+}
+
+export async function getSlipPdfUrl(
+  slip_id: string,
+  expires_in: number = 3600,
+): Promise<{ url: string; expires_in_seconds: number }> {
+  const r = await apiClient.get<{ url: string; expires_in_seconds: number }>(
+    `/api/v1/payroll/slips/${slip_id}/pdf-url`, { params: { expires_in } },
+  );
+  return r.data;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 
 export const MONTHS_ID = [

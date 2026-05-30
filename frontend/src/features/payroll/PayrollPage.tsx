@@ -9,7 +9,9 @@
 
 import {
   CalendarOutlined,
+  CloudDownloadOutlined,
   DollarOutlined,
+  FilePdfOutlined,
   LockOutlined,
   PlusOutlined,
   SettingOutlined,
@@ -43,8 +45,10 @@ import {
   addComponent,
   createPeriod,
   deleteComponent,
+  generateSlipPdf,
   generateSlips,
   getSlip,
+  getSlipPdfUrl,
   listConfigs,
   listPeriods,
   listSlips,
@@ -482,6 +486,27 @@ function SlipDetailDrawer({
     },
   });
 
+  const pdfMut = useMutation({
+    mutationFn: () => generateSlipPdf(slipId!),
+    onSuccess: () => {
+      message.success('PDF di-generate');
+      queryClient.invalidateQueries({ queryKey: ['payroll-slip', slipId] });
+      onChange();
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal generate PDF'),
+  });
+
+  const handleDownloadPdf = async () => {
+    if (!slipId) return;
+    try {
+      const { url } = await getSlipPdfUrl(slipId);
+      window.open(url, '_blank');
+    } catch (e: any) {
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal generate URL');
+    }
+  };
+
   const s = slipQ.data;
 
   return (
@@ -491,6 +516,19 @@ function SlipDetailDrawer({
       extra={
         s && (
           <Space>
+            {s.pdf_url ? (
+              <Button icon={<CloudDownloadOutlined />} onClick={handleDownloadPdf}>
+                Download PDF
+              </Button>
+            ) : (
+              <Button
+                icon={<FilePdfOutlined />}
+                loading={pdfMut.isPending}
+                onClick={() => pdfMut.mutate()}
+              >
+                Generate PDF
+              </Button>
+            )}
             <Button icon={<DollarOutlined />} onClick={() => setPphOpen(true)}>
               Set PPh21
             </Button>
