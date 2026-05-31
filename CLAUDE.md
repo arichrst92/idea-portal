@@ -275,6 +275,10 @@ Workflow: Saat butuh data dari Employee + User → JOIN `Employee.user_id == Use
 
 🔴 **Audit Script:** Saat curiga ada attribute error, jalankan `outputs/audit_models.py` dan `outputs/audit_usage.py`. Lihat `ERD_REFERENCE.md` section "Audit Workflow".
 
+🔴 **Permission Codes (NC-DEV-003):** Setiap `require_permission("x.y")` WAJIB match dengan code yang terdaftar di `app/identity/permissions.py` PERMISSIONS list. Code yang tidak terdaftar = 403 untuk SEMUA user. Jalankan `outputs/audit_permissions.py` untuk verify. Past examples: `project.close` (tidak ada — pakai `project.override`), `employee.delete` (tidak ada — pakai `employee.edit`).
+
+🔴 **Frontend Hooks Order (NC-DEV-004):** Hook calls (`useState`, `useWatch`, `useMemo`, `useQuery`) HARUS dipanggil sebelum conditional early return. React error "Rendered more hooks than during the previous render" terjadi kalau hook setelah `if (!x) return null`. Solusi: pindah semua hook ke atas, conditional return paling akhir sebelum JSX.
+
 ## Saat Stuck
 
 - Cek `ERD_REFERENCE.md` untuk model field map

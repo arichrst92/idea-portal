@@ -273,7 +273,7 @@ async def close_project_endpoint(
     project_id: UUID,
     data: ProjectClose,
     session: DBSession,
-    user=Depends(require_permission("project.close")),
+    user=Depends(require_permission("project.override")),
 ) -> ProjectOut:
     try:
         p = await service.close_project(session, project_id, data)

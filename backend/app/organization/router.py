@@ -279,7 +279,7 @@ async def delete_employee_endpoint(
     request: Request,
     nik: str,
     session: DBSession,
-    user= Depends(require_permission("employee.delete")),
+    user= Depends(require_permission("employee.edit")),
 ) -> EmployeeOut:
     """Soft delete employee — status → ALUMNI, user.is_active = false."""
     try:
