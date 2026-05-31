@@ -201,6 +201,93 @@ export async function getSlipPdfUrl(
   return r.data;
 }
 
+// ─── Attendance (TSK-047) ────────────────────────────────────────
+
+export interface AttendanceRow {
+  id: string;
+  employee_id: string;
+  period_id: string;
+  days_present: number;
+  days_absent_paid: number;
+  days_absent_unpaid: number;
+  overtime_hours: string;
+  notes: string | null;
+  input_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+  employee_nik: string | null;
+  employee_name: string | null;
+  department_name: string | null;
+}
+
+export interface AttendanceListResponse {
+  period_id: string;
+  period_year: number;
+  period_month: number;
+  period_status: string;
+  calendar_working_days: number;
+  total_active_employees: number;
+  submitted_count: number;
+  missing_count: number;
+  items: AttendanceRow[];
+}
+
+export interface AttendanceCompletenessResponse {
+  period_id: string;
+  calendar_working_days: number;
+  total_active_employees: number;
+  submitted_count: number;
+  missing_count: number;
+  missing_employee_ids: string[];
+}
+
+export interface AttendanceUpsertRow {
+  employee_id: string;
+  days_present: number;
+  days_absent_paid?: number;
+  days_absent_unpaid?: number;
+  overtime_hours?: number;
+  notes?: string | null;
+}
+
+export async function listAttendance(period_id: string): Promise<AttendanceListResponse> {
+  const r = await apiClient.get<AttendanceListResponse>(
+    `/api/v1/payroll/periods/${period_id}/attendance`
+  );
+  return r.data;
+}
+
+export async function getAttendanceCompleteness(
+  period_id: string
+): Promise<AttendanceCompletenessResponse> {
+  const r = await apiClient.get<AttendanceCompletenessResponse>(
+    `/api/v1/payroll/periods/${period_id}/attendance/completeness`
+  );
+  return r.data;
+}
+
+export async function bulkUpsertAttendance(
+  period_id: string,
+  rows: AttendanceUpsertRow[]
+): Promise<AttendanceRow[]> {
+  const r = await apiClient.post<AttendanceRow[]>(
+    `/api/v1/payroll/periods/${period_id}/attendance`,
+    { period_id, rows }
+  );
+  return r.data;
+}
+
+export async function updateAttendance(
+  att_id: string,
+  data: Partial<AttendanceUpsertRow>
+): Promise<AttendanceRow> {
+  const r = await apiClient.patch<AttendanceRow>(
+    `/api/v1/payroll/attendance/${att_id}`,
+    data
+  );
+  return r.data;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 
 export const MONTHS_ID = [

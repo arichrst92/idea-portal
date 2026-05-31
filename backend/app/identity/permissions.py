@@ -162,6 +162,7 @@ PERMISSION_REGISTRY: list[tuple[str, Resource, Action, str]] = [
     (perm(Resource.INVOICE, Action.CREATE), Resource.INVOICE, Action.CREATE, "Buat invoice"),
     (perm(Resource.PAYROLL, Action.VIEW), Resource.PAYROLL, Action.VIEW, "Lihat payroll (own untuk staff, semua untuk Finance)"),
     (perm(Resource.PAYROLL, Action.CREATE), Resource.PAYROLL, Action.CREATE, "Trigger payroll run"),
+    (perm(Resource.PAYROLL, Action.EDIT), Resource.PAYROLL, Action.EDIT, "Input attendance/komponen variable payroll (Operation)"),
     (perm(Resource.PAYROLL, Action.APPROVE), Resource.PAYROLL, Action.APPROVE, "Approve payroll (GM/C-Level Finance)"),
     (perm(Resource.PROCUREMENT, Action.CREATE), Resource.PROCUREMENT, Action.CREATE, "Submit pengadaan"),
     (perm(Resource.PROCUREMENT, Action.APPROVE), Resource.PROCUREMENT, Action.APPROVE, "Approve pengadaan"),

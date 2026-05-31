@@ -276,3 +276,46 @@ class Holiday(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     holiday_date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_joint_leave: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class MonthlyAttendance(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Monthly attendance per karyawan per periode — TSK-047 (EP-05).
+
+    Operation input data ini sepanjang bulan (knowledge.md sec.12 timeline:
+    "Sepanjang bulan → cuti, lembur input Operation; H-5 → rekap submit Finance").
+
+    Linked to PayrollPeriod (bukan year/month langsung) untuk lock state mgmt.
+    Unique constraint: 1 row per (employee, period).
+
+    Edge cases enforced di service layer:
+    - NC-OP-007-01: days_present + days_absent_paid + days_absent_unpaid ≤ calendar_working_days
+    - NC-OP-007-05: overtime_hours ≥ 0
+    - NC-OP-008-02: tidak bisa edit kalau period.status != DRAFT
+    """
+
+    __tablename__ = "monthly_attendances"
+
+    employee_id: Mapped[UUID] = mapped_column(
+        ForeignKey("employees.id"), nullable=False, index=True
+    )
+    period_id: Mapped[UUID] = mapped_column(
+        ForeignKey("payroll_periods.id"), nullable=False, index=True
+    )
+
+    # Attendance counts (days per month)
+    days_present: Mapped[int] = mapped_column(default=0, nullable=False)
+    days_absent_paid: Mapped[int] = mapped_column(default=0, nullable=False)  # leave approved
+    days_absent_unpaid: Mapped[int] = mapped_column(default=0, nullable=False)  # alpha
+    overtime_hours: Mapped[float] = mapped_column(Numeric(6, 2), default=0, nullable=False)
+
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Audit
+    input_by_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("employee_id", "period_id", name="uq_attendance_employee_period"),
+        Index("ix_attendance_period_employee", "period_id", "employee_id"),
+    )
