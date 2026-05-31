@@ -60,10 +60,15 @@ def audit_hooks_after_return(out: list):
 
 def audit_antd_deprecated(out: list):
     """A2: deprecated AntD APIs."""
+    import re as _re
     deprecated = {
         "destroyOnClose": "destroyOnHidden",
         "overlay={": "menu={ (Dropdown)",
+        "dropdownRender": "popupRender (Dropdown)",
     }
+    # Spin tip standalone: <Spin ... tip="..." />  (self-closing — no children)
+    spin_re = _re.compile(r"<Spin\s+[^>]*?\btip=[^>]*?/>")
+
     findings = []
     for py_file in FE_BASE.rglob("*.tsx"):
         text = py_file.read_text()
@@ -77,6 +82,14 @@ def audit_antd_deprecated(out: list):
                         "replacement": replacement,
                         "code": line.strip()[:120],
                     })
+            if spin_re.search(line):
+                findings.append({
+                    "file": str(py_file.relative_to(FE_BASE)),
+                    "line": i,
+                    "dep": "Spin tip self-closing",
+                    "replacement": "wrap with children or fullscreen",
+                    "code": line.strip()[:120],
+                })
     out.append("## A2: Deprecated AntD APIs")
     out.append("")
     by_dep = {}

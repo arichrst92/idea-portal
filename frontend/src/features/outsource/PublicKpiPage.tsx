@@ -42,7 +42,7 @@ export default function PublicKpiPage() {
   if (ctxQ.isLoading) {
     return (
       <div style={{ padding: 60, textAlign: 'center' }}>
-        <Spin size="large" tip="Memuat..." />
+        <Spin size="large" tip="Memuat..."><div style={{ minHeight: 24 }} /></Spin>
       </div>
     );
   }

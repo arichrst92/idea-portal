@@ -294,7 +294,8 @@ JSX component `<Modal>` TETAP dari `antd` — hanya imperative call yang migrate
 🔴 **AntD Deprecated Props (NC-DEV-006):** Saat copy code dari mockup lama atau snippet AI lain, cek deprecation:
 - `destroyOnClose` (Modal/Drawer) → **`destroyOnHidden`**
 - `Dropdown overlay={<Menu items=[…] />}` → **`Dropdown menu={{ items: […] }}`**
-- `Spin tip="..."` standalone → wrap children atau pakai `fullscreen`
+- `Dropdown dropdownRender={...}` → **`Dropdown popupRender={...}`**
+- `<Spin tip="..." />` self-closing → wrap children `<Spin tip="..."><div style={{minHeight:24}}/></Spin>` atau pakai `fullscreen`
 Audit kategori A2 di `outputs/audit_frontend.py` harus 0 sebelum push.
 
 🔴 **WeasyPrint Lazy Import (NC-DEV-007):** Top-level `from weasyprint import HTML` crash backend startup di host tanpa native libs (pango, glib). Pattern wajib:

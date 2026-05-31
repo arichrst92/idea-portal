@@ -92,7 +92,7 @@ export default function ProjectDetailPage() {
   });
 
   if (!id) return <Empty description="Project ID missing" />;
-  if (projectQuery.isLoading) return <Spin tip="Loading..." style={{ margin: 40 }} />;
+  if (projectQuery.isLoading) return <Spin tip="Loading..." style={{ margin: 40 }}><div style={{ minHeight: 24 }} /></Spin>;
   if (!projectQuery.data) return <Empty description="Project not found" />;
 
   const project = projectQuery.data;

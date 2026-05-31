@@ -54,7 +54,7 @@ function App() {
         </Paragraph>
 
         <Card title="Backend Health Check">
-          {isLoading && <Spin tip="Checking backend..." />}
+          {isLoading && <Spin tip="Checking backend..."><div style={{ minHeight: 24 }} /></Spin>}
           {error && (
             <Alert
               type="error"

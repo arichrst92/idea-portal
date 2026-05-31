@@ -66,7 +66,7 @@ export interface MarkAllReadResponse {
 }
 
 export async function getUnreadCount(): Promise<UnreadCountResponse> {
-  const { data } = await apiClient.get('/notifications/unread-count');
+  const { data } = await apiClient.get('/api/v1/notifications/unread-count');
   return data;
 }
 
@@ -75,7 +75,7 @@ export async function listNotifications(params: {
   page?: number;
   page_size?: number;
 }): Promise<NotificationListResponse> {
-  const { data } = await apiClient.get('/notifications', {
+  const { data } = await apiClient.get('/api/v1/notifications', {
     params: {
       unread_only: params.unread_only ?? false,
       page: params.page ?? 1,
@@ -86,12 +86,12 @@ export async function listNotifications(params: {
 }
 
 export async function markNotificationRead(id: string): Promise<MarkReadResponse> {
-  const { data } = await apiClient.post(`/notifications/${id}/read`);
+  const { data } = await apiClient.post(`/api/v1/notifications/${id}/read`);
   return data;
 }
 
 export async function markAllNotificationsRead(): Promise<MarkAllReadResponse> {
-  const { data } = await apiClient.post('/notifications/read-all');
+  const { data } = await apiClient.post('/api/v1/notifications/read-all');
   return data;
 }
 

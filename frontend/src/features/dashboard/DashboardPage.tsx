@@ -212,7 +212,7 @@ export default function DashboardPage() {
   if (overviewQ.isLoading) {
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
-        <Spin size="large" tip="Memuat dashboard..." />
+        <Spin size="large" tip="Memuat dashboard..."><div style={{ minHeight: 24 }} /></Spin>
       </div>
     );
   }
@@ -285,7 +285,7 @@ function OverviewTabContent() {
     refetchInterval: 60_000,
   });
 
-  if (overviewQ.isLoading) return <Spin tip="Memuat..." />;
+  if (overviewQ.isLoading) return <Spin tip="Memuat..."><div style={{ minHeight: 24 }} /></Spin>;
   if (!overviewQ.data) return <Empty />;
 
   const data = overviewQ.data;

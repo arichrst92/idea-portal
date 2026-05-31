@@ -161,7 +161,7 @@ function PermissionMatrixPage() {
   if (isLoading) {
     return (
       <div style={{ padding: 80, textAlign: 'center' }}>
-        <Spin size="large" tip="Loading permission matrix..." />
+        <Spin size="large" tip="Loading permission matrix..."><div style={{ minHeight: 24 }} /></Spin>
       </div>
     );
   }

@@ -184,7 +184,7 @@ export function GanttTab({ projectId }: GanttTabProps) {
   }, [projectQ.data, phasesQ.data, epicsQ.data, tasksQ.data]);
 
   if (projectQ.isLoading || phasesQ.isLoading) {
-    return <Spin tip="Memuat timeline..." style={{ marginTop: 40 }} />;
+    return <Spin tip="Memuat timeline..." style={{ marginTop: 40 }}><div style={{ minHeight: 24 }} /></Spin>;
   }
 
   if (ganttTasks.length === 0) {
