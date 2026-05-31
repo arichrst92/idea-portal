@@ -26,12 +26,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.organization.models import Employee, EmployeeStatus
 from app.payroll.models import (
+    MonthlyAttendance,
     PayrollComponent,
     PayrollConfig,
     PayrollPeriod,
     PayrollSlip,
 )
 from app.payroll.payroll_schemas import (
+    CalculatePayrollPreview,
+    CalculatePayrollResponse,
     PayrollComponentCreate,
     PayrollConfigCreate,
     PayrollConfigUpdate,
@@ -547,3 +550,352 @@ async def sum_take_home_in_period(session: AsyncSession, period_id: UUID) -> Dec
     )
     val = (await session.execute(stmt)).scalar_one_or_none()
     return Decimal(str(val)) if val is not None else Decimal("0")
+
+
+# ─── TSK-048 Payroll Calculation Engine ───────────────────────────
+
+
+class IncompleteAttendanceError(Exception):
+    """NC-OP-008-01 — beberapa employee belum ada attendance untuk period."""
+
+
+class NetNegativeError(Exception):
+    """NC-FN-002-02 — net pay < 0 untuk sebuah employee."""
+
+
+# Standard Indonesian overtime: 1.5× hourly rate (UU Ketenagakerjaan, simplified)
+DEFAULT_OVERTIME_MULTIPLIER = Decimal("1.5")
+STANDARD_HOURS_PER_DAY = Decimal("8")
+# Anomaly threshold: total payroll deviation vs prev month (NC-FN-002-05)
+ANOMALY_DEVIATION_PCT = Decimal("30")
+
+
+def _compute_attendance_factors(
+    att: MonthlyAttendance | None,
+    working_days: int,
+    basic_salary: Decimal,
+) -> tuple[Decimal, Decimal, Decimal]:
+    """Compute (prorata_basic, overtime_amount, prorata_factor) dari attendance.
+
+    Rules:
+    - Paid days = days_present + days_absent_paid (alpha tidak dibayar)
+    - Prorata factor = paid_days / working_days (clamp 0..1)
+    - Overtime = overtime_hours × (basic / (working_days × 8)) × 1.5
+
+    Returns Decimal triple, all .quantize(0.01).
+    """
+    if working_days <= 0:
+        return Decimal("0.00"), Decimal("0.00"), Decimal("0.00")
+
+    if att is None:
+        # No attendance → assume full month (safety net, but caller should validate first)
+        return basic_salary.quantize(Decimal("0.01")), Decimal("0.00"), Decimal("1.00")
+
+    paid_days = att.days_present + att.days_absent_paid
+    working_days_dec = Decimal(str(working_days))
+    paid_days_dec = Decimal(str(paid_days))
+
+    prorata_factor = paid_days_dec / working_days_dec
+    # Clamp 0..1 (kalau attendance days > working_days karena edge case dari TSK-047)
+    if prorata_factor > Decimal("1"):
+        prorata_factor = Decimal("1")
+    elif prorata_factor < Decimal("0"):
+        prorata_factor = Decimal("0")
+
+    prorata_basic = (basic_salary * prorata_factor).quantize(Decimal("0.01"))
+
+    # Overtime
+    overtime_hours = Decimal(str(att.overtime_hours))
+    if overtime_hours > 0 and basic_salary > 0:
+        hourly_rate = basic_salary / (working_days_dec * STANDARD_HOURS_PER_DAY)
+        overtime_amount = (
+            overtime_hours * hourly_rate * DEFAULT_OVERTIME_MULTIPLIER
+        ).quantize(Decimal("0.01"))
+    else:
+        overtime_amount = Decimal("0.00")
+
+    return prorata_basic, overtime_amount, prorata_factor.quantize(Decimal("0.0001"))
+
+
+async def calculate_payroll_preview(
+    session: AsyncSession, period_id: UUID
+) -> CalculatePayrollPreview:
+    """Pre-flight check — show what calc engine WOULD do, no mutation.
+
+    Validates:
+    - Period exists & DRAFT
+    - All active employees have attendance (NC-OP-008-01)
+    - No existing slips (NC-OP-008-02 duplicate prevention)
+    """
+    from app.payroll.attendance_service import (
+        calculate_period_working_days,
+        completeness,
+    )
+
+    period = await get_period(session, period_id)
+    blockers: list[str] = []
+
+    if period.status != "DRAFT":
+        blockers.append(
+            f"Period status {period.status} — calc hanya boleh di DRAFT (NC-OP-008-02)"
+        )
+
+    # Existing slips check (NC-OP-008-02)
+    existing_count = await count_slips_in_period(session, period_id)
+    if existing_count > 0:
+        blockers.append(
+            f"Sudah ada {existing_count} slip untuk period ini — clear dulu atau lock period (NC-OP-008-02)"
+        )
+
+    # Attendance completeness (NC-OP-008-01)
+    _p, working_days, total_active, submitted_count, missing_ids = await completeness(
+        session, period_id
+    )
+
+    if missing_ids:
+        blockers.append(
+            f"Attendance belum lengkap: {len(missing_ids)}/{total_active} karyawan belum ada data (NC-OP-008-01)"
+        )
+
+    return CalculatePayrollPreview(
+        period_id=period_id,
+        calendar_working_days=working_days,
+        attendance_missing_count=len(missing_ids),
+        attendance_missing_employee_ids=missing_ids,
+        estimated_employee_count=total_active,
+        can_proceed=len(blockers) == 0,
+        blockers=blockers,
+    )
+
+
+async def _check_anomaly(
+    session: AsyncSession, period: PayrollPeriod, current_total_gross: Decimal
+) -> str | None:
+    """NC-FN-002-05 — flag if total deviates >30% from prev month."""
+    # Prev month
+    prev_month = period.month - 1
+    prev_year = period.year
+    if prev_month == 0:
+        prev_month = 12
+        prev_year -= 1
+
+    prev_period_stmt = select(PayrollPeriod).where(
+        PayrollPeriod.year == prev_year, PayrollPeriod.month == prev_month
+    )
+    prev_period = (await session.execute(prev_period_stmt)).scalar_one_or_none()
+    if prev_period is None:
+        return None
+
+    prev_gross = await sum_gross_in_period(session, prev_period.id)
+    if prev_gross <= 0:
+        return None
+
+    deviation_pct = abs((current_total_gross - prev_gross) / prev_gross * Decimal("100"))
+    if deviation_pct > ANOMALY_DEVIATION_PCT:
+        return (
+            f"Total gross berbeda {deviation_pct:.1f}% dari bulan sebelumnya "
+            f"(Rp {prev_gross:,.0f} → Rp {current_total_gross:,.0f}). "
+            f"Cek anomaly sebelum approve (NC-FN-002-05)."
+        )
+    return None
+
+
+async def calculate_payroll(
+    session: AsyncSession, period_id: UUID
+) -> CalculatePayrollResponse:
+    """Full payroll calculation — attendance × config → slips with components.
+
+    TSK-048 main entrypoint. Differs dari generate_slips_for_period (TSK-046):
+    - Validates attendance completeness (NC-OP-008-01) → raises if missing
+    - Validates no existing slips (NC-OP-008-02)
+    - Applies prorata basic + overtime per attendance
+    - Anomaly check vs prev month (NC-FN-002-05)
+    - Blocks net negative (NC-FN-002-02)
+    """
+    from app.identity.models import User as _User
+    from app.payroll.attendance_service import calculate_period_working_days
+
+    period = await get_period(session, period_id)
+    if period.status != "DRAFT":
+        raise PeriodLockedError(
+            f"Period {period.year}-{period.month:02d} status {period.status} — calc hanya di DRAFT"
+        )
+
+    # Pre-validation
+    preview = await calculate_payroll_preview(session, period_id)
+    if not preview.can_proceed:
+        raise IncompleteAttendanceError(
+            "Calc payroll blocked: " + "; ".join(preview.blockers)
+        )
+
+    working_days = preview.calendar_working_days
+
+    # Fetch all active employees + nik + attendance + config
+    emp_stmt = (
+        select(Employee, _User.nik.label("nik"))
+        .join(_User, Employee.user_id == _User.id)
+        .where(
+            Employee.deleted_at.is_(None),
+            Employee.status.in_([EmployeeStatus.ACTIVE, EmployeeStatus.PROBATION]),
+        )
+    )
+    employees_with_nik = list((await session.execute(emp_stmt)).all())
+
+    # Attendance by employee_id
+    att_stmt = select(MonthlyAttendance).where(
+        MonthlyAttendance.period_id == period_id
+    )
+    att_by_emp = {
+        a.employee_id: a
+        for a in (await session.execute(att_stmt)).scalars().all()
+    }
+
+    generated = 0
+    skipped = 0
+    errors: list[str] = []
+    total_gross = Decimal("0")
+    total_deductions = Decimal("0")
+    total_take_home = Decimal("0")
+
+    for emp, emp_nik in employees_with_nik:
+        # Skip if slip already exists (defense — should be caught by preview)
+        existing_stmt = select(PayrollSlip).where(
+            PayrollSlip.employee_id == emp.id,
+            PayrollSlip.period_id == period_id,
+        )
+        if (await session.execute(existing_stmt)).scalar_one_or_none():
+            skipped += 1
+            continue
+
+        config = await get_active_config(session, emp.id)
+        if config is None:
+            errors.append(f"{emp_nik}: no payroll config")
+            continue
+
+        attendance = att_by_emp.get(emp.id)
+        # Already validated in preview, but double-check
+        if attendance is None:
+            errors.append(f"{emp_nik}: attendance missing (re-validate)")
+            continue
+
+        basic_salary = Decimal(str(config.basic_salary))
+        allowance = Decimal(str(config.fixed_allowance))
+
+        # Compute prorata + overtime
+        prorata_basic, overtime_amount, prorata_factor = _compute_attendance_factors(
+            attendance, working_days, basic_salary
+        )
+
+        # BPJS based on basic_salary (UU rules — bukan prorata)
+        bpjs_kes = (
+            basic_salary * Decimal(str(config.bpjs_kesehatan_pct)) / Decimal("100")
+        ).quantize(Decimal("0.01"))
+        bpjs_jht = (
+            basic_salary * Decimal(str(config.bpjs_ketenagakerjaan_pct)) / Decimal("100")
+        ).quantize(Decimal("0.01"))
+
+        gross = prorata_basic + allowance + overtime_amount
+        deductions = bpjs_kes + bpjs_jht
+        take_home = gross - deductions
+
+        # NC-FN-002-02: block if net negative
+        if take_home < 0:
+            raise NetNegativeError(
+                f"{emp_nik}: net pay negative (gross={gross}, deductions={deductions}). "
+                f"Review komponen sebelum lanjut (NC-FN-002-02)."
+            )
+
+        slip_no = f"SLIP-{period.year}{period.month:02d}-{emp_nik}"
+        slip = PayrollSlip(
+            employee_id=emp.id,
+            period_id=period_id,
+            slip_no=slip_no,
+            gross_income=gross,
+            total_deductions=deductions,
+            take_home_pay=take_home,
+        )
+        session.add(slip)
+        await session.flush()
+
+        # Build components
+        components = [
+            PayrollComponent(
+                slip_id=slip.id,
+                code="BASIC_PRORATA" if prorata_factor < Decimal("1") else "BASIC",
+                name=(
+                    f"Gaji Pokok ({attendance.days_present}+{attendance.days_absent_paid}/{working_days} hari)"
+                    if prorata_factor < Decimal("1")
+                    else "Gaji Pokok"
+                ),
+                component_type="INCOME",
+                is_variable=False,
+                amount=prorata_basic,
+                source_reference=f"attendance:{attendance.id}",
+            ),
+        ]
+        if allowance > 0:
+            components.append(PayrollComponent(
+                slip_id=slip.id, code="ALLOWANCE", name="Tunjangan Tetap",
+                component_type="INCOME", is_variable=False, amount=allowance,
+            ))
+        if overtime_amount > 0:
+            components.append(PayrollComponent(
+                slip_id=slip.id,
+                code="OVERTIME",
+                name=f"Lembur ({attendance.overtime_hours} jam × 1.5)",
+                component_type="INCOME",
+                is_variable=True,
+                amount=overtime_amount,
+                source_reference=f"attendance:{attendance.id}",
+            ))
+        if bpjs_kes > 0:
+            components.append(PayrollComponent(
+                slip_id=slip.id, code="BPJS_KES", name="BPJS Kesehatan",
+                component_type="DEDUCTION", is_variable=False, amount=bpjs_kes,
+            ))
+        if bpjs_jht > 0:
+            components.append(PayrollComponent(
+                slip_id=slip.id, code="BPJS_JHT", name="BPJS Ketenagakerjaan",
+                component_type="DEDUCTION", is_variable=False, amount=bpjs_jht,
+            ))
+        session.add_all(components)
+
+        # Inject pending commissions (TSK-194)
+        commission_total, _applied = await _apply_pending_commissions_to_slip(
+            session, slip.id, emp.id, period_id,
+        )
+        if commission_total > 0:
+            slip.gross_income = Decimal(str(slip.gross_income)) + commission_total
+            slip.take_home_pay = (
+                Decimal(str(slip.gross_income)) - Decimal(str(slip.total_deductions))
+            )
+
+        total_gross += Decimal(str(slip.gross_income))
+        total_deductions += Decimal(str(slip.total_deductions))
+        total_take_home += Decimal(str(slip.take_home_pay))
+        generated += 1
+
+    await session.commit()
+
+    # Anomaly check (NC-FN-002-05) — non-blocking warning
+    anomaly_warnings: list[str] = []
+    anomaly = await _check_anomaly(session, period, total_gross)
+    if anomaly:
+        anomaly_warnings.append(anomaly)
+
+    # Move period status to REVIEWING (ready for Finance/GM review)
+    if generated > 0 and period.status == "DRAFT":
+        period.status = "REVIEWING"
+        await session.commit()
+
+    return CalculatePayrollResponse(
+        period_id=period_id,
+        generated=generated,
+        skipped=skipped,
+        total_gross_idr=total_gross,
+        total_deductions_idr=total_deductions,
+        total_take_home_idr=total_take_home,
+        employee_count=generated + skipped,
+        anomaly_warnings=anomaly_warnings,
+        errors=errors,
+    )

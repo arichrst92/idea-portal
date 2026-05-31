@@ -31,6 +31,8 @@ from app.organization.models import Employee
 from app.payroll import payroll_service as service
 from app.payroll.models import PayrollPeriod, PayrollSlip
 from app.payroll.payroll_schemas import (
+    CalculatePayrollPreview,
+    CalculatePayrollResponse,
     GenerateSlipsResponse,
     PayrollComponentCreate,
     PayrollComponentOut,
@@ -46,6 +48,8 @@ from app.payroll.payroll_service import (
     ConfigNotFoundError,
     DuplicatePeriodError,
     DuplicateSlipError,
+    IncompleteAttendanceError,
+    NetNegativeError,
     PeriodLockedError,
     PeriodNotFoundError,
     SlipNotFoundError,
@@ -278,6 +282,88 @@ async def generate_slips_endpoint(
         resource_type="payroll_period", resource_id=str(period_id),
         ip_address=request.client.host if request.client else None,
         after_state={"generated": result.generated, "skipped": result.skipped},
+    )
+    return result
+
+
+# ─── TSK-048 Payroll Calculation Engine ─────────────────────────────
+
+
+@router.get(
+    "/periods/{period_id}/calculate-preview",
+    response_model=CalculatePayrollPreview,
+)
+async def calculate_payroll_preview_endpoint(
+    period_id: UUID,
+    session: DBSession,
+    _user=Depends(require_permission("payroll.create")),
+) -> CalculatePayrollPreview:
+    """Pre-flight check — show calc readiness without mutating.
+
+    Validates: period status, attendance completeness, no duplicate slips.
+    Returns blockers if any (NC-OP-008-01, NC-OP-008-02).
+    """
+    try:
+        return await service.calculate_payroll_preview(session, period_id)
+    except PeriodNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+
+
+@router.post(
+    "/periods/{period_id}/calculate",
+    response_model=CalculatePayrollResponse,
+)
+async def calculate_payroll_endpoint(
+    request: Request,
+    period_id: UUID,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> CalculatePayrollResponse:
+    """Run full payroll calc — attendance × config → slips with components.
+
+    TSK-048 entrypoint. Edges:
+    - 404 jika period tidak ada
+    - 409 jika period bukan DRAFT atau ada duplicate slip
+    - 422 jika attendance belum lengkap (NC-OP-008-01) atau net pay negative (NC-FN-002-02)
+
+    On success: period status → REVIEWING (ready Finance/GM review).
+    """
+    try:
+        result = await service.calculate_payroll(session, period_id)
+    except PeriodNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except PeriodLockedError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "PERIOD_LOCKED", "message": str(e)}
+        ) from e
+    except IncompleteAttendanceError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "ATTENDANCE_INCOMPLETE", "message": str(e)},
+        ) from e
+    except NetNegativeError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "NET_NEGATIVE", "message": str(e)},
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_CALCULATED",
+        resource_type="payroll_period",
+        resource_id=str(period_id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "generated": result.generated,
+            "total_gross": str(result.total_gross_idr),
+            "total_take_home": str(result.total_take_home_idr),
+            "anomaly_warnings": result.anomaly_warnings,
+        },
     )
     return result
 

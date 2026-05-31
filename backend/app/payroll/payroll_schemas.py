@@ -143,6 +143,36 @@ class GenerateSlipsResponse(BaseModel):
     errors: list[str] = Field(default_factory=list)
 
 
+class CalculatePayrollResponse(BaseModel):
+    """TSK-048 — Payroll Calculation Engine response.
+
+    Run calc engine sekali untuk 1 period — attendance × config → slips.
+    Validation steps di-report dalam response (anomaly, missing attendance).
+    """
+
+    period_id: UUID
+    generated: int
+    skipped: int
+    total_gross_idr: Decimal
+    total_deductions_idr: Decimal
+    total_take_home_idr: Decimal
+    employee_count: int
+    anomaly_warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+
+
+class CalculatePayrollPreview(BaseModel):
+    """Pre-flight check sebelum calc — show estimate + warnings without committing."""
+
+    period_id: UUID
+    calendar_working_days: int
+    attendance_missing_count: int
+    attendance_missing_employee_ids: list[UUID]
+    estimated_employee_count: int
+    can_proceed: bool
+    blockers: list[str] = Field(default_factory=list)
+
+
 class SetPph21Request(BaseModel):
     """Set PPh21 manual per slip (US-TK-049)."""
 

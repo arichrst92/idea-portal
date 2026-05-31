@@ -30,6 +30,8 @@ import { useState } from 'react';
 
 import {
   addComponent,
+  calculatePayroll,
+  calculatePayrollPreview,
   createPeriod,
   deleteComponent,
   generateSlipPdf,
@@ -200,6 +202,7 @@ function PeriodsTab() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
+  const [calcPreviewPeriodId, setCalcPreviewPeriodId] = useState<string | null>(null);
 
   const query = useQuery({ queryKey: ['payroll-periods'], queryFn: listPeriods });
 
@@ -224,6 +227,24 @@ function PeriodsTab() {
     },
     onError: (e: any) =>
       message.error(e?.response?.data?.detail?.message ?? 'Gagal generate'),
+  });
+
+  // TSK-048 Calc engine mutations
+  const calcMut = useMutation({
+    mutationFn: (id: string) => calculatePayroll(id),
+    onSuccess: (res) => {
+      message.success(
+        `Payroll calculated: ${res.generated} slip · Total Take Home: ${fmtIDR(res.total_take_home_idr)}`
+      );
+      if (res.anomaly_warnings.length > 0) {
+        message.warning(res.anomaly_warnings[0]);
+      }
+      setCalcPreviewPeriodId(null);
+      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-slips'] });
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal calculate'),
   });
 
   const lockMut = useMutation({
@@ -270,10 +291,20 @@ function PeriodsTab() {
       title: 'Actions', key: 'act', width: 240,
       render: (_, r) => (
         <Space size={4}>
-          {r.status !== 'LOCKED' && r.slip_count === 0 && (
-            <Tooltip title="Generate slips untuk semua active employees">
+          {r.status === 'DRAFT' && r.slip_count === 0 && (
+            <Tooltip title="TSK-048 — Calc engine: attendance × config → slips dengan prorata & overtime">
               <Button
                 size="small" type="primary" icon={<ThunderboltOutlined />}
+                onClick={() => setCalcPreviewPeriodId(r.id)}
+              >
+                Calculate
+              </Button>
+            </Tooltip>
+          )}
+          {r.status !== 'LOCKED' && r.status !== 'DRAFT' && r.slip_count === 0 && (
+            <Tooltip title="Legacy — generate slips tanpa attendance prorata">
+              <Button
+                size="small" icon={<ThunderboltOutlined />}
                 loading={generateMut.isPending}
                 onClick={() => generateMut.mutate(r.id)}
               >
@@ -332,7 +363,142 @@ function PeriodsTab() {
           </Button>
         </Form>
       </Modal>
+
+      {/* TSK-048 Calc Preview Modal */}
+      <CalcPreviewModal
+        periodId={calcPreviewPeriodId}
+        onClose={() => setCalcPreviewPeriodId(null)}
+        onConfirm={(id) => calcMut.mutate(id)}
+        confirmLoading={calcMut.isPending}
+      />
     </div>
+  );
+}
+
+// ─── TSK-048: Calc Preview Modal ───────────────────────────────────
+
+function CalcPreviewModal({
+  periodId,
+  onClose,
+  onConfirm,
+  confirmLoading,
+}: {
+  periodId: string | null;
+  onClose: () => void;
+  onConfirm: (id: string) => void;
+  confirmLoading: boolean;
+}) {
+  const previewQ = useQuery({
+    queryKey: ['payroll-calc-preview', periodId],
+    queryFn: () => calculatePayrollPreview(periodId!),
+    enabled: !!periodId,
+    retry: false,
+  });
+
+  const preview = previewQ.data;
+
+  return (
+    <Modal
+      title={<><ThunderboltOutlined /> Calculate Payroll — Pre-flight Check</>}
+      open={!!periodId}
+      onCancel={onClose}
+      width={620}
+      destroyOnHidden
+      footer={[
+        <Button key="c" onClick={onClose}>Batal</Button>,
+        <Button
+          key="ok"
+          type="primary"
+          loading={confirmLoading}
+          disabled={!preview?.can_proceed}
+          icon={<ThunderboltOutlined />}
+          onClick={() => periodId && onConfirm(periodId)}
+        >
+          Run Calc
+        </Button>,
+      ]}
+    >
+      {previewQ.isLoading && (
+        <div style={{ padding: 40, textAlign: 'center' }}>
+          <Spin>
+            <div style={{ minHeight: 24 }} />
+          </Spin>
+        </div>
+      )}
+
+      {preview && (
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <div style={{
+            padding: 14, background: 'var(--ide-bg, #F5F5F7)', borderRadius: 8,
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16,
+          }}>
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Hari Kerja</Text>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ide-blue)' }}>
+                {preview.calendar_working_days} <Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>hari</Text>
+              </div>
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Estimasi Slip</Text>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ide-green, #34C759)' }}>
+                {preview.estimated_employee_count - preview.attendance_missing_count} <Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>karyawan</Text>
+              </div>
+            </div>
+          </div>
+
+          {preview.attendance_missing_count > 0 && (
+            <div style={{
+              padding: 12, borderRadius: 8,
+              background: 'rgba(255,149,0,0.08)',
+              border: '1px solid rgba(255,149,0,0.3)',
+            }}>
+              <Text strong style={{ color: 'var(--ide-orange, #FF9500)' }}>
+                ⚠ {preview.attendance_missing_count} karyawan belum input attendance
+              </Text>
+              <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ide-ink2)' }}>
+                Lengkapi di tab Attendance dulu (NC-OP-008-01).
+              </div>
+            </div>
+          )}
+
+          {preview.blockers.length > 0 && (
+            <div style={{
+              padding: 12, borderRadius: 8,
+              background: 'rgba(255,59,48,0.08)',
+              border: '1px solid rgba(255,59,48,0.3)',
+            }}>
+              <Text strong style={{ color: 'var(--ide-red, #FF3B30)' }}>
+                Calc tidak bisa dijalankan:
+              </Text>
+              <ul style={{ margin: '8px 0 0 20px', fontSize: 13 }}>
+                {preview.blockers.map((b, i) => <li key={i}>{b}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {preview.can_proceed && (
+            <div style={{
+              padding: 12, borderRadius: 8,
+              background: 'rgba(52,199,89,0.08)',
+              border: '1px solid rgba(52,199,89,0.3)',
+            }}>
+              <Text strong style={{ color: 'var(--ide-green, #34C759)' }}>
+                ✓ Siap calculate
+              </Text>
+              <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ide-ink2)' }}>
+                Akan generate {preview.estimated_employee_count} slip dengan prorata basic salary,
+                overtime (1.5× hourly rate), BPJS Kesehatan 1%, BPJS Ketenagakerjaan 2%.
+                Komisi sales pending auto-inject. Status period → REVIEWING setelah selesai.
+              </div>
+            </div>
+          )}
+
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            Spec: US-OP-008 + US-FN-002 · Edge cases: NC-OP-008-01/02, NC-FN-002-02/05.
+          </Text>
+        </Space>
+      )}
+    </Modal>
   );
 }
 

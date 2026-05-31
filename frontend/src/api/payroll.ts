@@ -201,6 +201,48 @@ export async function getSlipPdfUrl(
   return r.data;
 }
 
+// ─── Payroll Calc Engine (TSK-048) ──────────────────────────────
+
+export interface CalculatePayrollPreview {
+  period_id: string;
+  calendar_working_days: number;
+  attendance_missing_count: number;
+  attendance_missing_employee_ids: string[];
+  estimated_employee_count: number;
+  can_proceed: boolean;
+  blockers: string[];
+}
+
+export interface CalculatePayrollResponse {
+  period_id: string;
+  generated: number;
+  skipped: number;
+  total_gross_idr: string;
+  total_deductions_idr: string;
+  total_take_home_idr: string;
+  employee_count: number;
+  anomaly_warnings: string[];
+  errors: string[];
+}
+
+export async function calculatePayrollPreview(
+  period_id: string
+): Promise<CalculatePayrollPreview> {
+  const r = await apiClient.get<CalculatePayrollPreview>(
+    `/api/v1/payroll/periods/${period_id}/calculate-preview`
+  );
+  return r.data;
+}
+
+export async function calculatePayroll(
+  period_id: string
+): Promise<CalculatePayrollResponse> {
+  const r = await apiClient.post<CalculatePayrollResponse>(
+    `/api/v1/payroll/periods/${period_id}/calculate`
+  );
+  return r.data;
+}
+
 // ─── Attendance (TSK-047) ────────────────────────────────────────
 
 export interface AttendanceRow {
