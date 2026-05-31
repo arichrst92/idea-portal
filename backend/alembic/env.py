@@ -99,6 +99,9 @@ from app.onboarding.models import (  # noqa: F401  — Onboarding (4) TSK-016
 from app.separation.models import (  # noqa: F401  — Separation (1) TSK-017
     EmployeeSeparation,
 )
+from app.notification.models import (  # noqa: F401  — Notification (1) TSK-057
+    Notification,
+)
 
 config = context.config
 

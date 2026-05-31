@@ -42,6 +42,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '@/api/auth';
 import { getExpiringPlacements } from '@/api/outsource';
 import { getMyTasksDueSummary } from '@/api/projects';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   executiveColor,
   getTopRole,
@@ -341,6 +342,8 @@ export function AppShell({ children }: AppShellProps) {
               aria-label="Open global search (Cmd+K)"
               title="Search (⌘K)"
             />
+
+            <NotificationBell />
 
             <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '0 8px' }} title={topRole?.name ?? ''}>

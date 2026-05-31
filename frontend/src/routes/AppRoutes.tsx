@@ -29,6 +29,7 @@ import PublicKpiPage from '@/features/outsource/PublicKpiPage';
 import ContractsListPage from '@/features/contracts/ContractsListPage';
 import FinancePage from '@/features/finance/FinancePage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
+import NotificationsPage from '@/features/notifications/NotificationsPage';
 import PayrollPage from '@/features/payroll/PayrollPage';
 import PerformancePage from '@/features/performance/PerformancePage';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -187,6 +188,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><LeaveListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <RequireAuth>
+              <AppShell><NotificationsPage /></AppShell>
             </RequireAuth>
           }
         />
