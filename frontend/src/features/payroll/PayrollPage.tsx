@@ -9,12 +9,15 @@
 
 import {
   CalendarOutlined,
+  CheckOutlined,
   CheckSquareOutlined,
+  CloseOutlined,
   CloudDownloadOutlined,
   DollarOutlined,
   FilePdfOutlined,
   LockOutlined,
   PlusOutlined,
+  SendOutlined,
   SettingOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
@@ -30,6 +33,7 @@ import { useState } from 'react';
 
 import {
   addComponent,
+  approvePayroll,
   calculatePayroll,
   calculatePayrollPreview,
   createPeriod,
@@ -45,6 +49,8 @@ import {
   MONTHS_ID,
   periodLabel,
   periodStatusColor,
+  rejectPayroll,
+  submitPayrollForApproval,
   suggestPph21,
   setPph21,
   upsertConfig,
@@ -204,6 +210,8 @@ function PeriodsTab() {
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
   const [calcPreviewPeriodId, setCalcPreviewPeriodId] = useState<string | null>(null);
+  const [rejectPeriodId, setRejectPeriodId] = useState<string | null>(null);
+  const [rejectForm] = Form.useForm();
 
   const query = useQuery({ queryKey: ['payroll-periods'], queryFn: listPeriods });
 
@@ -246,6 +254,46 @@ function PeriodsTab() {
     },
     onError: (e: any) =>
       message.error(e?.response?.data?.detail?.message ?? 'Gagal calculate'),
+  });
+
+  // TSK-050 Approval workflow mutations
+  const submitApprovalMut = useMutation({
+    mutationFn: (id: string) => submitPayrollForApproval(id),
+    onSuccess: () => {
+      message.success('Payroll submitted untuk approval GM/C-Level');
+      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal submit'),
+  });
+
+  const approveMut = useMutation({
+    mutationFn: (id: string) => approvePayroll(id),
+    onSuccess: () => {
+      message.success('Payroll approved ✓');
+      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+    },
+    onError: (e: any) => {
+      const d = e?.response?.data?.detail;
+      if (d?.code === 'SELF_APPROVAL') {
+        message.error(d.message);
+      } else {
+        message.error(d?.message ?? 'Gagal approve');
+      }
+    },
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      rejectPayroll(id, reason),
+    onSuccess: () => {
+      message.success('Payroll rejected — kembali ke Finance untuk fix');
+      setRejectPeriodId(null);
+      rejectForm.resetFields();
+      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+    },
+    onError: (e: any) =>
+      message.error(e?.response?.data?.detail?.message ?? 'Gagal reject'),
   });
 
   const lockMut = useMutation({
@@ -302,7 +350,44 @@ function PeriodsTab() {
               </Button>
             </Tooltip>
           )}
-          {r.status !== 'LOCKED' && r.status !== 'DRAFT' && r.slip_count === 0 && (
+          {r.status === 'REVIEWING' && r.slip_count > 0 && (
+            <Tooltip title="Submit ke GM/C-Level untuk approval (US-FN-002 AC-06)">
+              <Button
+                size="small" type="primary" icon={<SendOutlined />}
+                loading={submitApprovalMut.isPending}
+                onClick={() => submitApprovalMut.mutate(r.id)}
+              >
+                Submit Approval
+              </Button>
+            </Tooltip>
+          )}
+          {r.status === 'PENDING_APPROVAL' && (
+            <>
+              <Tooltip title="Approve payroll (GM/C-Level). Self-approval di-block.">
+                <Popconfirm
+                  title="Approve payroll ini?"
+                  description="Setelah approved, slip siap dipublish ke karyawan."
+                  onConfirm={() => approveMut.mutate(r.id)}
+                >
+                  <Button
+                    size="small" type="primary" icon={<CheckOutlined />}
+                    loading={approveMut.isPending}
+                  >
+                    Approve
+                  </Button>
+                </Popconfirm>
+              </Tooltip>
+              <Tooltip title="Reject — kembali ke Finance untuk fix">
+                <Button
+                  size="small" danger icon={<CloseOutlined />}
+                  onClick={() => setRejectPeriodId(r.id)}
+                >
+                  Reject
+                </Button>
+              </Tooltip>
+            </>
+          )}
+          {r.status !== 'LOCKED' && r.status !== 'DRAFT' && r.status !== 'PENDING_APPROVAL' && r.slip_count === 0 && (
             <Tooltip title="Legacy — generate slips tanpa attendance prorata">
               <Button
                 size="small" icon={<ThunderboltOutlined />}
@@ -313,7 +398,7 @@ function PeriodsTab() {
               </Button>
             </Tooltip>
           )}
-          {r.status !== 'LOCKED' && (
+          {(r.status === 'APPROVED' || r.status === 'PAID') && (
             <Popconfirm
               title="Lock periode ini? Setelah locked, slip tidak bisa diubah."
               onConfirm={() => lockMut.mutate(r.id)}
@@ -372,6 +457,53 @@ function PeriodsTab() {
         onConfirm={(id) => calcMut.mutate(id)}
         confirmLoading={calcMut.isPending}
       />
+
+      {/* TSK-050 Reject Modal */}
+      <Modal
+        title="Reject Payroll"
+        open={!!rejectPeriodId}
+        onCancel={() => setRejectPeriodId(null)}
+        footer={null}
+        destroyOnHidden
+      >
+        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
+          Payroll akan kembali ke status REVIEWING untuk Finance fix sebelum
+          submit ulang. Notifikasi akan dikirim ke submitter.
+        </Text>
+        <Form
+          form={rejectForm}
+          layout="vertical"
+          onFinish={(v) =>
+            rejectMut.mutate({ id: rejectPeriodId!, reason: v.rejection_reason })
+          }
+        >
+          <Form.Item
+            label="Alasan Reject"
+            name="rejection_reason"
+            rules={[
+              { required: true, message: 'Alasan wajib diisi' },
+              { min: 3, message: 'Minimal 3 karakter' },
+            ]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="Contoh: Komisi sales bulan ini perlu di-review, ada anomaly di slip Budi..."
+            />
+          </Form.Item>
+          <Space>
+            <Button onClick={() => setRejectPeriodId(null)}>Batal</Button>
+            <Button
+              type="primary"
+              danger
+              htmlType="submit"
+              loading={rejectMut.isPending}
+              icon={<CloseOutlined />}
+            >
+              Confirm Reject
+            </Button>
+          </Space>
+        </Form>
+      </Modal>
     </div>
   );
 }

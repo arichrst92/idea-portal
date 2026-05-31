@@ -4,7 +4,7 @@
 
 import { apiClient } from './client';
 
-export type PeriodStatus = 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'PAID' | 'LOCKED';
+export type PeriodStatus = 'DRAFT' | 'REVIEWING' | 'PENDING_APPROVAL' | 'APPROVED' | 'PAID' | 'LOCKED';
 export type ComponentType = 'INCOME' | 'DEDUCTION';
 
 export interface PayrollConfig {
@@ -30,6 +30,16 @@ export interface PayrollPeriod {
   locked_at: string | null;
   created_at: string;
   updated_at: string;
+  // TSK-050 approval audit
+  submitted_for_review_at: string | null;
+  submitted_by_user_id: string | null;
+  approved_at: string | null;
+  approved_by_user_id: string | null;
+  approval_notes: string | null;
+  rejected_at: string | null;
+  rejected_by_user_id: string | null;
+  rejection_reason: string | null;
+  // derived
   slip_count: number;
   total_gross: string | null;
   total_take_home: string | null;
@@ -197,6 +207,41 @@ export async function getSlipPdfUrl(
 ): Promise<{ url: string; expires_in_seconds: number }> {
   const r = await apiClient.get<{ url: string; expires_in_seconds: number }>(
     `/api/v1/payroll/slips/${slip_id}/pdf-url`, { params: { expires_in } },
+  );
+  return r.data;
+}
+
+// ─── Payroll Approval Workflow (TSK-050) ─────────────────────────
+
+export async function submitPayrollForApproval(
+  period_id: string,
+  notes?: string
+): Promise<PayrollPeriod> {
+  const r = await apiClient.post<PayrollPeriod>(
+    `/api/v1/payroll/periods/${period_id}/submit-for-approval`,
+    { notes: notes ?? null }
+  );
+  return r.data;
+}
+
+export async function approvePayroll(
+  period_id: string,
+  notes?: string
+): Promise<PayrollPeriod> {
+  const r = await apiClient.post<PayrollPeriod>(
+    `/api/v1/payroll/periods/${period_id}/approve`,
+    { notes: notes ?? null }
+  );
+  return r.data;
+}
+
+export async function rejectPayroll(
+  period_id: string,
+  rejection_reason: string
+): Promise<PayrollPeriod> {
+  const r = await apiClient.post<PayrollPeriod>(
+    `/api/v1/payroll/periods/${period_id}/reject`,
+    { rejection_reason }
   );
   return r.data;
 }
@@ -383,6 +428,7 @@ export function periodStatusColor(s: PeriodStatus): { className: string; label: 
   switch (s) {
     case 'DRAFT': return { className: 'ide-tag-gray', label: 'Draft' };
     case 'REVIEWING': return { className: 'ide-tag-orange', label: 'Reviewing' };
+    case 'PENDING_APPROVAL': return { className: 'ide-tag-yellow', label: 'Pending Approval' };
     case 'APPROVED': return { className: 'ide-tag-blue', label: 'Approved' };
     case 'PAID': return { className: 'ide-tag-green', label: 'Paid' };
     case 'LOCKED': return { className: 'ide-tag-purple', label: 'Locked' };

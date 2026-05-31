@@ -122,7 +122,16 @@ class PayrollConfig(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
 
 class PayrollPeriod(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Periode payroll bulanan."""
+    """Periode payroll bulanan dengan approval workflow (TSK-050).
+
+    Status transitions:
+      DRAFT → REVIEWING (calc engine done — TSK-048)
+      REVIEWING → PENDING_APPROVAL (Finance submit for review — TSK-050)
+      PENDING_APPROVAL → APPROVED (GM/C-Level approve — TSK-050)
+      PENDING_APPROVAL → REVIEWING (GM reject, back to Finance — TSK-050)
+      APPROVED → PAID (slip PDF published, future TSK)
+      any → LOCKED (immutable — existing)
+    """
 
     __tablename__ = "payroll_periods"
 
@@ -131,6 +140,29 @@ class PayrollPeriod(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     pay_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="DRAFT", nullable=False)
     locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # ─── TSK-050 Approval workflow audit ──────────────────────
+    submitted_for_review_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    submitted_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    approved_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    approval_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    rejected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    rejected_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class PayrollComponent(Base, UUIDPrimaryKeyMixin, TimestampMixin):

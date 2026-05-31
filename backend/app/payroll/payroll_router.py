@@ -35,6 +35,7 @@ from app.payroll.payroll_schemas import (
     CalculatePayrollPreview,
     CalculatePayrollResponse,
     GenerateSlipsResponse,
+    PayrollApproveRequest,
     PayrollComponentCreate,
     PayrollComponentOut,
     PayrollConfigCreate,
@@ -42,7 +43,9 @@ from app.payroll.payroll_schemas import (
     PayrollConfigUpdate,
     PayrollPeriodCreate,
     PayrollPeriodOut,
+    PayrollRejectRequest,
     PayrollSlipOut,
+    PayrollSubmitForApproval,
     Pph21SuggestResponse,
     SetPph21Request,
 )
@@ -51,9 +54,11 @@ from app.payroll.payroll_service import (
     DuplicatePeriodError,
     DuplicateSlipError,
     IncompleteAttendanceError,
+    InvalidStateTransitionError,
     NetNegativeError,
     PeriodLockedError,
     PeriodNotFoundError,
+    SelfApprovalBlockedError,
     SlipNotFoundError,
 )
 from app.payroll.pdf_generator import generate_slip_pdf
@@ -385,6 +390,124 @@ async def lock_period_endpoint(
         session=session, actor=user, action="PAYROLL_PERIOD_LOCKED",
         resource_type="payroll_period", resource_id=str(p.id),
         ip_address=request.client.host if request.client else None,
+    )
+    return await _period_to_out(session, p)
+
+
+# ─── TSK-050 Approval workflow ───────────────────────────────────
+
+
+@router.post(
+    "/periods/{period_id}/submit-for-approval", response_model=PayrollPeriodOut
+)
+async def submit_for_approval_endpoint(
+    request: Request,
+    period_id: UUID,
+    data: PayrollSubmitForApproval,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> PayrollPeriodOut:
+    """Finance submit payroll period untuk GM/C-Level approval.
+
+    Pre-condition: status == REVIEWING (calc done + PPh21 set).
+    Notifies approvers via PAYROLL_PENDING_APPROVAL template.
+    """
+    try:
+        p = await service.submit_payroll_for_approval(session, period_id, user.id)
+    except PeriodNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidStateTransitionError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "INVALID_STATE", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_SUBMITTED_FOR_APPROVAL",
+        resource_type="payroll_period",
+        resource_id=str(p.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"notes": data.notes, "submitted_by": str(user.id)},
+    )
+    return await _period_to_out(session, p)
+
+
+@router.post("/periods/{period_id}/approve", response_model=PayrollPeriodOut)
+async def approve_payroll_endpoint(
+    request: Request,
+    period_id: UUID,
+    data: PayrollApproveRequest,
+    session: DBSession,
+    user=Depends(require_permission("payroll.approve")),
+) -> PayrollPeriodOut:
+    """GM/C-Level approve payroll. Pre: PENDING_APPROVAL. Post: APPROVED.
+
+    NC-FN-002-01: approval mandatory before finalization.
+    Self-approval blocked (Finance ≠ GM).
+    """
+    try:
+        p = await service.approve_payroll(session, period_id, user.id, data.notes)
+    except PeriodNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidStateTransitionError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "INVALID_STATE", "message": str(e)}
+        ) from e
+    except SelfApprovalBlockedError as e:
+        raise HTTPException(
+            status_code=403, detail={"code": "SELF_APPROVAL", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_APPROVED",
+        resource_type="payroll_period",
+        resource_id=str(p.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"approved_by": str(user.id), "notes": data.notes},
+    )
+    return await _period_to_out(session, p)
+
+
+@router.post("/periods/{period_id}/reject", response_model=PayrollPeriodOut)
+async def reject_payroll_endpoint(
+    request: Request,
+    period_id: UUID,
+    data: PayrollRejectRequest,
+    session: DBSession,
+    user=Depends(require_permission("payroll.approve")),
+) -> PayrollPeriodOut:
+    """GM/C-Level reject — back to REVIEWING untuk Finance fix. Reason required."""
+    try:
+        p = await service.reject_payroll(
+            session, period_id, user.id, data.rejection_reason
+        )
+    except PeriodNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except InvalidStateTransitionError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "INVALID_STATE", "message": str(e)}
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_REJECTED",
+        resource_type="payroll_period",
+        resource_id=str(p.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "rejected_by": str(user.id),
+            "reason": data.rejection_reason,
+        },
     )
     return await _period_to_out(session, p)
 

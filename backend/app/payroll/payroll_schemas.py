@@ -54,9 +54,28 @@ class PayrollConfigOut(PayrollConfigBase):
 class PeriodStatus:
     DRAFT = "DRAFT"
     REVIEWING = "REVIEWING"
+    PENDING_APPROVAL = "PENDING_APPROVAL"  # TSK-050 — Finance submitted, awaiting GM/C-Level
     APPROVED = "APPROVED"
     PAID = "PAID"
     LOCKED = "LOCKED"
+
+
+class PayrollSubmitForApproval(BaseModel):
+    """Finance submits payroll period for GM/C-Level approval (TSK-050)."""
+
+    notes: str | None = None
+
+
+class PayrollApproveRequest(BaseModel):
+    """GM/C-Level approve payroll (TSK-050, US-FN-002 AC-06)."""
+
+    notes: str | None = None
+
+
+class PayrollRejectRequest(BaseModel):
+    """GM/C-Level reject payroll — back to REVIEWING for Finance fix."""
+
+    rejection_reason: Annotated[str, Field(min_length=3, max_length=500)]
 
 
 class PayrollPeriodCreate(BaseModel):
@@ -76,6 +95,16 @@ class PayrollPeriodOut(BaseModel):
     locked_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+    # TSK-050 approval audit
+    submitted_for_review_at: datetime | None = None
+    submitted_by_user_id: UUID | None = None
+    approved_at: datetime | None = None
+    approved_by_user_id: UUID | None = None
+    approval_notes: str | None = None
+    rejected_at: datetime | None = None
+    rejected_by_user_id: UUID | None = None
+    rejection_reason: str | None = None
 
     # Derived
     slip_count: int = 0

@@ -636,6 +636,186 @@ async def sum_take_home_in_period(session: AsyncSession, period_id: UUID) -> Dec
     return Decimal(str(val)) if val is not None else Decimal("0")
 
 
+# ─── TSK-050 Payroll Approval Workflow ────────────────────────────
+
+
+class InvalidStateTransitionError(Exception):
+    """Period status tidak match dengan transisi yang diminta."""
+
+
+class SelfApprovalBlockedError(Exception):
+    """Approver tidak boleh sama dengan submitter (NC-FN-002-01 spirit)."""
+
+
+async def submit_payroll_for_approval(
+    session: AsyncSession, period_id: UUID, submitter_user_id: UUID
+) -> PayrollPeriod:
+    """Finance submit payroll period untuk GM/C-Level review.
+
+    Pre-condition: status == REVIEWING (calc engine sudah jalan + PPh21 set).
+    Post-condition: status → PENDING_APPROVAL, notify approvers.
+    """
+    period = await get_period(session, period_id)
+    if period.status != "REVIEWING":
+        raise InvalidStateTransitionError(
+            f"Period status {period.status} — submit hanya boleh dari REVIEWING "
+            f"(post-calc, post-PPh21). NC-FN-002-01."
+        )
+
+    period.status = "PENDING_APPROVAL"
+    period.submitted_for_review_at = datetime.now(UTC)
+    period.submitted_by_user_id = submitter_user_id
+    # Clear any prior rejection state
+    period.rejected_at = None
+    period.rejected_by_user_id = None
+    period.rejection_reason = None
+    await session.commit()
+    await session.refresh(period)
+
+    # Notify GM/C-Level (users with payroll.approve permission)
+    try:
+        from app.notification.models import NotificationType
+        from app.notification.templates import notify_from_template
+        from app.identity.models import Permission, Role, RolePermission, User, UserRole
+
+        approver_stmt = (
+            select(User.id)
+            .join(UserRole, UserRole.user_id == User.id)
+            .join(Role, Role.id == UserRole.role_id)
+            .join(RolePermission, RolePermission.role_id == Role.id)
+            .join(Permission, Permission.id == RolePermission.permission_id)
+            .where(Permission.code == "payroll.approve")
+            .distinct()
+        )
+        approver_ids = list((await session.execute(approver_stmt)).scalars().all())
+
+        slip_count = await count_slips_in_period(session, period_id)
+        total_take_home = await sum_take_home_in_period(session, period_id)
+
+        for uid in approver_ids:
+            if uid == submitter_user_id:
+                continue  # don't self-notify
+            await notify_from_template(
+                session,
+                user_id=uid,
+                type=NotificationType.PAYROLL_PENDING_APPROVAL,
+                context={
+                    "period": f"{period.year}-{period.month:02d}",
+                    "employee_count": slip_count,
+                    "total_idr": f"{int(total_take_home):,}".replace(",", "."),
+                    "run_id": str(period.id),
+                },
+            )
+        if approver_ids:
+            await session.commit()
+    except Exception:  # noqa: BLE001 — non-blocking notification
+        pass
+
+    return period
+
+
+async def approve_payroll(
+    session: AsyncSession,
+    period_id: UUID,
+    approver_user_id: UUID,
+    notes: str | None = None,
+) -> PayrollPeriod:
+    """GM/C-Level approve payroll. Pre: PENDING_APPROVAL. Post: APPROVED.
+
+    Self-approval blocked: approver ≠ submitter.
+    """
+    period = await get_period(session, period_id)
+    if period.status != "PENDING_APPROVAL":
+        raise InvalidStateTransitionError(
+            f"Period status {period.status} — approve hanya dari PENDING_APPROVAL"
+        )
+
+    if period.submitted_by_user_id == approver_user_id:
+        raise SelfApprovalBlockedError(
+            "Tidak boleh approve payroll yang Anda submit sendiri (Finance vs GM rule)"
+        )
+
+    period.status = "APPROVED"
+    period.approved_at = datetime.now(UTC)
+    period.approved_by_user_id = approver_user_id
+    period.approval_notes = notes
+    await session.commit()
+    await session.refresh(period)
+
+    # Notify Finance (submitter) — approved
+    try:
+        from app.notification.models import NotificationType
+        from app.notification.templates import notify_from_template
+
+        if period.submitted_by_user_id:
+            await notify_from_template(
+                session,
+                user_id=period.submitted_by_user_id,
+                type=NotificationType.PAYROLL_APPROVED,
+                context={
+                    "period": f"{period.year}-{period.month:02d}",
+                    "approver_name": "GM/C-Level",
+                    "run_id": str(period.id),
+                },
+            )
+            await session.commit()
+    except Exception:  # noqa: BLE001
+        pass
+
+    return period
+
+
+async def reject_payroll(
+    session: AsyncSession,
+    period_id: UUID,
+    rejector_user_id: UUID,
+    rejection_reason: str,
+) -> PayrollPeriod:
+    """GM/C-Level reject payroll — back to REVIEWING untuk Finance fix.
+
+    Pre: PENDING_APPROVAL. Post: REVIEWING.
+    """
+    period = await get_period(session, period_id)
+    if period.status != "PENDING_APPROVAL":
+        raise InvalidStateTransitionError(
+            f"Period status {period.status} — reject hanya dari PENDING_APPROVAL"
+        )
+
+    period.status = "REVIEWING"
+    period.rejected_at = datetime.now(UTC)
+    period.rejected_by_user_id = rejector_user_id
+    period.rejection_reason = rejection_reason
+    # Reset submitted_* so Finance harus submit ulang setelah fix
+    submitter = period.submitted_by_user_id  # capture for notify
+    period.submitted_for_review_at = None
+    period.submitted_by_user_id = None
+    await session.commit()
+    await session.refresh(period)
+
+    # Notify Finance (original submitter)
+    try:
+        from app.notification.models import NotificationType
+        from app.notification.templates import notify_from_template
+
+        if submitter:
+            await notify_from_template(
+                session,
+                user_id=submitter,
+                type=NotificationType.APPROVAL_REJECTED,
+                context={
+                    "request_type": f"Payroll {period.year}-{period.month:02d}",
+                    "approver_name": "GM/C-Level",
+                    "reason": rejection_reason,
+                    "link": f"/payroll?period={period.id}",
+                },
+            )
+            await session.commit()
+    except Exception:  # noqa: BLE001
+        pass
+
+    return period
+
+
 # ─── TSK-048 Payroll Calculation Engine ───────────────────────────
 
 
