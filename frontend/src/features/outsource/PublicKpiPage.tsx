@@ -6,7 +6,8 @@
 
 import { CheckCircleFilled } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button, Form, Input, Rate, Spin, Typography, message } from 'antd';
+import { Alert, Button, Form, Input, Rate, Spin, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useParams } from 'react-router-dom';
 

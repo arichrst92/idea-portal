@@ -15,7 +15,8 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Modal, Spin, message } from 'antd';
+import { Button, Empty, Form, Input, Spin} from 'antd';
+import { message, modal } from '@/lib/notify';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -298,7 +299,7 @@ function ActionBar({
   });
 
   const handleApprove = (level: 1 | 2) => {
-    Modal.confirm({
+    modal.confirm({
       title: `Approve L${level}`,
       content: (
         <Form layout="vertical">
@@ -320,7 +321,7 @@ function ActionBar({
   };
 
   const handleReject = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Reject Separation',
       content: (
         <Form layout="vertical">
@@ -343,7 +344,7 @@ function ActionBar({
   };
 
   const handleCancel = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Cancel Separation',
       content: (
         <Form layout="vertical">
@@ -366,7 +367,7 @@ function ActionBar({
   };
 
   const handleExecute = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Execute Separation',
       content: (
         <div>

@@ -5,17 +5,8 @@
 import { CheckOutlined, CloseOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Spin,
-  message,
-} from 'antd';
+  Alert, Button, DatePicker, Empty, Form, Input, Modal, Select, Spin} from 'antd';
+import { message, modal } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -182,7 +173,7 @@ function CreateLeaveModal({
           Submit
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
       width={560}
     >
       <Form form={form} layout="vertical">
@@ -275,7 +266,7 @@ function RowActions({
   });
 
   const handleReject = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Reject Leave Request',
       content: (
         <Form layout="vertical">

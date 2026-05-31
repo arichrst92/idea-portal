@@ -164,7 +164,7 @@ export function GlobalSearch() {
       closable={false}
       width={600}
       style={{ top: 80 }}
-      destroyOnClose
+      destroyOnHidden
       maskClosable
     >
       <Input

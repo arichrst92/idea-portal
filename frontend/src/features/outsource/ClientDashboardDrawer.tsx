@@ -7,9 +7,8 @@
 import { CopyOutlined, LinkOutlined, SendOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button, Drawer, Empty, Form, Input, Modal, Space, Spin, Tag, Tooltip,
-  Typography, message,
-} from 'antd';
+  Button, Drawer, Empty, Form, Input, Modal, Space, Spin, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
@@ -231,7 +230,7 @@ function KpiRequestModal({
     <Modal
       title={`KPI Request — ${placement.employee_name}`}
       open={open} onCancel={() => { setResultKpi(null); form.resetFields(); onClose(); }}
-      footer={null} destroyOnClose width={560}
+      footer={null} destroyOnHidden width={560}
     >
       {!resultKpi ? (
         <Form

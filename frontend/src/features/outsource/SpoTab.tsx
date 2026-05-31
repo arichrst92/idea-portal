@@ -20,21 +20,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Empty,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tabs,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Empty, Form, Input, Modal, Select, Space, Spin, Table, Tabs, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -210,7 +197,7 @@ function ComplaintsSection() {
 
       <Modal title="Log Client Complaint" open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields(); }}
-        footer={null} destroyOnClose width={560}
+        footer={null} destroyOnHidden width={560}
       >
         <Form form={form} layout="vertical"
           initialValues={{ complaint_date: dayjs().format('YYYY-MM-DD'), severity: 'MEDIUM' }}
@@ -245,7 +232,7 @@ function ComplaintsSection() {
 
       <Modal title={`Issue SP-O — ${activeComplaint?.placement_employee_name}`}
         open={spoOpen} onCancel={() => { setSpoOpen(false); spoForm.resetFields(); }}
-        footer={null} destroyOnClose width={560}
+        footer={null} destroyOnHidden width={560}
       >
         <Form form={spoForm} layout="vertical" onFinish={(v) => spoMut.mutate(v)}>
           <Form.Item name="placement_id" hidden><Input /></Form.Item>

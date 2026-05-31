@@ -23,7 +23,8 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Modal, Spin, message } from 'antd';
+import { Button, Spin} from 'antd';
+import { message, modal } from '@/lib/notify';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -216,7 +217,7 @@ export default function EmployeeDetailPage() {
   const typeTag = employeeTypeColor(emp.employee_type);
 
   const handleDelete = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Hapus Karyawan',
       content: `Soft-delete ${emp.full_name} (${emp.nik})? Status akan diubah ke ALUMNI dan user dinonaktifkan. Data tetap di-archive.`,
       okText: 'Soft Delete',

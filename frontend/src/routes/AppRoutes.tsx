@@ -9,6 +9,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/AppShell';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { NotifyBinder } from '@/components/NotifyBinder';
 import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
@@ -53,6 +54,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <>
+      <NotifyBinder />
       <SessionManager />
       <GlobalSearch />
       <Routes>

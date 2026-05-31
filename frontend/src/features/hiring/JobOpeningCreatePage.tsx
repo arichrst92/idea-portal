@@ -6,7 +6,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button, message } from 'antd';
+import { Alert, Button} from 'antd';
+import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';

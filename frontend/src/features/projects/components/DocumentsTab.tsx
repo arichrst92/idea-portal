@@ -15,23 +15,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Drawer,
-  Empty,
-  Form,
-  Input,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  Upload,
-  message,
-} from 'antd';
+  Button, Drawer, Empty, Form, Input, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography, Upload} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
 import dayjs from 'dayjs';
@@ -204,7 +189,7 @@ export function DocumentsTab({ projectId }: DocumentsTabProps) {
       <Modal
         title="Upload Document" open={uploadOpen}
         onCancel={() => { setUploadOpen(false); setUploadFile(null); uploadForm.resetFields(); }}
-        footer={null} destroyOnClose width={520}
+        footer={null} destroyOnHidden width={520}
       >
         <Form
           form={uploadForm} layout="vertical"

@@ -6,19 +6,8 @@
 import { CrownOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Progress,
-  Select,
-  Spin,
-  Tabs,
-  Tag,
-  message,
-} from 'antd';
+  Button, Empty, Form, Input, InputNumber, Modal, Progress, Select, Spin, Tabs, Tag} from 'antd';
+import { message } from '@/lib/notify';
 import { useState } from 'react';
 
 import { listDepartments, listEmployees } from '@/api/organization';
@@ -159,7 +148,7 @@ function TransitModal({
           }}
         >Lanjut</Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item label="Stage Baru" name="new_stage" rules={[{ required: true }]}>
@@ -330,7 +319,7 @@ function CreateLeadModal({ open, onClose, onSuccess }: { open: boolean; onClose:
           const v = await form.validateFields();
           mutation.mutate(v);
         }}>Submit</Button>]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ is_direktur_driven: false }}>
         <Form.Item label="Company Name" name="company_name" rules={[{ required: true }]}>
@@ -500,7 +489,7 @@ function TargetsTab() {
         })}
       </div>
 
-      <Modal title="Set Sales Target" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} destroyOnClose>
+      <Modal title="Set Sales Target" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} destroyOnHidden>
         <Form layout="vertical" onFinish={(v) => mutation.mutate(v)} initialValues={{ year: new Date().getFullYear() }}>
           <Form.Item label="Sales PIC (opsional)" name="user_id">
             <Select

@@ -235,9 +235,7 @@ export function AppShell({ children }: AppShellProps) {
     </>
   );
 
-  const userMenu = (
-    <Menu
-      items={[
+  const userMenuItems = [
         {
           key: 'profile',
           icon: <UserOutlined />,
@@ -273,9 +271,7 @@ export function AppShell({ children }: AppShellProps) {
           danger: true,
           onClick: handleLogout,
         },
-      ]}
-    />
-  );
+      ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -346,7 +342,7 @@ export function AppShell({ children }: AppShellProps) {
               title="Search (⌘K)"
             />
 
-            <Dropdown overlay={userMenu} trigger={['click']} placement="bottomRight">
+            <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '0 8px' }} title={topRole?.name ?? ''}>
                 <Avatar
                   size={32}

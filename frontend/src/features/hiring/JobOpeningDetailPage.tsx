@@ -19,7 +19,8 @@ import {
   UserAddOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Modal, Select, Spin, Tag, message } from 'antd';
+import { Button, Empty, Form, Input, Modal, Select, Spin, Tag} from 'antd';
+import { message } from '@/lib/notify';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -172,7 +173,7 @@ function AddApplicationModal({
           Tambah
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ source: 'OTHER' }}>
         <Form.Item
@@ -289,7 +290,7 @@ function TransitionModal({
           Lanjut
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <div
         style={{

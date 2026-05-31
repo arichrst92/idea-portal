@@ -14,23 +14,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Drawer,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Drawer, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -239,7 +224,7 @@ export function ChangeRequestsTab({ projectId }: ChangeRequestsTabProps) {
       <Modal
         title="New Change Request" open={createOpen}
         onCancel={() => { setCreateOpen(false); createForm.resetFields(); }}
-        footer={null} destroyOnClose width={620}
+        footer={null} destroyOnHidden width={620}
       >
         <Form
           form={createForm} layout="vertical"
@@ -279,7 +264,7 @@ export function ChangeRequestsTab({ projectId }: ChangeRequestsTabProps) {
       <Modal
         title="Reject CR" open={rejectOpen}
         onCancel={() => { setRejectOpen(false); rejectForm.resetFields(); }}
-        footer={null} destroyOnClose
+        footer={null} destroyOnHidden
       >
         <Form
           form={rejectForm} layout="vertical"

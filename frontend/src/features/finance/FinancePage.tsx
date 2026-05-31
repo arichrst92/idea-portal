@@ -8,20 +8,8 @@ import InvoicesTab from './InvoicesTab';
 import { CheckOutlined, CloseOutlined, PlusOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Spin,
-  Tabs,
-  Tag,
-  message,
-} from 'antd';
+  Alert, Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Select, Spin, Tabs, Tag} from 'antd';
+import { message, modal } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
@@ -218,7 +206,7 @@ function ReimbRow({ r, onAction, isApprover }: { r: ReimbursementListItem; onAct
   });
 
   const handleReject = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Reject Reimbursement',
       content: <Form layout="vertical"><Form.Item label="Alasan (min 10 char)"><TextArea id={`rej-${r.id}`} rows={3} /></Form.Item></Form>,
       okText: 'Reject',
@@ -237,7 +225,7 @@ function ReimbRow({ r, onAction, isApprover }: { r: ReimbursementListItem; onAct
   };
 
   const handleTransfer = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Mark as Transferred',
       content: <Form layout="vertical"><Form.Item label="Transfer Reference (e.g. bank ref no)"><Input id={`tx-${r.id}`} /></Form.Item></Form>,
       okText: 'Transfer',
@@ -320,7 +308,7 @@ function CreateReimbModal({ open, onClose, onSuccess }: { open: boolean; onClose
             currency: 'IDR',
           });
         }}>Submit</Button>]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ category: 'OTHER', request_date: dayjs() }}>
         <Form.Item label="Karyawan" name="employee_id" rules={[{ required: true }]}>
@@ -446,7 +434,7 @@ function ProcRow({ p, onAction, isApprover }: { p: ProcurementListItem; onAction
   const approveL2Mut = useMutation({ mutationFn: () => approveProcL2(p.id), onSuccess: () => { message.success('Approved L2'); onAction(); }, onError: (e: any) => message.error(e?.response?.data?.detail?.message || 'Gagal') });
 
   const handleOrder = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Mark as Ordered',
       content: (
         <Form layout="vertical">
@@ -468,7 +456,7 @@ function ProcRow({ p, onAction, isApprover }: { p: ProcurementListItem; onAction
   };
 
   const handleDeliver = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Mark as Delivered',
       content: <p>Mark item delivered hari ini ({dayjs().format('DD MMM YYYY')})?</p>,
       onOk: async () => {
@@ -545,7 +533,7 @@ function CreateProcModal({ open, onClose, onSuccess }: { open: boolean; onClose:
             notes: v.notes,
           });
         }}>Submit</Button>]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ item_category: 'OTHER', quantity: 1, is_asset: false }}>
         <Form.Item label="Item Description (min 10 char)" name="item_description" rules={[{ required: true }, { min: 10 }]}>
@@ -617,7 +605,7 @@ function VendorTab() {
         ))}
       </div>
 
-      <Modal title="Add Vendor" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} destroyOnClose>
+      <Modal title="Add Vendor" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} destroyOnHidden>
         <Form layout="vertical" onFinish={(v) => mutation.mutate(v)}>
           <Form.Item label="Code" name="code" rules={[{ required: true, min: 2 }]}>
             <Input placeholder="VND-001" style={{ fontFamily: 'var(--ide-font-mono)' }} />

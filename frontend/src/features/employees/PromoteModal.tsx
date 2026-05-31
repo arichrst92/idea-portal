@@ -8,7 +8,8 @@
  */
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, Modal, Select, message } from 'antd';
+import { Alert, Button, DatePicker, Form, Input, Modal, Select} from 'antd';
+import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -97,7 +98,7 @@ export function PromoteModal({
           Promosi
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       {serverError && (
         <Alert

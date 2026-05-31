@@ -13,7 +13,8 @@ import {
   MinusOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Dropdown, Empty, Form, Input, Modal, Spin, message } from 'antd';
+import { Button, Dropdown, Empty, Form, Input, Modal, Spin} from 'antd';
+import { message } from '@/lib/notify';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 

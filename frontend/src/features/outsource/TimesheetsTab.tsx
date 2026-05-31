@@ -17,21 +17,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Drawer,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+  Button, Drawer, Empty, Form, Input, InputNumber, Modal, Select, Space, Spin, Table, Tag, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
@@ -187,7 +174,7 @@ export function TimesheetsTab() {
 
       <Modal title="New Timesheet" open={createOpen}
         onCancel={() => { setCreateOpen(false); createForm.resetFields(); }}
-        footer={null} destroyOnClose
+        footer={null} destroyOnHidden
       >
         <Form
           form={createForm} layout="vertical"
@@ -474,7 +461,7 @@ function TimesheetDetailDrawer({
 
       <Modal title="Reject Timesheet" open={rejectOpen}
         onCancel={() => { setRejectOpen(false); rejectForm.resetFields(); }}
-        footer={null} destroyOnClose
+        footer={null} destroyOnHidden
       >
         <Form form={rejectForm} layout="vertical"
           onFinish={(v) => rejectMut.mutate(v.rejection_reason)}

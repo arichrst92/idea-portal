@@ -5,7 +5,8 @@
 
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Select, Spin, message } from 'antd';
+import { Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Select, Spin} from 'antd';
+import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -186,7 +187,7 @@ function InitiateModal({
           Submit untuk Approval
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
       width={560}
     >
       {serverError && (

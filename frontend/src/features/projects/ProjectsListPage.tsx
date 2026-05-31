@@ -5,18 +5,8 @@
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Progress,
-  Select,
-  Spin,
-  message,
-} from 'antd';
+  Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Progress, Select, Spin} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -104,7 +94,7 @@ function CreateProjectModal({
           Create
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" initialValues={{ type: 'CLIENT', currency: 'IDR' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>

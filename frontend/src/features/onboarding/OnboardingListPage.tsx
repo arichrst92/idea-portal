@@ -5,7 +5,8 @@
 
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Modal, Select, Spin, message } from 'antd';
+import { Button, Empty, Form, Input, Modal, Select, Spin} from 'antd';
+import { message } from '@/lib/notify';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -233,7 +234,7 @@ function AssignModal({
           Assign
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item

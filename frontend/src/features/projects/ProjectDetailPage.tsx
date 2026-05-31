@@ -18,23 +18,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Collapse,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Progress,
-  Select,
-  Space,
-  Spin,
-  Tabs,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Collapse, Empty, Form, Input, InputNumber, Modal, Progress, Select, Space, Spin, Tabs, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -210,7 +195,7 @@ export default function ProjectDetailPage() {
         open={closeOpen}
         onCancel={() => setCloseOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form layout="vertical" onFinish={(v) => closeMut.mutate({ status: closeStatus, reason: v.reason })}>
           <Form.Item label="Reason" name="reason" rules={[{ required: true, min: 10 }]}>
@@ -355,7 +340,7 @@ function HierarchyTab({ projectId }: { projectId: string }) {
 
       {/* Create Phase Modal */}
       <Modal
-        title="Add Phase" open={phaseOpen} onCancel={() => setPhaseOpen(false)} footer={null} destroyOnClose
+        title="Add Phase" open={phaseOpen} onCancel={() => setPhaseOpen(false)} footer={null} destroyOnHidden
       >
         <Form layout="vertical" onFinish={(v) => createPhaseMut.mutate(v)}>
           <Form.Item label="Name" name="name" rules={[{ required: true }]}>
@@ -376,7 +361,7 @@ function HierarchyTab({ projectId }: { projectId: string }) {
 
       {/* Create Epic Modal */}
       <Modal
-        title="Add Epic" open={epicOpen} onCancel={() => setEpicOpen(false)} footer={null} destroyOnClose
+        title="Add Epic" open={epicOpen} onCancel={() => setEpicOpen(false)} footer={null} destroyOnHidden
       >
         <Form layout="vertical" onFinish={(v) => createEpicMut.mutate({ phaseId: epicPhaseId!, data: v })}>
           <Form.Item label="Name" name="name" rules={[{ required: true }]}>
@@ -394,7 +379,7 @@ function HierarchyTab({ projectId }: { projectId: string }) {
 
       {/* Create Task Modal */}
       <Modal
-        title="Add Task" open={taskOpen} onCancel={() => setTaskOpen(false)} footer={null} destroyOnClose
+        title="Add Task" open={taskOpen} onCancel={() => setTaskOpen(false)} footer={null} destroyOnHidden
       >
         <Form
           layout="vertical"

@@ -19,24 +19,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Drawer,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tabs,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Drawer, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -152,7 +136,7 @@ function ConfigsTab() {
 
       <Modal
         title="Set Payroll Config" open={open}
-        onCancel={() => setOpen(false)} footer={null} destroyOnClose
+        onCancel={() => setOpen(false)} footer={null} destroyOnHidden
         width={520}
       >
         <Form
@@ -323,7 +307,7 @@ function PeriodsTab() {
           <Table rowKey="id" columns={columns} dataSource={query.data ?? []} size="small" />}
 
       <Modal title="New Payroll Period" open={open}
-        onCancel={() => setOpen(false)} footer={null} destroyOnClose>
+        onCancel={() => setOpen(false)} footer={null} destroyOnHidden>
         <Form
           form={form} layout="vertical"
           initialValues={{ year: dayjs().year(), month: dayjs().month() + 1 }}
@@ -598,7 +582,7 @@ function SlipDetailDrawer({
           )}
 
           <Modal title="Add Component" open={addOpen}
-            onCancel={() => setAddOpen(false)} footer={null} destroyOnClose>
+            onCancel={() => setAddOpen(false)} footer={null} destroyOnHidden>
             <Form form={form} layout="vertical"
               initialValues={{ component_type: 'INCOME', is_variable: true }}
               onFinish={(v) => addMut.mutate(v)}
@@ -633,7 +617,7 @@ function SlipDetailDrawer({
           </Modal>
 
           <Modal title="Set PPh21" open={pphOpen}
-            onCancel={() => setPphOpen(false)} footer={null} destroyOnClose>
+            onCancel={() => setPphOpen(false)} footer={null} destroyOnHidden>
             <Form form={pphForm} layout="vertical"
               onFinish={(v) => pphMut.mutate(v.amount)}
             >

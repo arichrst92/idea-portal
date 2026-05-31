@@ -6,21 +6,8 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Progress,
-  Select,
-  Spin,
-  Tabs,
-  Tag,
-  message,
-} from 'antd';
+  Alert, Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Progress, Select, Spin, Tabs, Tag} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
@@ -376,7 +363,7 @@ function SubmitAssessmentModal({
           Submit
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item label="Karyawan" name="employee_id" rules={[{ required: true }]}>
@@ -685,7 +672,7 @@ function CreateOkrModal({
           Submit
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
@@ -934,7 +921,7 @@ function IssueSpModal({
           Issue
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Alert
         type="warning"

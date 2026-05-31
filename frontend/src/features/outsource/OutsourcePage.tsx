@@ -19,23 +19,8 @@ import { SpoTab } from './SpoTab';
 import { TimesheetsTab } from './TimesheetsTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tabs,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -281,7 +266,7 @@ function PlacementsTab() {
 
       <Modal title="New Placement" open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields(); }}
-        footer={null} destroyOnClose width={620}
+        footer={null} destroyOnHidden width={620}
       >
         <Form
           form={form} layout="vertical"
@@ -381,7 +366,7 @@ function RenewPlacementModal({
   return (
     <Modal
       title={`Renew / Amend — ${placement.employee_name} → ${placement.client_code}`}
-      open={open} onCancel={onClose} footer={null} destroyOnClose width={680}
+      open={open} onCancel={onClose} footer={null} destroyOnHidden width={680}
     >
       <div style={{
         background: 'rgba(0,113,227,0.05)', padding: 12, borderRadius: 8,
@@ -540,7 +525,7 @@ function ClientsTab() {
 
       <Modal title="New Client" open={open}
         onCancel={() => { setOpen(false); form.resetFields(); }}
-        footer={null} destroyOnClose
+        footer={null} destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={(v) => createMut.mutate(v)}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>

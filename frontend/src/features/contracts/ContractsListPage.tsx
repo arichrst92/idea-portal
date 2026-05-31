@@ -10,18 +10,8 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Spin,
-  message,
-} from 'antd';
+  Alert, Button, DatePicker, Empty, Form, Input, InputNumber, Modal, Select, Spin} from 'antd';
+import { message } from '@/lib/notify';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
@@ -122,7 +112,7 @@ function CreateModal({
           Create
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
       width={560}
     >
       <Form form={form} layout="vertical" initialValues={{ contract_type: 'PKWT' }}>
@@ -253,7 +243,7 @@ function RenewModal({
           Renew
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
       width={560}
     >
       <Alert
@@ -381,7 +371,7 @@ function TerminateModal({
           Terminate
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item

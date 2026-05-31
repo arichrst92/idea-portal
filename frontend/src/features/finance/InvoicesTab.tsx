@@ -13,22 +13,8 @@
 import { DeleteOutlined, DollarOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Popconfirm,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+  Button, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography} from 'antd';
+import { message } from '@/lib/notify';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
@@ -321,7 +307,7 @@ export default function InvoicesTab() {
         open={createOpen}
         onCancel={() => { setCreateOpen(false); createForm.resetFields(); }}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         width={620}
       >
         <Form
@@ -395,7 +381,7 @@ export default function InvoicesTab() {
         open={paymentOpen}
         onCancel={() => { setPaymentOpen(false); paymentForm.resetFields(); }}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         {activeInvoice && (
           <Form
