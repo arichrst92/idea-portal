@@ -227,6 +227,7 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-31 | AntD v5 deprecated props sweep: `destroyOnClose` → `destroyOnHidden`, `Dropdown overlay=` → `Dropdown menu={{ items: [...] }}` | Bulk sed safe untuk destroyOnClose (43 occurrences fixed). Dropdown overlay perlu refactor manual karena ganti dari JSX `<Menu>` ke items array. |
 | 2026-05-31 | Frontend audit script `outputs/audit_frontend.py` re-runnable, 4 kategori (A1 hooks-after-return, A2 deprecated AntD, A3 static notify, A4 InputNumber parser) | Jalankan sebelum push setelah refactor besar untuk catch regression. A3 detector skip kalau import sudah dari `@/lib/notify` (proxy aman). |
 | 2026-05-31 | WeasyPrint import WAJIB lazy (di dalam function body), bukan top-level | Native libs (pango, glib) tidak selalu ada di host (mis. macOS dev box tanpa Homebrew install). Top-level import crash backend startup. Pattern: `def generate_pdf(): from weasyprint import HTML; ...` plus actionable error message kalau import fail. |
+| 2026-05-31 | Kembali ke sprint discipline — kerja per Sprint goal, bukan TSK-pick-and-choose | Marathon mode 28-31 May bypass roadmap (jump ke PH2 modul sambil M1.4 baru 37%). Formalkan Sprint Planning di xlsx: S1 (1-14 Jun) close M1.4 core, S2 (15-28 Jun) M1.4 variants + M1.2 UI, S3 (29 Jun-12 Jul) M1.3 closure, S4 (13-26 Jul) PH1 GATE demo. Setiap sprint = goal terikat milestone, end-of-sprint demo. Tidak skip milestone berikutnya sebelum current closure. |
 
 Tambah row baru saat ada keputusan signifikan.
 
