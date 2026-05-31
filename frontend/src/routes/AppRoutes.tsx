@@ -30,6 +30,7 @@ import ContractsListPage from '@/features/contracts/ContractsListPage';
 import FinancePage from '@/features/finance/FinancePage';
 import LeaveListPage from '@/features/leave/LeaveListPage';
 import NotificationsPage from '@/features/notifications/NotificationsPage';
+import MyPayslipsPage from '@/features/payroll/MyPayslipsPage';
 import PayrollPage from '@/features/payroll/PayrollPage';
 import PerformancePage from '@/features/performance/PerformancePage';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -236,6 +237,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><PayrollPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/my-payslips"
+          element={
+            <RequireAuth>
+              <AppShell><MyPayslipsPage /></AppShell>
             </RequireAuth>
           }
         />

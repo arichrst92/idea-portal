@@ -253,6 +253,12 @@ export function AppShell({ children }: AppShellProps) {
         },
         { type: 'divider' as const },
         {
+          key: 'my-payslips',
+          icon: <DollarOutlined />,
+          label: 'Slip Gaji Saya',
+          onClick: () => navigate('/my-payslips'),
+        },
+        {
           key: 'settings',
           icon: <SettingOutlined />,
           label: 'Pengaturan',

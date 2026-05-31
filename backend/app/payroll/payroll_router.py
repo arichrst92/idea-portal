@@ -26,7 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 
 from app.core.audit import audit_log
-from app.core.deps import DBSession, require_permission
+from app.core.deps import DBSession, get_current_user, require_permission
 from app.organization.models import Employee
 from app.payroll import payroll_service as service
 from app.payroll.models import PayrollPeriod, PayrollSlip
@@ -43,6 +43,7 @@ from app.payroll.payroll_schemas import (
     PayrollConfigUpdate,
     PayrollPeriodCreate,
     PayrollPeriodOut,
+    PayrollPeriodUpdate,
     PayrollRejectRequest,
     PayrollSlipOut,
     PayrollSubmitForApproval,
@@ -257,12 +258,58 @@ async def create_period_endpoint(
     try:
         p = await service.create_period(session, data)
     except DuplicatePeriodError as e:
+        # NC-OP-008-02: prevent duplicate periods (both app-check + DB constraint)
         raise HTTPException(status_code=409, detail={"code": "DUPLICATE_PERIOD", "message": str(e)}) from e
     await audit_log(
         session=session, actor=user, action="PAYROLL_PERIOD_CREATED",
         resource_type="payroll_period", resource_id=str(p.id),
         ip_address=request.client.host if request.client else None,
-        after_state={"year": p.year, "month": p.month, "pay_date": str(p.pay_date)},
+        after_state={
+            "year": p.year,
+            "month": p.month,
+            "pay_date": str(p.pay_date),
+            "cutoff_date": str(p.cutoff_date) if p.cutoff_date else None,
+            "publish_date": str(p.publish_date) if p.publish_date else None,
+        },
+    )
+    return await _period_to_out(session, p)
+
+
+# TSK-055 — edit period config while DRAFT
+@router.patch("/periods/{period_id}", response_model=PayrollPeriodOut)
+async def update_period_endpoint(
+    request: Request,
+    period_id: UUID,
+    data: PayrollPeriodUpdate,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> PayrollPeriodOut:
+    """Update period config (pay_date / cutoff_date / publish_date). DRAFT only."""
+    try:
+        p = await service.update_period_config(
+            session,
+            period_id,
+            pay_date=data.pay_date,
+            cutoff_date=data.cutoff_date,
+            publish_date=data.publish_date,
+        )
+    except PeriodNotFoundError as e:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
+    except PeriodLockedError as e:
+        raise HTTPException(status_code=409, detail={"code": "LOCKED", "message": str(e)}) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_PERIOD_UPDATED",
+        resource_type="payroll_period",
+        resource_id=str(p.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "pay_date": str(p.pay_date),
+            "cutoff_date": str(p.cutoff_date) if p.cutoff_date else None,
+            "publish_date": str(p.publish_date) if p.publish_date else None,
+        },
     )
     return await _period_to_out(session, p)
 
@@ -513,6 +560,37 @@ async def reject_payroll_endpoint(
 
 
 # ─── Slip endpoints ──────────────────────────────────────────────
+
+
+# TSK-052 — static route BEFORE dynamic /slips/{slip_id} (NC-DEV-002)
+@router.get("/me/payslips", response_model=list[PayrollSlipOut])
+async def list_my_payslips_endpoint(
+    session: DBSession,
+    current_user=Depends(get_current_user),
+    period_id: UUID | None = None,
+) -> list[PayrollSlipOut]:
+    """List slip gaji milik current user (employee self-view).
+
+    Per US-FN-002 AC-10: pay slip history accessible to each employee
+    from their first month. Hanya tampilkan slip yang sudah published
+    (period.status in APPROVED/PAID/LOCKED).
+    """
+    # Resolve employee_id dari user
+    from app.organization.models import Employee
+    emp_stmt = select(Employee.id).where(Employee.user_id == current_user.id)
+    employee_id = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if employee_id is None:
+        return []
+
+    # Filter ke slip yang period-nya already APPROVED/PAID/LOCKED
+    slips = await service.list_slips(session, employee_id=employee_id)
+    visible_slips = []
+    for s in slips:
+        period = await session.get(PayrollPeriod, s.period_id)
+        if period and period.status in ("APPROVED", "PAID", "LOCKED"):
+            visible_slips.append(s)
+
+    return [await _slip_to_out(session, s) for s in visible_slips]
 
 
 @router.get("/slips", response_model=list[PayrollSlipOut])

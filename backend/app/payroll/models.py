@@ -141,6 +141,12 @@ class PayrollPeriod(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="DRAFT", nullable=False)
     locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # ─── TSK-055 Period configuration ─────────────────────────
+    cutoff_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # ↑ Tanggal cut-off: attendance & komponen variable harus sudah di-input
+    publish_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # ↑ Tanggal slip publish ke portal karyawan (default = pay_date)
+
     # ─── TSK-050 Approval workflow audit ──────────────────────
     submitted_for_review_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -163,6 +169,11 @@ class PayrollPeriod(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"), nullable=True
     )
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # TSK-056 — race-safe unique guarantee on (year, month)
+    __table_args__ = (
+        UniqueConstraint("year", "month", name="uq_payroll_period_year_month"),
+    )
 
 
 class PayrollComponent(Base, UUIDPrimaryKeyMixin, TimestampMixin):

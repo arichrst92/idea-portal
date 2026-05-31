@@ -160,20 +160,70 @@ async def get_period(session: AsyncSession, period_id: UUID) -> PayrollPeriod:
 async def create_period(
     session: AsyncSession, data: PayrollPeriodCreate
 ) -> PayrollPeriod:
-    # Check duplicate
+    """Create payroll period. NC-OP-008-02: prevent duplicate (year, month).
+
+    Two-layer guard:
+    1. Application check via SELECT (early fail with clear message)
+    2. DB UniqueConstraint(year, month) — race-safe (TSK-056)
+    """
+    # Application-level pre-check (NC-OP-008-02)
     dup_stmt = select(PayrollPeriod).where(
         PayrollPeriod.year == data.year, PayrollPeriod.month == data.month
     )
-    if (await session.execute(dup_stmt)).scalar_one_or_none():
-        raise DuplicatePeriodError(f"Period {data.year}-{data.month:02d} sudah ada")
+    existing = (await session.execute(dup_stmt)).scalar_one_or_none()
+    if existing:
+        raise DuplicatePeriodError(
+            f"Period {data.year}-{data.month:02d} sudah ada (status: {existing.status}, "
+            f"id: {existing.id}). NC-OP-008-02 prevents duplicate periods."
+        )
 
     period = PayrollPeriod(
         year=data.year,
         month=data.month,
         pay_date=data.pay_date,
+        cutoff_date=data.cutoff_date,
+        publish_date=data.publish_date,
         status="DRAFT",
     )
     session.add(period)
+    try:
+        await session.commit()
+    except IntegrityError as e:
+        # Race condition catcher: another request created same (year, month)
+        # between our SELECT and INSERT. DB constraint enforced (TSK-056).
+        await session.rollback()
+        raise DuplicatePeriodError(
+            f"Period {data.year}-{data.month:02d} sudah ada (race condition). "
+            f"NC-OP-008-02 — refresh halaman dan retry."
+        ) from e
+    await session.refresh(period)
+    return period
+
+
+async def update_period_config(
+    session: AsyncSession,
+    period_id: UUID,
+    pay_date: date | None = None,
+    cutoff_date: date | None = None,
+    publish_date: date | None = None,
+) -> PayrollPeriod:
+    """TSK-055 — update period config (pay_date / cutoff / publish). Only DRAFT.
+
+    Once period moves to REVIEWING+, config dianggap final (no edit).
+    """
+    period = await get_period(session, period_id)
+    if period.status != "DRAFT":
+        raise PeriodLockedError(
+            f"Period status {period.status} — config hanya editable di DRAFT"
+        )
+
+    if pay_date is not None:
+        period.pay_date = pay_date
+    if cutoff_date is not None:
+        period.cutoff_date = cutoff_date
+    if publish_date is not None:
+        period.publish_date = publish_date
+
     await session.commit()
     await session.refresh(period)
     return period

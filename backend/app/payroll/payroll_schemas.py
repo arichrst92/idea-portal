@@ -82,6 +82,17 @@ class PayrollPeriodCreate(BaseModel):
     year: Annotated[int, Field(ge=2020, le=2099)]
     month: Annotated[int, Field(ge=1, le=12)]
     pay_date: date
+    # TSK-055 — optional config (default null → use sensible defaults)
+    cutoff_date: date | None = None  # attendance/komponen freeze (default: pay_date - 5)
+    publish_date: date | None = None  # slip publish ke karyawan (default: pay_date)
+
+
+class PayrollPeriodUpdate(BaseModel):
+    """TSK-055 — update period config (only DRAFT)."""
+
+    pay_date: date | None = None
+    cutoff_date: date | None = None
+    publish_date: date | None = None
 
 
 class PayrollPeriodOut(BaseModel):
@@ -95,6 +106,10 @@ class PayrollPeriodOut(BaseModel):
     locked_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+    # TSK-055 config
+    cutoff_date: date | None = None
+    publish_date: date | None = None
 
     # TSK-050 approval audit
     submitted_for_review_at: datetime | None = None

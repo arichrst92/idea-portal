@@ -216,15 +216,30 @@ function PeriodsTab() {
   const query = useQuery({ queryKey: ['payroll-periods'], queryFn: listPeriods });
 
   const createMut = useMutation({
-    mutationFn: createPeriod,
+    // Convert empty string → null for optional date fields (TSK-055)
+    mutationFn: (v: any) =>
+      createPeriod({
+        year: v.year,
+        month: v.month,
+        pay_date: v.pay_date,
+        cutoff_date: v.cutoff_date ? v.cutoff_date : null,
+        publish_date: v.publish_date ? v.publish_date : null,
+      }),
     onSuccess: () => {
       message.success('Periode dibuat');
       queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
       setOpen(false);
       form.resetFields();
     },
-    onError: (e: any) =>
-      message.error(e?.response?.data?.detail?.message ?? 'Gagal create periode'),
+    onError: (e: any) => {
+      const detail = e?.response?.data?.detail;
+      // NC-OP-008-02 — duplicate periode explicit
+      if (detail?.code === 'DUPLICATE_PERIOD') {
+        message.error(detail.message);
+      } else {
+        message.error(detail?.message ?? 'Gagal create periode');
+      }
+    },
   });
 
   const generateMut = useMutation({
@@ -441,9 +456,34 @@ function PeriodsTab() {
               <Select options={MONTHS_ID.map((m, i) => ({ value: i + 1, label: m }))} />
             </Form.Item>
           </div>
-          <Form.Item label="Pay Date" name="pay_date" rules={[{ required: true }]}>
+          <Form.Item
+            label="Pay Date"
+            name="pay_date"
+            rules={[{ required: true, message: 'Tanggal pembayaran wajib' }]}
+            tooltip="Tanggal transfer gaji ke karyawan"
+          >
             <Input placeholder="YYYY-MM-DD" />
           </Form.Item>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Form.Item
+              label="Cut-off Date"
+              name="cutoff_date"
+              tooltip="Tanggal attendance & komponen variable harus sudah di-input (opsional, default: pay_date - 5 hari)"
+            >
+              <Input placeholder="YYYY-MM-DD (opsional)" />
+            </Form.Item>
+            <Form.Item
+              label="Publish Date"
+              name="publish_date"
+              tooltip="Tanggal slip PDF di-publish ke portal karyawan (opsional, default: pay_date)"
+            >
+              <Input placeholder="YYYY-MM-DD (opsional)" />
+            </Form.Item>
+          </div>
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 12 }}>
+            Per knowledge.md sec.12: "Tanggal gajian dikonfigurasi per periode".
+            Config bisa di-edit selama period masih DRAFT.
+          </Text>
           <Button type="primary" htmlType="submit" loading={createMut.isPending} block>
             Create
           </Button>

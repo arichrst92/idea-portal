@@ -30,6 +30,9 @@ export interface PayrollPeriod {
   locked_at: string | null;
   created_at: string;
   updated_at: string;
+  // TSK-055 config
+  cutoff_date: string | null;
+  publish_date: string | null;
   // TSK-050 approval audit
   submitted_for_review_at: string | null;
   submitted_by_user_id: string | null;
@@ -133,8 +136,32 @@ export async function createPeriod(data: {
   year: number;
   month: number;
   pay_date: string;
+  cutoff_date?: string | null;
+  publish_date?: string | null;
 }): Promise<PayrollPeriod> {
   const r = await apiClient.post<PayrollPeriod>('/api/v1/payroll/periods', data);
+  return r.data;
+}
+
+// TSK-055 — update period config (DRAFT only)
+export async function updatePeriod(
+  period_id: string,
+  data: {
+    pay_date?: string | null;
+    cutoff_date?: string | null;
+    publish_date?: string | null;
+  }
+): Promise<PayrollPeriod> {
+  const r = await apiClient.patch<PayrollPeriod>(
+    `/api/v1/payroll/periods/${period_id}`,
+    data
+  );
+  return r.data;
+}
+
+// TSK-052 — current user's own slip history
+export async function listMyPayslips(): Promise<PayrollSlip[]> {
+  const r = await apiClient.get<PayrollSlip[]>('/api/v1/payroll/me/payslips');
   return r.data;
 }
 
