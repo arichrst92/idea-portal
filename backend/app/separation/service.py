@@ -24,6 +24,12 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.notification.approver_chain import (
+    find_l1_l2_approver_user_ids,
+    get_employee_display_name,
+)
+from app.notification.models import NotificationType
+from app.notification.templates import notify_from_template
 from app.organization.models import Employee, EmployeeStatus
 from app.separation.models import (
     EmployeeSeparation,
@@ -176,6 +182,24 @@ async def submit_for_approval(
     sep.status = SeparationStatus.PENDING_APPROVAL_L1
     await session.commit()
     await session.refresh(sep)
+
+    # TSK-060 — notify L1 approver (supervisor of separating employee)
+    l1_user_id, _ = await find_l1_l2_approver_user_ids(session, sep.employee_id)
+    if l1_user_id:
+        emp_name = await get_employee_display_name(session, sep.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l1_user_id,
+            type=NotificationType.SEPARATION_PENDING,
+            context={
+                "requester_name": emp_name,
+                "separation_type": sep.separation_type.value if hasattr(sep.separation_type, "value") else str(sep.separation_type),
+                "employee_name": emp_name,
+                "effective_date": sep.effective_date.strftime("%d %b %Y") if sep.effective_date else "—",
+                "separation_id": str(sep.id),
+            },
+        )
+        await session.commit()
     return sep
 
 
@@ -200,6 +224,24 @@ async def approve_l1(
     sep.status = SeparationStatus.PENDING_APPROVAL_L2
     await session.commit()
     await session.refresh(sep)
+
+    # TSK-060 — notify L2 approver
+    _, l2_user_id = await find_l1_l2_approver_user_ids(session, sep.employee_id)
+    if l2_user_id:
+        emp_name = await get_employee_display_name(session, sep.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l2_user_id,
+            type=NotificationType.SEPARATION_PENDING,
+            context={
+                "requester_name": emp_name,
+                "separation_type": sep.separation_type.value if hasattr(sep.separation_type, "value") else str(sep.separation_type),
+                "employee_name": emp_name,
+                "effective_date": sep.effective_date.strftime("%d %b %Y") if sep.effective_date else "—",
+                "separation_id": str(sep.id),
+            },
+        )
+        await session.commit()
     return sep
 
 
@@ -228,6 +270,19 @@ async def approve_l2(
     sep.status = SeparationStatus.APPROVED
     await session.commit()
     await session.refresh(sep)
+
+    # TSK-060 — notify initiator (separation approved)
+    await notify_from_template(
+        session,
+        user_id=sep.initiated_by_user_id,
+        type=NotificationType.APPROVAL_APPROVED,
+        context={
+            "request_type": "Separation",
+            "approver_name": "—",
+            "link": f"/separations/{sep.id}",
+        },
+    )
+    await session.commit()
     return sep
 
 
@@ -253,6 +308,20 @@ async def reject_separation(
     sep.rejection_reason = data.rejection_reason
     await session.commit()
     await session.refresh(sep)
+
+    # TSK-060 — notify initiator
+    await notify_from_template(
+        session,
+        user_id=sep.initiated_by_user_id,
+        type=NotificationType.APPROVAL_REJECTED,
+        context={
+            "request_type": "Separation",
+            "approver_name": "—",
+            "reason": data.rejection_reason or "(no reason)",
+            "link": f"/separations/{sep.id}",
+        },
+    )
+    await session.commit()
     return sep
 
 

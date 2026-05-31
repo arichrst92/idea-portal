@@ -14,6 +14,12 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.notification.approver_chain import (
+    find_l1_l2_approver_user_ids_by_user,
+    get_user_display_name,
+)
+from app.notification.models import NotificationType
+from app.notification.templates import notify_from_template
 from app.project.cr_schemas import CRApprove, CRCreate, CRReject, CRUpdate
 from app.project.models import (
     CRImpact,
@@ -127,6 +133,25 @@ async def submit_cr(session: AsyncSession, cr_id: UUID) -> ProjectChangeRequest:
     cr.status = CRStatus.PENDING_L1
     await session.commit()
     await session.refresh(cr)
+
+    # TSK-060 — notify L1 approver
+    l1_user_id, _ = await find_l1_l2_approver_user_ids_by_user(session, cr.requester_user_id)
+    if l1_user_id:
+        project = await session.get(Project, cr.project_id)
+        requester_name = await get_user_display_name(session, cr.requester_user_id)
+        await notify_from_template(
+            session,
+            user_id=l1_user_id,
+            type=NotificationType.CHANGE_REQUEST_PENDING,
+            context={
+                "requester_name": requester_name,
+                "project_code": project.code if project else "—",
+                "project_id": str(cr.project_id),
+                "summary": cr.title,
+                "cr_id": str(cr.id),
+            },
+        )
+        await session.commit()
     return cr
 
 
@@ -144,6 +169,25 @@ async def approve_l1(
     cr.status = CRStatus.PENDING_L2
     await session.commit()
     await session.refresh(cr)
+
+    # TSK-060 — notify L2 approver
+    _, l2_user_id = await find_l1_l2_approver_user_ids_by_user(session, cr.requester_user_id)
+    if l2_user_id:
+        project = await session.get(Project, cr.project_id)
+        requester_name = await get_user_display_name(session, cr.requester_user_id)
+        await notify_from_template(
+            session,
+            user_id=l2_user_id,
+            type=NotificationType.CHANGE_REQUEST_PENDING,
+            context={
+                "requester_name": requester_name,
+                "project_code": project.code if project else "—",
+                "project_id": str(cr.project_id),
+                "summary": cr.title,
+                "cr_id": str(cr.id),
+            },
+        )
+        await session.commit()
     return cr
 
 
@@ -173,6 +217,20 @@ async def approve_l2(
 
     await session.commit()
     await session.refresh(cr)
+
+    # TSK-060 — notify requester (CR resolved/approved)
+    await notify_from_template(
+        session,
+        user_id=cr.requester_user_id,
+        type=NotificationType.CHANGE_REQUEST_RESOLVED,
+        context={
+            "project_code": project.code if project else "—",
+            "project_id": str(cr.project_id),
+            "summary": cr.title,
+            "cr_id": str(cr.id),
+        },
+    )
+    await session.commit()
     return cr
 
 
@@ -189,6 +247,21 @@ async def reject_cr(
     cr.rejection_reason = data.rejection_reason
     await session.commit()
     await session.refresh(cr)
+
+    # TSK-060 — notify requester (rejected)
+    project = await session.get(Project, cr.project_id)
+    await notify_from_template(
+        session,
+        user_id=cr.requester_user_id,
+        type=NotificationType.APPROVAL_REJECTED,
+        context={
+            "request_type": f"Change Request '{cr.title}'",
+            "approver_name": "—",
+            "reason": data.rejection_reason or "(no reason)",
+            "link": f"/projects/{cr.project_id}?tab=cr&id={cr.id}",
+        },
+    )
+    await session.commit()
     return cr
 
 

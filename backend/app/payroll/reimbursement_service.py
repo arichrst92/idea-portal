@@ -21,6 +21,15 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.notification.approver_chain import (
+    find_l1_l2_approver_user_ids,
+    find_l1_l2_approver_user_ids_by_user,
+    get_employee_display_name,
+    get_requester_user_id,
+    get_user_display_name,
+)
+from app.notification.models import NotificationType
+from app.notification.templates import notify_from_template
 from app.organization.models import Employee
 from app.payroll.models import ProcurementRequest, Reimbursement, Vendor
 from app.payroll.reimbursement_schemas import (
@@ -152,6 +161,25 @@ async def create_reimbursement(
     session.add(r)
     await session.commit()
     await session.refresh(r)
+
+    # TSK-060 — notify L1 approver
+    l1_user_id, _ = await find_l1_l2_approver_user_ids(session, data.employee_id)
+    if l1_user_id:
+        requester_name = await get_employee_display_name(session, data.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l1_user_id,
+            type=NotificationType.PROCUREMENT_PENDING,
+            context={
+                "kind": "Reimbursement",
+                "requester_name": requester_name,
+                "amount_idr": f"{int(data.amount):,}".replace(",", "."),
+                "purpose": data.description or data.category,
+                "request_id": str(r.id),
+                "tab": "reimbursement",
+            },
+        )
+        await session.commit()
     return r
 
 
@@ -176,6 +204,25 @@ async def approve_reimbursement_l1(
     r.status = "PENDING_L2"
     await session.commit()
     await session.refresh(r)
+
+    # TSK-060 — notify L2
+    _, l2_user_id = await find_l1_l2_approver_user_ids(session, r.employee_id)
+    if l2_user_id:
+        requester_name = await get_employee_display_name(session, r.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l2_user_id,
+            type=NotificationType.PROCUREMENT_PENDING,
+            context={
+                "kind": "Reimbursement",
+                "requester_name": requester_name,
+                "amount_idr": f"{int(r.amount):,}".replace(",", "."),
+                "purpose": r.description or r.category,
+                "request_id": str(r.id),
+                "tab": "reimbursement",
+            },
+        )
+        await session.commit()
     return r
 
 
@@ -202,6 +249,22 @@ async def approve_reimbursement_l2(
     r.status = "APPROVED"
     await session.commit()
     await session.refresh(r)
+
+    # TSK-060 — notify requester (approved)
+    requester_user_id = await get_requester_user_id(session, r.employee_id)
+    if requester_user_id:
+        await notify_from_template(
+            session,
+            user_id=requester_user_id,
+            type=NotificationType.PROCUREMENT_APPROVED,
+            context={
+                "kind": "Reimbursement",
+                "amount_idr": f"{int(r.amount):,}".replace(",", "."),
+                "request_id": str(r.id),
+                "tab": "reimbursement",
+            },
+        )
+        await session.commit()
     return r
 
 
@@ -220,6 +283,22 @@ async def reject_reimbursement(
     r.rejection_reason = data.rejection_reason
     await session.commit()
     await session.refresh(r)
+
+    # TSK-060 — notify requester (rejected)
+    requester_user_id = await get_requester_user_id(session, r.employee_id)
+    if requester_user_id:
+        await notify_from_template(
+            session,
+            user_id=requester_user_id,
+            type=NotificationType.APPROVAL_REJECTED,
+            context={
+                "request_type": "Reimbursement",
+                "approver_name": "—",
+                "reason": data.rejection_reason or "(no reason)",
+                "link": f"/finance?tab=reimbursement&id={r.id}",
+            },
+        )
+        await session.commit()
     return r
 
 
@@ -317,6 +396,25 @@ async def create_procurement(
     session.add(p)
     await session.commit()
     await session.refresh(p)
+
+    # TSK-060 — notify L1 approver
+    l1_user_id, _ = await find_l1_l2_approver_user_ids_by_user(session, requested_by_user_id)
+    if l1_user_id:
+        requester_name = await get_user_display_name(session, requested_by_user_id)
+        await notify_from_template(
+            session,
+            user_id=l1_user_id,
+            type=NotificationType.PROCUREMENT_PENDING,
+            context={
+                "kind": "Procurement",
+                "requester_name": requester_name,
+                "amount_idr": f"{int(data.estimated_amount):,}".replace(",", "."),
+                "purpose": data.item_description,
+                "request_id": str(p.id),
+                "tab": "procurement",
+            },
+        )
+        await session.commit()
     return p
 
 
@@ -337,6 +435,25 @@ async def approve_procurement_l1(
     p.status = "PENDING_L2"
     await session.commit()
     await session.refresh(p)
+
+    # TSK-060 — notify L2
+    _, l2_user_id = await find_l1_l2_approver_user_ids_by_user(session, p.requested_by_user_id)
+    if l2_user_id:
+        requester_name = await get_user_display_name(session, p.requested_by_user_id)
+        await notify_from_template(
+            session,
+            user_id=l2_user_id,
+            type=NotificationType.PROCUREMENT_PENDING,
+            context={
+                "kind": "Procurement",
+                "requester_name": requester_name,
+                "amount_idr": f"{int(p.estimated_amount):,}".replace(",", "."),
+                "purpose": p.item_description,
+                "request_id": str(p.id),
+                "tab": "procurement",
+            },
+        )
+        await session.commit()
     return p
 
 
@@ -359,6 +476,20 @@ async def approve_procurement_l2(
     p.status = "APPROVED"
     await session.commit()
     await session.refresh(p)
+
+    # TSK-060 — notify requester (approved)
+    await notify_from_template(
+        session,
+        user_id=p.requested_by_user_id,
+        type=NotificationType.PROCUREMENT_APPROVED,
+        context={
+            "kind": "Procurement",
+            "amount_idr": f"{int(p.estimated_amount):,}".replace(",", "."),
+            "request_id": str(p.id),
+            "tab": "procurement",
+        },
+    )
+    await session.commit()
     return p
 
 
@@ -377,6 +508,20 @@ async def reject_procurement(
     p.rejection_reason = data.rejection_reason
     await session.commit()
     await session.refresh(p)
+
+    # TSK-060 — notify requester (rejected)
+    await notify_from_template(
+        session,
+        user_id=p.requested_by_user_id,
+        type=NotificationType.APPROVAL_REJECTED,
+        context={
+            "request_type": "Procurement",
+            "approver_name": "—",
+            "reason": data.rejection_reason or "(no reason)",
+            "link": f"/finance?tab=procurement&id={p.id}",
+        },
+    )
+    await session.commit()
     return p
 
 

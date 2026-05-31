@@ -22,6 +22,13 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.notification.approver_chain import (
+    find_l1_l2_approver_user_ids,
+    get_employee_display_name,
+    get_requester_user_id,
+)
+from app.notification.models import NotificationType
+from app.notification.templates import notify_from_template
 from app.organization.models import Employee, EmployeeStatus
 from app.payroll.leave_schemas import (
     LeaveRequestApprove,
@@ -274,6 +281,24 @@ async def create_leave_request(
     session.add(req)
     await session.commit()
     await session.refresh(req)
+
+    # TSK-060 — notify L1 approver
+    l1_user_id, _l2 = await find_l1_l2_approver_user_ids(session, data.employee_id)
+    if l1_user_id:
+        requester_name = await get_employee_display_name(session, data.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l1_user_id,
+            type=NotificationType.LEAVE_PENDING_APPROVAL,
+            context={
+                "requester_name": requester_name,
+                "leave_type": leave_type.name,
+                "days": days,
+                "date_range": f"{data.start_date.strftime('%d %b')}–{data.end_date.strftime('%d %b %Y')}",
+                "leave_id": str(req.id),
+            },
+        )
+        await session.commit()
     return req
 
 
@@ -299,6 +324,25 @@ async def approve_l1(
     req.status = LeaveRequestStatus.PENDING_L2.value
     await session.commit()
     await session.refresh(req)
+
+    # TSK-060 — notify L2 approver (next in chain)
+    _l1, l2_user_id = await find_l1_l2_approver_user_ids(session, req.employee_id)
+    if l2_user_id:
+        leave_type = await get_leave_type(session, req.leave_type_id)
+        requester_name = await get_employee_display_name(session, req.employee_id)
+        await notify_from_template(
+            session,
+            user_id=l2_user_id,
+            type=NotificationType.LEAVE_PENDING_APPROVAL,
+            context={
+                "requester_name": requester_name,
+                "leave_type": leave_type.name,
+                "days": req.days_count,
+                "date_range": f"{req.start_date.strftime('%d %b')}–{req.end_date.strftime('%d %b %Y')}",
+                "leave_id": str(req.id),
+            },
+        )
+        await session.commit()
     return req
 
 
@@ -346,6 +390,22 @@ async def approve_l2(
     req.status = LeaveRequestStatus.APPROVED.value
     await session.commit()
     await session.refresh(req)
+
+    # TSK-060 — notify requester (final approval)
+    requester_user_id = await get_requester_user_id(session, req.employee_id)
+    if requester_user_id:
+        await notify_from_template(
+            session,
+            user_id=requester_user_id,
+            type=NotificationType.LEAVE_APPROVED,
+            context={
+                "leave_type": leave_type.name,
+                "days": req.days_count,
+                "date_range": f"{req.start_date.strftime('%d %b')}–{req.end_date.strftime('%d %b %Y')}",
+                "leave_id": str(req.id),
+            },
+        )
+        await session.commit()
     return req
 
 
@@ -367,6 +427,24 @@ async def reject_request(
     req.rejection_reason = data.rejection_reason
     await session.commit()
     await session.refresh(req)
+
+    # TSK-060 — notify requester
+    requester_user_id = await get_requester_user_id(session, req.employee_id)
+    if requester_user_id:
+        leave_type = await get_leave_type(session, req.leave_type_id)
+        await notify_from_template(
+            session,
+            user_id=requester_user_id,
+            type=NotificationType.LEAVE_REJECTED,
+            context={
+                "leave_type": leave_type.name,
+                "days": req.days_count,
+                "date_range": f"{req.start_date.strftime('%d %b')}–{req.end_date.strftime('%d %b %Y')}",
+                "leave_id": str(req.id),
+                "reason": data.rejection_reason or "(no reason)",
+            },
+        )
+        await session.commit()
     return req
 
 
