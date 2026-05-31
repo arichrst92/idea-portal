@@ -174,6 +174,27 @@ class CalculatePayrollPreview(BaseModel):
 
 
 class SetPph21Request(BaseModel):
-    """Set PPh21 manual per slip (US-TK-049)."""
+    """Set PPh21 manual per slip (US-FN-002 AC-03)."""
 
     pph21_amount: Annotated[Decimal, Field(ge=0)]
+
+
+class Pph21BulkRow(BaseModel):
+    slip_id: UUID
+    pph21_amount: Annotated[Decimal, Field(ge=0)]
+
+
+class BulkSetPph21Request(BaseModel):
+    """Bulk PPh21 input untuk semua slip dalam 1 period."""
+
+    period_id: UUID
+    rows: list[Pph21BulkRow]
+
+
+class Pph21SuggestResponse(BaseModel):
+    slip_id: UUID
+    monthly_gross: Decimal
+    annual_gross: Decimal
+    ptkp: Decimal
+    suggested_pph21: Decimal
+    note: str = "Auto-calc berdasarkan bracket progresif × 12. Final keputusan Finance."

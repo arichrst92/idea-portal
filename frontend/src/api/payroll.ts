@@ -201,6 +201,44 @@ export async function getSlipPdfUrl(
   return r.data;
 }
 
+// ─── PPh21 enhancements (TSK-049) ────────────────────────────────
+
+export interface Pph21SuggestResponse {
+  slip_id: string;
+  monthly_gross: string;
+  annual_gross: string;
+  ptkp: string;
+  suggested_pph21: string;
+  note: string;
+}
+
+export interface Pph21BulkRow {
+  slip_id: string;
+  pph21_amount: number;
+}
+
+export async function suggestPph21(
+  slip_id: string,
+  ptkp?: number
+): Promise<Pph21SuggestResponse> {
+  const r = await apiClient.get<Pph21SuggestResponse>(
+    `/api/v1/payroll/slips/${slip_id}/pph21-suggest`,
+    { params: ptkp ? { ptkp } : {} }
+  );
+  return r.data;
+}
+
+export async function bulkSetPph21(
+  period_id: string,
+  rows: Pph21BulkRow[]
+): Promise<PayrollSlip[]> {
+  const r = await apiClient.post<PayrollSlip[]>(
+    `/api/v1/payroll/periods/${period_id}/bulk-pph21`,
+    { period_id, rows }
+  );
+  return r.data;
+}
+
 // ─── Payroll Calc Engine (TSK-048) ──────────────────────────────
 
 export interface CalculatePayrollPreview {

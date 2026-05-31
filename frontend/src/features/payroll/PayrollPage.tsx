@@ -45,6 +45,7 @@ import {
   MONTHS_ID,
   periodLabel,
   periodStatusColor,
+  suggestPph21,
   setPph21,
   upsertConfig,
   type ComponentType,
@@ -637,6 +638,21 @@ function SlipDetailDrawer({
       setPphOpen(false);
       pphForm.resetFields();
     },
+    onError: (e: any) => {
+      const detail = e?.response?.data?.detail;
+      if (detail?.code === 'NET_NEGATIVE') {
+        message.error(detail.message);  // NC-FN-002-02 explicit
+      } else {
+        message.error(detail?.message ?? 'Gagal set PPh21');
+      }
+    },
+  });
+
+  // TSK-049 — auto-suggest PPh21 saat modal buka
+  const pphSuggestQ = useQuery({
+    queryKey: ['pph21-suggest', slipId],
+    queryFn: () => suggestPph21(slipId!),
+    enabled: !!slipId && pphOpen,
   });
 
   const pdfMut = useMutation({
@@ -785,20 +801,42 @@ function SlipDetailDrawer({
             </Form>
           </Modal>
 
-          <Modal title="Set PPh21" open={pphOpen}
+          <Modal title="Set PPh21 Manual" open={pphOpen}
             onCancel={() => setPphOpen(false)} footer={null} destroyOnHidden>
             <Form form={pphForm} layout="vertical"
               onFinish={(v) => pphMut.mutate(v.amount)}
             >
+              {pphSuggestQ.data && (
+                <div style={{
+                  background: 'rgba(0,113,227,0.06)',
+                  border: '1px solid rgba(0,113,227,0.2)',
+                  borderRadius: 8, padding: 12, marginBottom: 12,
+                }}>
+                  <Text strong style={{ fontSize: 12, color: 'var(--ide-blue, #0071E3)' }}>
+                    💡 Suggested: {fmtIDR(pphSuggestQ.data.suggested_pph21)}
+                  </Text>
+                  <div style={{ fontSize: 11, color: 'var(--ide-ink2)', marginTop: 4 }}>
+                    Annual gross {fmtIDR(pphSuggestQ.data.annual_gross)} × bracket progresif (PTKP TK/0 = Rp 54jt), dibagi 12.
+                    Final keputusan Finance.
+                  </div>
+                  <Button
+                    size="small" type="link" style={{ padding: 0, marginTop: 4 }}
+                    onClick={() => pphForm.setFieldValue('amount', Number(pphSuggestQ.data!.suggested_pph21))}
+                  >
+                    Gunakan suggestion
+                  </Button>
+                </div>
+              )}
               <Form.Item label="PPh21 Amount" name="amount" rules={[{ required: true }]}>
                 <InputNumber
                   min={0} style={{ width: '100%' }}
-                  formatter={(v) => (v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
+                  formatter={(v) => (v ? `Rp ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
                   parser={(v) => (v ? Number(v.replace(/[^0-9]/g, '')) : 0) as any}
                 />
               </Form.Item>
               <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 10 }}>
-                PPh21 di-input manual per slip (US-TK-049). Akan masuk sebagai DEDUCTION dengan code PPH21.
+                PPh21 di-input manual per slip (US-FN-002 AC-03). Akan masuk sebagai DEDUCTION code PPH21.
+                Sistem akan reject kalau net pay jadi negative (NC-FN-002-02).
               </Text>
               <Button type="primary" htmlType="submit" loading={pphMut.isPending} block>
                 Save PPh21

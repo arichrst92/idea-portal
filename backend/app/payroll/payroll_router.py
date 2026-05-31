@@ -31,6 +31,7 @@ from app.organization.models import Employee
 from app.payroll import payroll_service as service
 from app.payroll.models import PayrollPeriod, PayrollSlip
 from app.payroll.payroll_schemas import (
+    BulkSetPph21Request,
     CalculatePayrollPreview,
     CalculatePayrollResponse,
     GenerateSlipsResponse,
@@ -42,6 +43,7 @@ from app.payroll.payroll_schemas import (
     PayrollPeriodCreate,
     PayrollPeriodOut,
     PayrollSlipOut,
+    Pph21SuggestResponse,
     SetPph21Request,
 )
 from app.payroll.payroll_service import (
@@ -460,6 +462,12 @@ async def set_pph21_endpoint(
         raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}) from e
     except PeriodLockedError as e:
         raise HTTPException(status_code=400, detail={"code": "LOCKED", "message": str(e)}) from e
+    except NetNegativeError as e:
+        # NC-FN-002-02: PPh21 makes net negative
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "NET_NEGATIVE", "message": str(e)},
+        ) from e
     await audit_log(
         session=session, actor=user, action="PAYROLL_PPH21_SET",
         resource_type="payroll_slip", resource_id=str(s.id),
@@ -467,6 +475,88 @@ async def set_pph21_endpoint(
         after_state={"pph21_amount": float(data.pph21_amount)},
     )
     return await _slip_to_out(session, s, include_components=True)
+
+
+# ─── TSK-049 PPh21 enhancements ─────────────────────────────────────
+
+
+@router.get("/slips/{slip_id}/pph21-suggest", response_model=Pph21SuggestResponse)
+async def suggest_pph21_endpoint(
+    slip_id: UUID,
+    session: DBSession,
+    _user=Depends(require_permission("payroll.view")),
+    ptkp: float | None = None,
+) -> Pph21SuggestResponse:
+    """Suggest PPh21 amount via progressive bracket — informational only.
+
+    Finance tetap manual input final amount (US-FN-002 AC-03).
+    """
+    try:
+        slip = await service.get_slip(session, slip_id)
+    except SlipNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+
+    from decimal import Decimal
+    ptkp_dec = Decimal(str(ptkp)) if ptkp is not None else Decimal("54000000")
+    suggested = await service.suggest_pph21_for_slip(session, slip_id, ptkp_dec)
+    monthly_gross = Decimal(str(slip.gross_income))
+    return Pph21SuggestResponse(
+        slip_id=slip_id,
+        monthly_gross=monthly_gross,
+        annual_gross=monthly_gross * Decimal("12"),
+        ptkp=ptkp_dec,
+        suggested_pph21=suggested,
+    )
+
+
+@router.post("/periods/{period_id}/bulk-pph21", response_model=list[PayrollSlipOut])
+async def bulk_set_pph21_endpoint(
+    request: Request,
+    period_id: UUID,
+    data: BulkSetPph21Request,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> list[PayrollSlipOut]:
+    """Bulk set PPh21 untuk semua slip dalam 1 period (US-FN-002 AC-03).
+
+    Pre-validate semua row dulu — kalau ada yang net negative → reject all
+    dengan list blockers (NC-FN-002-02 atomic).
+    """
+    if data.period_id != period_id:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "period_id di path tidak match dengan body"},
+        )
+
+    pph21_map = {r.slip_id: r.pph21_amount for r in data.rows}
+    try:
+        updated = await service.bulk_set_pph21(session, period_id, pph21_map)
+    except SlipNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except PeriodLockedError as e:
+        raise HTTPException(
+            status_code=400, detail={"code": "LOCKED", "message": str(e)}
+        ) from e
+    except NetNegativeError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "NET_NEGATIVE", "message": str(e)},
+        ) from e
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_PPH21_BULK_SET",
+        resource_type="payroll_period",
+        resource_id=str(period_id),
+        ip_address=request.client.host if request.client else None,
+        after_state={"rows_updated": len(updated)},
+    )
+    return [await _slip_to_out(session, s, include_components=True) for s in updated]
 
 
 @router.post("/slips/{slip_id}/generate-pdf", response_model=PayrollSlipOut)

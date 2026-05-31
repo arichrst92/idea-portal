@@ -460,17 +460,36 @@ async def delete_component(
 async def set_pph21(
     session: AsyncSession, slip_id: UUID, pph21_amount: Decimal
 ) -> PayrollSlip:
-    """Replace or insert PPh21 component (manual input US-TK-049)."""
+    """Replace or insert PPh21 component (manual input US-FN-002 AC-03).
+
+    Validates NC-FN-002-02: net pay tidak boleh negative setelah PPh21
+    diaplikasikan. Raise NetNegativeError kalau pelanggaran.
+    """
     slip = await get_slip(session, slip_id)
     period = await get_period(session, slip.period_id)
     if period.status == "LOCKED":
         raise PeriodLockedError("Cannot set PPh21 on locked period")
 
-    # Hapus existing PPh21 component kalau ada
-    stmt = select(PayrollComponent).where(
+    # NC-FN-002-02 pre-check — simulate net dengan PPh21 baru
+    # Net = gross - (total_deductions_existing - existing_pph21_amount + new_pph21_amount)
+    existing_stmt = select(PayrollComponent).where(
         PayrollComponent.slip_id == slip_id, PayrollComponent.code == "PPH21"
     )
-    existing = (await session.execute(stmt)).scalar_one_or_none()
+    existing = (await session.execute(existing_stmt)).scalar_one_or_none()
+    existing_pph21 = Decimal(str(existing.amount)) if existing else Decimal("0")
+
+    gross = Decimal(str(slip.gross_income))
+    deductions = Decimal(str(slip.total_deductions))
+    projected_deductions = deductions - existing_pph21 + pph21_amount
+    projected_net = gross - projected_deductions
+    if projected_net < 0:
+        raise NetNegativeError(
+            f"Slip {slip.slip_no}: PPh21 {pph21_amount} membuat net pay negative "
+            f"(gross={gross}, projected_deductions={projected_deductions}). "
+            f"Maximum PPh21: {gross - (deductions - existing_pph21):.2f} (NC-FN-002-02)."
+        )
+
+    # Hapus existing PPh21 component kalau ada
     if existing:
         await session.delete(existing)
         await session.commit()
@@ -488,6 +507,71 @@ async def set_pph21(
         await session.commit()
 
     return await _recompute_slip_totals(session, slip_id)
+
+
+async def bulk_set_pph21(
+    session: AsyncSession,
+    period_id: UUID,
+    pph21_by_slip_id: dict[UUID, Decimal],
+) -> list[PayrollSlip]:
+    """Bulk set PPh21 untuk multiple slips dalam 1 period.
+
+    Pre-validate semua: kalau ada slip yang akan net negative → reject all.
+    """
+    period = await get_period(session, period_id)
+    if period.status == "LOCKED":
+        raise PeriodLockedError("Cannot bulk-set PPh21 on locked period")
+
+    # Pre-validate all
+    blockers: list[str] = []
+    for slip_id, pph21_amt in pph21_by_slip_id.items():
+        slip = await get_slip(session, slip_id)
+        if slip.period_id != period_id:
+            blockers.append(f"Slip {slip.slip_no} bukan dari period {period_id}")
+            continue
+        existing_stmt = select(PayrollComponent).where(
+            PayrollComponent.slip_id == slip_id, PayrollComponent.code == "PPH21"
+        )
+        existing = (await session.execute(existing_stmt)).scalar_one_or_none()
+        existing_pph21 = Decimal(str(existing.amount)) if existing else Decimal("0")
+        gross = Decimal(str(slip.gross_income))
+        deductions = Decimal(str(slip.total_deductions))
+        projected_net = gross - (deductions - existing_pph21 + pph21_amt)
+        if projected_net < 0:
+            blockers.append(
+                f"{slip.slip_no}: PPh21 {pph21_amt} → net {projected_net:.2f} (NC-FN-002-02)"
+            )
+
+    if blockers:
+        raise NetNegativeError(
+            "Bulk PPh21 blocked — " + "; ".join(blockers[:5])
+            + (f"... ({len(blockers)} total)" if len(blockers) > 5 else "")
+        )
+
+    # Apply all
+    updated: list[PayrollSlip] = []
+    for slip_id, pph21_amt in pph21_by_slip_id.items():
+        s = await set_pph21(session, slip_id, pph21_amt)
+        updated.append(s)
+    return updated
+
+
+async def suggest_pph21_for_slip(
+    session: AsyncSession,
+    slip_id: UUID,
+    ptkp: Decimal = Decimal("54000000"),  # TK/0 default
+) -> Decimal:
+    """Suggest PPh21 amount berdasarkan annualized gross × bracket progressive.
+
+    Asumsi: gross bulan ini × 12 = annual gross. Tidak include THR/bonus tahunan.
+    Hasil dibagi 12 untuk monthly portion. Manual input tetap Finance discretion.
+    """
+    slip = await get_slip(session, slip_id)
+    gross_monthly = Decimal(str(slip.gross_income))
+    annual_gross = gross_monthly * Decimal("12")
+    annual_tax = compute_pph21_progressive(annual_gross, ptkp)
+    monthly_tax = (annual_tax / Decimal("12")).quantize(Decimal("0.01"))
+    return monthly_tax
 
 
 # ─── PPh21 Helper (informational, not used in auto-calc) ──────────
