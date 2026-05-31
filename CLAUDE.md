@@ -223,6 +223,10 @@ Catat decision penting yang ditemukan saat development di sini:
 | 2026-05-29 | Comment markdown via `react-markdown` di frontend, plain text storage di DB | Format ringan tanpa overengineering rich editor. Storage = text mentah, render = markdown di UI. Comment accessible langsung dari kanban card (icon + count badge → drawer/modal). |
 | 2026-05-29 | Invoice dipindah dari `app/project/` ke `app/finance/` (new domain) | Conceptually invoice belongs to Finance (lihat mockup `IDEA_InvoiceAR.html`). Project hanya trigger lewat Phase completion. Tabel baru `invoices` di Finance dengan FK `project_id` & `trigger_phase_id` nullable. Endpoint pindah `/api/v1/finance/invoices/*`. |
 | 2026-05-29 | TSK numbering untuk re-work modul: append alphabet (TSK-022B, TSK-022C, …) | TSK-022 sudah COMPLETED — refactor besar di-track sebagai sub-task baru. Lebih clean drpd reopen TSK existing. |
+| 2026-05-31 | Imperative AntD API (`message`, `Modal.confirm`, `notification`) WAJIB lewat `@/lib/notify` proxy, BUKAN import langsung dari `antd` | AntD v5 deprecate static call — tidak pickup dynamic theme/locale/prefixCls dari `ConfigProvider`. Pola: `lib/notify.ts` proxy + `NotifyBinder` (mount di `AppRoutes`) yang call `bindNotifyApi(App.useApp())`. JSX `<Modal>` component tetap dari `antd`; hanya imperative call yang migrate. Audit via `outputs/audit_frontend.py` (kategori A3). |
+| 2026-05-31 | AntD v5 deprecated props sweep: `destroyOnClose` → `destroyOnHidden`, `Dropdown overlay=` → `Dropdown menu={{ items: [...] }}` | Bulk sed safe untuk destroyOnClose (43 occurrences fixed). Dropdown overlay perlu refactor manual karena ganti dari JSX `<Menu>` ke items array. |
+| 2026-05-31 | Frontend audit script `outputs/audit_frontend.py` re-runnable, 4 kategori (A1 hooks-after-return, A2 deprecated AntD, A3 static notify, A4 InputNumber parser) | Jalankan sebelum push setelah refactor besar untuk catch regression. A3 detector skip kalau import sudah dari `@/lib/notify` (proxy aman). |
+| 2026-05-31 | WeasyPrint import WAJIB lazy (di dalam function body), bukan top-level | Native libs (pango, glib) tidak selalu ada di host (mis. macOS dev box tanpa Homebrew install). Top-level import crash backend startup. Pattern: `def generate_pdf(): from weasyprint import HTML; ...` plus actionable error message kalau import fail. |
 
 Tambah row baru saat ada keputusan signifikan.
 
@@ -279,6 +283,30 @@ Workflow: Saat butuh data dari Employee + User → JOIN `Employee.user_id == Use
 
 🔴 **Frontend Hooks Order (NC-DEV-004):** Hook calls (`useState`, `useWatch`, `useMemo`, `useQuery`) HARUS dipanggil sebelum conditional early return. React error "Rendered more hooks than during the previous render" terjadi kalau hook setelah `if (!x) return null`. Solusi: pindah semua hook ke atas, conditional return paling akhir sebelum JSX.
 
+🔴 **AntD Imperative API (NC-DEV-005):** JANGAN import `message`, `notification`, atau pakai `Modal.confirm/.warning/.info/.success/.error` langsung dari `antd`. Browser console akan warn "Static function can not consume context like dynamic theme" dan toast tidak ke-pickup theme/locale dari `ConfigProvider`. Pola yang benar:
+```tsx
+import { message, modal, notification } from '@/lib/notify';
+message.success('OK');
+modal.confirm({ title: 'Hapus?', onOk: () => {} });
+```
+JSX component `<Modal>` TETAP dari `antd` — hanya imperative call yang migrate. Proxy di-bind via `NotifyBinder` (sudah mount di `AppRoutes`). Audit: `python3 outputs/audit_frontend.py` → kategori A3 harus 0.
+
+🔴 **AntD Deprecated Props (NC-DEV-006):** Saat copy code dari mockup lama atau snippet AI lain, cek deprecation:
+- `destroyOnClose` (Modal/Drawer) → **`destroyOnHidden`**
+- `Dropdown overlay={<Menu items=[…] />}` → **`Dropdown menu={{ items: […] }}`**
+- `Spin tip="..."` standalone → wrap children atau pakai `fullscreen`
+Audit kategori A2 di `outputs/audit_frontend.py` harus 0 sebelum push.
+
+🔴 **WeasyPrint Lazy Import (NC-DEV-007):** Top-level `from weasyprint import HTML` crash backend startup di host tanpa native libs (pango, glib). Pattern wajib:
+```python
+def generate_slip_pdf(...):
+    try:
+        from weasyprint import HTML
+    except ImportError as e:
+        raise RuntimeError("PDF generator butuh `brew install pango glib cairo`...") from e
+    HTML(string=html).write_pdf(...)
+```
+
 ## Saat Stuck
 
 - Cek `ERD_REFERENCE.md` untuk model field map
@@ -290,4 +318,4 @@ Workflow: Saat butuh data dari Employee + User → JOIN `Employee.user_id == Use
 
 ---
 
-**Last updated:** 2026-05-31 (ERD audit + reference doc added)
+**Last updated:** 2026-05-31 (NC-DEV-005/006/007 added + frontend audit script + AntD notify proxy)
