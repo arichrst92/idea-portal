@@ -794,7 +794,7 @@ async def _comment_to_out(session, c) -> CommentOut:
         from app.organization.models import Employee as Emp
         r = await session.execute(
             select(Emp.full_name)
-            .join(User, User.employee_id == Emp.id)
+            .join(User, Emp.user_id == User.id)
             .where(User.id == c.author_user_id)
         )
         name = r.scalar_one_or_none()
@@ -957,8 +957,10 @@ async def my_tasks_due_summary_endpoint(
         items: [{ task_id, slug, title, due_date, status, project_id }]
       }
     """
-    # Map user → employee
-    if user.employee_id is None:
+    # Map user → employee (User punya relationship .employee, bukan employee_id direct)
+    emp_stmt = select(Employee.id).where(Employee.user_id == user.id)
+    employee_id = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if employee_id is None:
         return {"overdue_count": 0, "due_h1_count": 0, "due_h3_count": 0, "items": []}
 
     today = _date.today()
@@ -968,7 +970,7 @@ async def my_tasks_due_summary_endpoint(
     stmt = (
         select(_ProjectTask)
         .where(
-            _ProjectTask.assignee_id == user.employee_id,
+            _ProjectTask.assignee_id == employee_id,
             _ProjectTask.deleted_at.is_(None),
             _ProjectTask.due_date.is_not(None),
             _ProjectTask.status.notin_(["DONE"]),

@@ -221,9 +221,11 @@ async def _try_inject_commission_to_active_slip(
         PayrollComponent, PayrollPeriod, PayrollSlip,
     )
 
-    # User → Employee
-    user = await session.get(User, commission.sales_user_id)
-    if user is None or user.employee_id is None:
+    # User → Employee via Employee.user_id (User tidak punya employee_id direct)
+    from app.organization.models import Employee as _Emp
+    emp_stmt = select(_Emp.id).where(_Emp.user_id == commission.sales_user_id)
+    employee_id = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if employee_id is None:
         return False
 
     # Active period (DRAFT or REVIEWING)
@@ -239,7 +241,7 @@ async def _try_inject_commission_to_active_slip(
 
     # Slip untuk employee ini di period tersebut
     slip_stmt = select(PayrollSlip).where(
-        PayrollSlip.employee_id == user.employee_id,
+        PayrollSlip.employee_id == employee_id,
         PayrollSlip.period_id == period.id,
     )
     slip = (await session.execute(slip_stmt)).scalar_one_or_none()

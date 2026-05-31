@@ -314,11 +314,10 @@ async def _apply_pending_commissions_to_slip(
 
     Returns: (total_commission_amount, applied_count)
     """
-    from app.identity.models import User
     from app.sales.models import SalesCommission
 
-    # Find user_id for this employee
-    user_stmt = select(User.id).where(User.employee_id == employee_id)
+    # Find user_id for this employee — User doesn't have employee_id; use Employee.user_id
+    user_stmt = select(Employee.user_id).where(Employee.id == employee_id)
     user_id_row = (await session.execute(user_stmt)).scalar_one_or_none()
     if user_id_row is None:
         return Decimal("0"), 0
