@@ -254,14 +254,31 @@ GET    /api/v1/payroll/slips/{nik}/{period}  # slip detail
 ## Saat Memulai Sesi Baru
 
 1. Baca file ini (`CLAUDE.md`)
-2. Cek `git status` & `git log -5` — lihat state terakhir
-3. Buka `IDEA_Task_Management.xlsx` — cek TSK yang in-progress atau next priority
-4. Diskusi sama Ari: lanjut TSK mana?
-5. Mulai kerja → push frequently
+2. **🚨 BACA `ERD_REFERENCE.md`** — canonical model field map. WAJIB sebelum menulis query atau mengakses model attribute. Banyak FK direction counter-intuitive (Employee.nik tidak ada, User.employee_id tidak ada — lihat reference).
+3. Cek `git status` & `git log -5` — lihat state terakhir
+4. Buka `IDEA_Task_Management.xlsx` — cek TSK yang in-progress atau next priority
+5. Diskusi sama Ari: lanjut TSK mana?
+6. Mulai kerja → push frequently
+
+## Aturan Coding Wajib (Prevent Past Bugs)
+
+🔴 **ERD Compliance (NC-DEV-001):** Sebelum write SQLAlchemy query atau access `.attr` pada model instance, WAJIB verify field exists di `ERD_REFERENCE.md`. Pattern yang sering salah:
+- ❌ `Employee.nik` (Employee tidak punya kolom nik — NIK ada di User table)
+- ❌ `User.employee_id` (User tidak punya employee_id — Employee.user_id is the FK)
+- ❌ `User.full_name`, `User.department_id` (semua di Employee, bukan User)
+
+Workflow: Saat butuh data dari Employee + User → JOIN `Employee.user_id == User.id`.
+
+🔴 **Route Order (NC-DEV-002):** FastAPI matches routes in declaration order. Static routes (`/projects/my-tasks-due`) yang muncul SETELAH dynamic routes (`/projects/{id}`) akan ke-shadow → 422 validation error. Solusi: declare static route di atas, atau pakai namespace berbeda (`/me/project-tasks-due`).
+
+🔴 **Migration Discipline:** Setiap model baru WAJIB ada migration alembic. Tambah model import di `alembic/env.py`. Run `./tsk022b_apply.sh` (idempotent) untuk apply.
+
+🔴 **Audit Script:** Saat curiga ada attribute error, jalankan `outputs/audit_models.py` dan `outputs/audit_usage.py`. Lihat `ERD_REFERENCE.md` section "Audit Workflow".
 
 ## Saat Stuck
 
-- Cek `knowledge.md` dulu — kemungkinan ada di spec
+- Cek `ERD_REFERENCE.md` untuk model field map
+- Cek `knowledge.md` untuk spec bisnis
 - Cek `IDEA_User_Stories.docx` untuk AC
 - Cek `IDEA_Negative_Cases.docx` untuk edge case yang harus di-handle
 - Cek mockup di `GUI html/` untuk visual reference
@@ -269,4 +286,4 @@ GET    /api/v1/payroll/slips/{nik}/{period}  # slip detail
 
 ---
 
-**Last updated:** 2026-05-26 (saat repo setup dari OneDrive → ~/Projects/idea-portal)
+**Last updated:** 2026-05-31 (ERD audit + reference doc added)
