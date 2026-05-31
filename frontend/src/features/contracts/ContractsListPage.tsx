@@ -205,6 +205,8 @@ function RenewModal({
   onSuccess: () => void;
 }) {
   const [form] = Form.useForm();
+  // useWatch HARUS dipanggil sebelum conditional return (Rules of Hooks)
+  const newType = Form.useWatch('new_contract_type', form);
   const mutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => renewContract(id, data),
     onSuccess: () => {
@@ -218,7 +220,6 @@ function RenewModal({
   });
 
   if (!contract) return null;
-  const newType = Form.useWatch('new_contract_type', form);
 
   return (
     <Modal
