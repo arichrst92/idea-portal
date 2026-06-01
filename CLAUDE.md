@@ -278,7 +278,8 @@ Workflow: Saat butuh data dari Employee + User → JOIN `Employee.user_id == Use
 
 🔴 **Migration Discipline:** Setiap model baru WAJIB ada migration alembic. Tambah model import di `alembic/env.py`. Run `./tsk022b_apply.sh` (idempotent) untuk apply.
 
-🔴 **Audit Script:** Saat curiga ada attribute error, jalankan `outputs/audit_models.py` dan `outputs/audit_usage.py`. Lihat `ERD_REFERENCE.md` section "Audit Workflow".
+🔴 **Audit Script:** Saat curiga ada attribute error, jalankan `outputs/audit_model_refs.py` (AST-based scan Model.attr di router/service vs actual fields — 94 models, 28 files). Lihat `ERD_REFERENCE.md` section "Audit Workflow".
+Past bugs caught: `ClientKpiAssessment.is_submitted` (sebenarnya `submitted_at`).
 
 🔴 **Permission Codes (NC-DEV-003):** Setiap `require_permission("x.y")` WAJIB match dengan code yang terdaftar di `app/identity/permissions.py` PERMISSIONS list. Code yang tidak terdaftar = 403 untuk SEMUA user. Jalankan `outputs/audit_permissions.py` untuk verify. Past examples: `project.close` (tidak ada — pakai `project.override`), `employee.delete` (tidak ada — pakai `employee.edit`).
 
