@@ -10,15 +10,19 @@ import {
   ClockCircleOutlined,
   CloseCircleOutlined,
   CloseOutlined,
+  DollarOutlined,
   ExclamationCircleOutlined,
   StopOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Spin} from 'antd';
+import { Button, DatePicker, Empty, Form, Input, Modal, Spin, Typography } from 'antd';
 import { message, modal } from '@/lib/notify';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+
+import { generateFinalPayroll } from '@/api/payroll';
 
 import {
   SEPARATION_TYPE_META,
@@ -298,6 +302,36 @@ function ActionBar({
     onError: (e: any) => message.error(e?.response?.data?.detail?.message || 'Gagal execute'),
   });
 
+  // TSK-054 Final Payroll
+  const [finalPayrollOpen, setFinalPayrollOpen] = useState(false);
+  const [finalPayrollForm] = Form.useForm();
+
+  const finalPayrollMut = useMutation({
+    mutationFn: (v: any) =>
+      generateFinalPayroll({
+        employee_id: sep.employee_id,
+        last_working_day: v.last_working_day.format('YYYY-MM-DD'),
+        pay_date: v.pay_date.format('YYYY-MM-DD'),
+        notes: v.notes || null,
+      }),
+    onSuccess: (res) => {
+      message.success(
+        `Final payroll generated · Take Home Rp ${parseFloat(res.take_home).toLocaleString('id-ID')} · ${res.days_worked}/${res.working_days_in_month} hari kerja`
+      );
+      setFinalPayrollOpen(false);
+      finalPayrollForm.resetFields();
+      onAction();
+    },
+    onError: (e: any) => {
+      const d = e?.response?.data?.detail;
+      if (d?.code === 'DUPLICATE') {
+        message.warning(d.message);
+      } else {
+        message.error(d?.message ?? 'Gagal generate final payroll');
+      }
+    },
+  });
+
   const handleApprove = (level: 1 | 2) => {
     modal.confirm({
       title: `Approve L${level}`,
@@ -450,6 +484,20 @@ function ActionBar({
     );
   }
 
+  // TSK-054 — Generate Final Payroll setelah EXECUTED
+  if (sep.status === 'EXECUTED' && isApprover) {
+    buttons.push(
+      <Button
+        key="fp"
+        icon={<DollarOutlined />}
+        type="primary"
+        onClick={() => setFinalPayrollOpen(true)}
+      >
+        Generate Final Payroll
+      </Button>,
+    );
+  }
+
   if (
     !['EXECUTED', 'CANCELLED', 'REJECTED'].includes(sep.status) &&
     (isInitiator || isApprover)
@@ -469,7 +517,66 @@ function ActionBar({
     );
   }
 
-  return <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{buttons}</div>;
+  return (
+    <>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{buttons}</div>
+
+      {/* TSK-054 — Final Payroll Modal */}
+      <Modal
+        title={<><DollarOutlined /> Generate Final Payroll</>}
+        open={finalPayrollOpen}
+        onCancel={() => setFinalPayrollOpen(false)}
+        footer={null}
+        destroyOnHidden
+      >
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+          Per knowledge.md sec.12: "Gaji prorata jika resign/terminated di tengah
+          bulan". Sistem akan hitung prorata basic salary berdasarkan hari kerja
+          dari awal bulan sampai last working day, ditambah tunjangan tetap (prorata),
+          dikurangi BPJS (full sesuai UU). Komisi sales pending tidak ter-include.
+        </Typography.Paragraph>
+
+        <Form
+          form={finalPayrollForm}
+          layout="vertical"
+          initialValues={{
+            last_working_day: sep.effective_date ? dayjs(sep.effective_date) : dayjs(),
+            pay_date: dayjs(),
+          }}
+          onFinish={(v) => finalPayrollMut.mutate(v)}
+        >
+          <Form.Item
+            label="Last Working Day"
+            name="last_working_day"
+            rules={[{ required: true, message: 'Last working day wajib' }]}
+            tooltip="Hari terakhir karyawan bekerja. Days worked dihitung dari tanggal 1 bulan ini sampai tanggal ini."
+          >
+            <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />
+          </Form.Item>
+          <Form.Item
+            label="Payment Date"
+            name="pay_date"
+            rules={[{ required: true, message: 'Payment date wajib' }]}
+            tooltip="Tanggal transfer final payroll ke karyawan"
+          >
+            <DatePicker style={{ width: '100%' }} format="DD MMM YYYY" />
+          </Form.Item>
+          <Form.Item label="Notes (opsional)" name="notes">
+            <TextArea rows={2} placeholder="Catatan untuk audit log..." />
+          </Form.Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            loading={finalPayrollMut.isPending}
+            icon={<ThunderboltOutlined />}
+          >
+            Generate Final Payroll
+          </Button>
+        </Form>
+      </Modal>
+    </>
+  );
 }
 
 // ─── Main Detail Page ────────────────────────────────────────────

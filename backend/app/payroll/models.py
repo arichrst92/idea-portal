@@ -205,6 +205,12 @@ class PayrollSlip(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     pdf_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # TSK-054 — final payroll flag (mid-month resign/terminate)
+    is_final_payroll: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    last_working_day: Mapped[date | None] = mapped_column(Date, nullable=True)
+
 
 class Reimbursement(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Reimbursement — transfer TERPISAH dari payroll (knowledge.md sec.12).
@@ -319,6 +325,58 @@ class Holiday(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     holiday_date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_joint_leave: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class ThrPayment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """THR (Tunjangan Hari Raya) payment — TSK-053 (US-FN-003).
+
+    Per knowledge.md sec.12 + US-FN-003 AC-02:
+    - THR = configurable, separate transfer dari monthly payroll
+    - Prorated untuk karyawan < 1 tahun masa kerja (bulan kerja / 12)
+    - Recorded as separate expense entry di financial ledger
+
+    Calculation: thr_amount = base_salary × (months_worked / 12)
+    Rumus: kalau ≥ 12 bulan kerja → 1× basic salary; kalau < 12 → prorata.
+    """
+
+    __tablename__ = "thr_payments"
+
+    employee_id: Mapped[UUID] = mapped_column(
+        ForeignKey("employees.id"), nullable=False, index=True
+    )
+    thr_year: Mapped[int] = mapped_column(nullable=False, index=True)
+
+    # Snapshot for audit (config bisa berubah)
+    base_salary: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    months_worked: Mapped[float] = mapped_column(Numeric(4, 2), nullable=False)
+    # ↑ 0..12, decimal supaya bisa 5.5 bulan misal
+
+    # Hasil
+    thr_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="IDR", nullable=False)
+
+    # Workflow
+    status: Mapped[str] = mapped_column(
+        String(20), default="GENERATED", nullable=False, index=True
+    )
+    # GENERATED | APPROVED | PAID | CANCELLED
+
+    paid_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    transfer_ref: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Audit
+    generated_by_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("employee_id", "thr_year", name="uq_thr_employee_year"),
+        Index("ix_thr_year_status", "thr_year", "status"),
+    )
 
 
 class MonthlyAttendance(Base, UUIDPrimaryKeyMixin, TimestampMixin):

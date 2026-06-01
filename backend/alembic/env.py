@@ -62,7 +62,7 @@ from app.outsource.models import (  # noqa: F401  — Outsource (9)
     TimesheetItem,
     WarningLetterOutsource,
 )
-from app.payroll.models import (  # noqa: F401  — HR & Payroll (13 incl MonthlyAttendance)
+from app.payroll.models import (  # noqa: F401  — HR & Payroll (14 incl ThrPayment)
     Holiday,
     LeaveBalance,
     LeaveRequest,
@@ -74,6 +74,7 @@ from app.payroll.models import (  # noqa: F401  — HR & Payroll (13 incl Monthl
     PayrollSlip,
     ProcurementRequest,
     Reimbursement,
+    ThrPayment,
     Vendor,
     WorkCalendar,
 )

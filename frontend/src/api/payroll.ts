@@ -238,6 +238,106 @@ export async function getSlipPdfUrl(
   return r.data;
 }
 
+// ─── THR (TSK-053) ───────────────────────────────────────────────
+
+export type ThrStatus = 'GENERATED' | 'APPROVED' | 'PAID' | 'CANCELLED';
+
+export interface Thr {
+  id: string;
+  employee_id: string;
+  thr_year: number;
+  base_salary: string;
+  months_worked: string;
+  thr_amount: string;
+  currency: string;
+  status: ThrStatus;
+  paid_at: string | null;
+  payment_date: string | null;
+  transfer_ref: string | null;
+  notes: string | null;
+  generated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+  employee_nik: string | null;
+  employee_name: string | null;
+}
+
+export interface ThrGenerateResponse {
+  thr_year: number;
+  generated: number;
+  skipped: number;
+  total_amount_idr: string;
+  employee_count: number;
+  errors: string[];
+}
+
+export async function generateThr(
+  thr_year: number,
+  reference_date: string,
+  overwrite_existing: boolean = false
+): Promise<ThrGenerateResponse> {
+  const r = await apiClient.post<ThrGenerateResponse>(
+    '/api/v1/payroll/thr/generate',
+    { thr_year, reference_date, overwrite_existing }
+  );
+  return r.data;
+}
+
+export async function listThr(params: {
+  thr_year?: number;
+  status_filter?: ThrStatus;
+} = {}): Promise<Thr[]> {
+  const r = await apiClient.get<Thr[]>('/api/v1/payroll/thr', { params });
+  return r.data;
+}
+
+export async function listMyThr(): Promise<Thr[]> {
+  const r = await apiClient.get<Thr[]>('/api/v1/payroll/thr/mine');
+  return r.data;
+}
+
+export async function markThrPaid(
+  thr_id: string,
+  payment_date: string,
+  transfer_ref?: string | null
+): Promise<Thr> {
+  const r = await apiClient.post<Thr>(
+    `/api/v1/payroll/thr/${thr_id}/mark-paid`,
+    { payment_date, transfer_ref: transfer_ref ?? null }
+  );
+  return r.data;
+}
+
+// ─── Final Payroll (TSK-054) ─────────────────────────────────────
+
+export interface FinalPayrollResponse {
+  slip_id: string;
+  period_id: string;
+  employee_id: string;
+  last_working_day: string;
+  gross: string;
+  deductions: string;
+  take_home: string;
+  days_worked: number;
+  working_days_in_month: number;
+  prorata_factor: string;
+}
+
+export async function generateFinalPayroll(
+  data: {
+    employee_id: string;
+    last_working_day: string;
+    pay_date: string;
+    notes?: string | null;
+  }
+): Promise<FinalPayrollResponse> {
+  const r = await apiClient.post<FinalPayrollResponse>(
+    '/api/v1/payroll/final-payroll',
+    data
+  );
+  return r.data;
+}
+
 // ─── Payroll Approval Workflow (TSK-050) ─────────────────────────
 
 export async function submitPayrollForApproval(

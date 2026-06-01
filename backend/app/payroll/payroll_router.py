@@ -34,6 +34,8 @@ from app.payroll.payroll_schemas import (
     BulkSetPph21Request,
     CalculatePayrollPreview,
     CalculatePayrollResponse,
+    FinalPayrollRequest,
+    FinalPayrollResponse,
     GenerateSlipsResponse,
     PayrollApproveRequest,
     PayrollComponentCreate,
@@ -54,6 +56,7 @@ from app.payroll.payroll_service import (
     ConfigNotFoundError,
     DuplicatePeriodError,
     DuplicateSlipError,
+    FinalPayrollAlreadyExistsError,
     IncompleteAttendanceError,
     InvalidStateTransitionError,
     NetNegativeError,
@@ -420,6 +423,88 @@ async def calculate_payroll_endpoint(
         },
     )
     return result
+
+
+# ─── TSK-054 Final Payroll (prorated for resign/terminate mid-month) ─
+
+
+@router.post(
+    "/final-payroll",
+    response_model=FinalPayrollResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_final_payroll_endpoint(
+    request: Request,
+    data: FinalPayrollRequest,
+    session: DBSession,
+    user=Depends(require_permission("payroll.create")),
+) -> FinalPayrollResponse:
+    """Generate prorated final payroll untuk karyawan yang resign/terminated
+    mid-month (US-OP-004 AC-07 + knowledge.md sec.12 'gaji prorata jika
+    resign mid-month').
+
+    Auto-create off-cycle PayrollPeriod kalau belum ada. Generate slip
+    dengan is_final_payroll=True flag + last_working_day populated.
+    """
+    try:
+        result = await service.generate_final_payroll(
+            session,
+            employee_id=data.employee_id,
+            last_working_day=data.last_working_day,
+            pay_date=data.pay_date,
+            notes=data.notes,
+        )
+    except SlipNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": str(e)}
+        ) from e
+    except ConfigNotFoundError as e:
+        raise HTTPException(
+            status_code=422, detail={"code": "NO_CONFIG", "message": str(e)}
+        ) from e
+    except PeriodLockedError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "LOCKED", "message": str(e)}
+        ) from e
+    except FinalPayrollAlreadyExistsError as e:
+        raise HTTPException(
+            status_code=409, detail={"code": "DUPLICATE", "message": str(e)}
+        ) from e
+    except NetNegativeError as e:
+        raise HTTPException(
+            status_code=422, detail={"code": "NET_NEGATIVE", "message": str(e)}
+        ) from e
+
+    slip = result["slip"]
+    period = result["period"]
+
+    await audit_log(
+        session=session,
+        actor=user,
+        action="PAYROLL_FINAL_GENERATED",
+        resource_type="payroll_slip",
+        resource_id=str(slip.id),
+        ip_address=request.client.host if request.client else None,
+        after_state={
+            "employee_id": str(data.employee_id),
+            "last_working_day": str(data.last_working_day),
+            "take_home": str(slip.take_home_pay),
+            "days_worked": result["days_worked"],
+        },
+    )
+
+    return FinalPayrollResponse(
+        slip_id=slip.id,
+        period_id=period.id,
+        employee_id=data.employee_id,
+        last_working_day=data.last_working_day,
+        gross=slip.gross_income,
+        deductions=slip.total_deductions,
+        take_home=slip.take_home_pay,
+        days_worked=result["days_worked"],
+        working_days_in_month=result["working_days_in_month"],
+        prorata_factor=result["prorata_factor"],
+    )
 
 
 @router.post("/periods/{period_id}/lock", response_model=PayrollPeriodOut)

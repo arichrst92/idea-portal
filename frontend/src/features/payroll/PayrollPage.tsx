@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 
 import { AttendanceTab } from './AttendanceTab';
+import { ThrTab } from './ThrTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button, Drawer, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Spin, Table, Tabs, Tag, Tooltip, Typography} from 'antd';
@@ -1039,6 +1040,7 @@ export default function PayrollPage() {
           { key: 'periods', label: <span><CalendarOutlined /> Periods</span>, children: <PeriodsTab /> },
           { key: 'attendance', label: <span><CheckSquareOutlined /> Attendance</span>, children: <AttendanceTab /> },
           { key: 'slips', label: <span><DollarOutlined /> Slips</span>, children: <SlipsTab /> },
+          { key: 'thr', label: <span><PlusOutlined /> THR</span>, children: <ThrTab /> },
           { key: 'configs', label: <span><SettingOutlined /> Configs</span>, children: <ConfigsTab /> },
         ]}
       />

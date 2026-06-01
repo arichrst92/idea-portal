@@ -60,6 +60,32 @@ class PeriodStatus:
     LOCKED = "LOCKED"
 
 
+class FinalPayrollRequest(BaseModel):
+    """Generate prorated final payroll untuk resigned/terminated employee.
+
+    TSK-054 / US-OP-004 AC-07: on last working day, Finance process final
+    prorated payroll. knowledge.md sec.12: gaji prorata jika resign mid-month.
+    """
+
+    employee_id: UUID
+    last_working_day: date
+    pay_date: date
+    notes: str | None = None
+
+
+class FinalPayrollResponse(BaseModel):
+    slip_id: UUID
+    period_id: UUID
+    employee_id: UUID
+    last_working_day: date
+    gross: Decimal
+    deductions: Decimal
+    take_home: Decimal
+    days_worked: int
+    working_days_in_month: int
+    prorata_factor: Decimal
+
+
 class PayrollSubmitForApproval(BaseModel):
     """Finance submits payroll period for GM/C-Level approval (TSK-050)."""
 

@@ -16,7 +16,7 @@ Tax bracket helper disediakan kalau mau future auto-calc.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -684,6 +684,220 @@ async def sum_take_home_in_period(session: AsyncSession, period_id: UUID) -> Dec
     )
     val = (await session.execute(stmt)).scalar_one_or_none()
     return Decimal(str(val)) if val is not None else Decimal("0")
+
+
+# ─── TSK-054 Prorated Final Payroll (resign/terminate) ───────────
+
+
+class FinalPayrollAlreadyExistsError(Exception):
+    """Employee sudah punya final payroll untuk last_working_day ini."""
+
+
+async def generate_final_payroll(
+    session: AsyncSession,
+    employee_id: UUID,
+    last_working_day: "date",
+    pay_date: "date",
+    notes: str | None = None,
+):
+    """Generate prorated final payroll untuk karyawan yang resign/terminated
+    mid-month (US-OP-004 AC-07 + knowledge.md sec.12).
+
+    Approach:
+    1. Find/create off-cycle PayrollPeriod (year, month dari last_working_day).
+       Status PERIOD = REVIEWING langsung supaya tidak nyangkut di calc engine.
+    2. Prorate basic salary = config.basic × (working_days_from_start_to_LWD /
+       working_days_in_month)
+    3. Generate single PayrollSlip dengan flag is_final_payroll=True dan
+       last_working_day di slip.
+    4. Standard deductions (BPJS) tetap, scaled prorata.
+
+    Returns PayrollSlip. Caller adds audit_log + notification.
+    """
+    from datetime import date as _date
+
+    from app.identity.models import User as _User
+    from app.payroll.attendance_service import calculate_period_working_days
+
+    # 1. Resolve employee + config
+    emp_stmt = (
+        select(Employee, _User.nik.label("nik"))
+        .join(_User, Employee.user_id == _User.id)
+        .where(Employee.id == employee_id)
+    )
+    emp_row = (await session.execute(emp_stmt)).first()
+    if emp_row is None:
+        raise SlipNotFoundError(f"Employee {employee_id} not found")
+    emp, emp_nik = emp_row
+
+    config = await get_active_config(session, emp.id)
+    if config is None:
+        raise ConfigNotFoundError(
+            f"{emp_nik}: no payroll config — final payroll cannot be calculated"
+        )
+
+    # 2. Find or create off-cycle PayrollPeriod (year, month dari LWD)
+    year = last_working_day.year
+    month = last_working_day.month
+    period_stmt = select(PayrollPeriod).where(
+        PayrollPeriod.year == year, PayrollPeriod.month == month
+    )
+    period = (await session.execute(period_stmt)).scalar_one_or_none()
+    if period is None:
+        period = PayrollPeriod(
+            year=year,
+            month=month,
+            pay_date=pay_date,
+            status="REVIEWING",  # Off-cycle, langsung Reviewing
+        )
+        session.add(period)
+        await session.commit()
+        await session.refresh(period)
+
+    # Block kalau period sudah LOCKED
+    if period.status == "LOCKED":
+        raise PeriodLockedError(
+            f"Period {year}-{month:02d} sudah LOCKED — tidak bisa generate final payroll"
+        )
+
+    # 3. Check duplicate — slip is_final untuk employee+period
+    dup_stmt = select(PayrollSlip).where(
+        PayrollSlip.employee_id == employee_id,
+        PayrollSlip.period_id == period.id,
+        PayrollSlip.is_final_payroll.is_(True),
+    )
+    if (await session.execute(dup_stmt)).scalar_one_or_none():
+        raise FinalPayrollAlreadyExistsError(
+            f"{emp_nik}: final payroll untuk {year}-{month:02d} sudah ada"
+        )
+
+    # 4. Compute days worked (start of month to last_working_day, weekday excl holidays)
+    from calendar import monthrange
+
+    from app.payroll.models import Holiday
+
+    last_day_of_month = monthrange(year, month)[1]
+    start_of_month = _date(year, month, 1)
+    end_of_month = _date(year, month, last_day_of_month)
+
+    # Working days in full month
+    working_days_in_month = await calculate_period_working_days(session, year, month)
+
+    # Days worked: weekdays excluding holidays from 1st to last_working_day
+    holidays_stmt = select(Holiday.holiday_date).where(
+        Holiday.holiday_date >= start_of_month,
+        Holiday.holiday_date <= last_working_day,
+    )
+    holidays = {h for h in (await session.execute(holidays_stmt)).scalars().all()}
+
+    cur = start_of_month
+    days_worked = 0
+    while cur <= last_working_day:
+        if cur.weekday() < 5 and cur not in holidays:
+            days_worked += 1
+        cur = _date.fromordinal(cur.toordinal() + 1)
+
+    # 5. Prorate
+    basic = Decimal(str(config.basic_salary))
+    allowance = Decimal(str(config.fixed_allowance))
+
+    if working_days_in_month > 0:
+        prorata_factor = Decimal(str(days_worked)) / Decimal(str(working_days_in_month))
+    else:
+        prorata_factor = Decimal("1")
+    if prorata_factor > Decimal("1"):
+        prorata_factor = Decimal("1")
+
+    prorata_basic = (basic * prorata_factor).quantize(Decimal("0.01"))
+    prorata_allowance = (allowance * prorata_factor).quantize(Decimal("0.01"))
+
+    # BPJS — based on full basic per UU (not prorated)
+    bpjs_kes = (
+        basic * Decimal(str(config.bpjs_kesehatan_pct)) / Decimal("100")
+    ).quantize(Decimal("0.01"))
+    bpjs_jht = (
+        basic * Decimal(str(config.bpjs_ketenagakerjaan_pct)) / Decimal("100")
+    ).quantize(Decimal("0.01"))
+
+    gross = prorata_basic + prorata_allowance
+    deductions = bpjs_kes + bpjs_jht
+    take_home = gross - deductions
+
+    if take_home < 0:
+        raise NetNegativeError(
+            f"{emp_nik}: final payroll net negative (gross={gross}, ded={deductions})"
+        )
+
+    # 6. Generate slip with is_final flag
+    slip_no = f"FINAL-{year}{month:02d}-{emp_nik}"
+    slip = PayrollSlip(
+        employee_id=employee_id,
+        period_id=period.id,
+        slip_no=slip_no,
+        gross_income=gross,
+        total_deductions=deductions,
+        take_home_pay=take_home,
+        is_final_payroll=True,
+        last_working_day=last_working_day,
+    )
+    session.add(slip)
+    await session.flush()
+
+    components = [
+        PayrollComponent(
+            slip_id=slip.id,
+            code="BASIC_FINAL",
+            name=f"Gaji Pokok Final ({days_worked}/{working_days_in_month} hari)",
+            component_type="INCOME",
+            is_variable=False,
+            amount=prorata_basic,
+            source_reference=f"final_payroll:lwd={last_working_day}",
+        ),
+    ]
+    if prorata_allowance > 0:
+        components.append(
+            PayrollComponent(
+                slip_id=slip.id,
+                code="ALLOWANCE_FINAL",
+                name=f"Tunjangan Tetap ({days_worked}/{working_days_in_month} hari)",
+                component_type="INCOME",
+                is_variable=False,
+                amount=prorata_allowance,
+            )
+        )
+    if bpjs_kes > 0:
+        components.append(
+            PayrollComponent(
+                slip_id=slip.id,
+                code="BPJS_KES",
+                name="BPJS Kesehatan",
+                component_type="DEDUCTION",
+                is_variable=False,
+                amount=bpjs_kes,
+            )
+        )
+    if bpjs_jht > 0:
+        components.append(
+            PayrollComponent(
+                slip_id=slip.id,
+                code="BPJS_JHT",
+                name="BPJS Ketenagakerjaan",
+                component_type="DEDUCTION",
+                is_variable=False,
+                amount=bpjs_jht,
+            )
+        )
+    session.add_all(components)
+    await session.commit()
+    await session.refresh(slip)
+
+    return {
+        "slip": slip,
+        "period": period,
+        "days_worked": days_worked,
+        "working_days_in_month": working_days_in_month,
+        "prorata_factor": prorata_factor,
+    }
 
 
 # ─── TSK-050 Payroll Approval Workflow ────────────────────────────
