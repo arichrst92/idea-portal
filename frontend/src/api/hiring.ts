@@ -286,3 +286,114 @@ export const SOURCE_OPTIONS: { value: ApplicationSource; label: string }[] = [
   { value: 'WALK_IN', label: 'Walk-in' },
   { value: 'OTHER', label: 'Other' },
 ];
+
+// ─── TSK-034 Offering Letter workflow ─────────────────────────────
+
+export type OfferStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'SENT'
+  | 'ACCEPTED'
+  | 'NEGOTIATING'
+  | 'REJECTED';
+
+export type CandidateResponse = 'ACCEPTED' | 'NEGOTIATING' | 'REJECTED';
+
+export interface Offer {
+  application_id: string;
+  offer_status: OfferStatus;
+  offer_pdf_url: string | null;
+  offer_pdf_generated_at: string | null;
+  offered_salary: string | null;
+  offered_start_date: string | null;
+  offer_submitted_at: string | null;
+  offer_approved_at: string | null;
+  offer_sent_at: string | null;
+  candidate_response: CandidateResponse | null;
+  candidate_response_at: string | null;
+  salary_override_approved: boolean;
+}
+
+export async function generateOfferPdf(applicationId: string): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/generate-pdf`
+  );
+  return r.data;
+}
+
+export async function getOfferPdfUrl(applicationId: string): Promise<{ url: string | null }> {
+  const r = await apiClient.get<{ url: string | null }>(
+    `/api/v1/hiring/applications/${applicationId}/offer/pdf-url`
+  );
+  return r.data;
+}
+
+export async function submitOfferForApproval(applicationId: string): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/submit-approval`
+  );
+  return r.data;
+}
+
+export async function approveOffer(
+  applicationId: string,
+  data: { notes?: string | null; salary_override?: boolean }
+): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/approve`,
+    {
+      notes: data.notes ?? null,
+      salary_override: data.salary_override ?? false,
+    }
+  );
+  return r.data;
+}
+
+export async function rejectOffer(applicationId: string, reason: string): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/reject`,
+    { reason }
+  );
+  return r.data;
+}
+
+export async function markOfferSent(applicationId: string): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/mark-sent`
+  );
+  return r.data;
+}
+
+export async function recordCandidateResponse(
+  applicationId: string,
+  response: CandidateResponse,
+  notes?: string | null
+): Promise<Offer> {
+  const r = await apiClient.post<Offer>(
+    `/api/v1/hiring/applications/${applicationId}/offer/candidate-response`,
+    { response, notes: notes ?? null }
+  );
+  return r.data;
+}
+
+// Add offer fields to JobApplication interface so frontend can read them via list
+export interface ApplicationOfferFields {
+  offer_status?: OfferStatus;
+  offer_pdf_url?: string | null;
+  offer_pdf_generated_at?: string | null;
+  offer_approved_at?: string | null;
+  offer_sent_at?: string | null;
+  candidate_response?: CandidateResponse | null;
+  salary_override_approved?: boolean;
+}
+
+export const OFFER_STATUS_COLOR: Record<OfferStatus, { label: string; color: string }> = {
+  DRAFT: { label: 'Draft', color: 'default' },
+  PENDING_APPROVAL: { label: 'Pending Approval', color: 'orange' },
+  APPROVED: { label: 'Approved', color: 'blue' },
+  SENT: { label: 'Sent to Candidate', color: 'purple' },
+  ACCEPTED: { label: 'Accepted ✓', color: 'green' },
+  NEGOTIATING: { label: 'Negotiating', color: 'gold' },
+  REJECTED: { label: 'Rejected', color: 'red' },
+};

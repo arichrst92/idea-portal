@@ -39,6 +39,7 @@ import {
   SOURCE_OPTIONS,
 } from '@/api/hiring';
 import { useAuthStore } from '@/store/auth';
+import { OfferDrawer } from './OfferDrawer';
 
 const { TextArea } = Input;
 
@@ -350,6 +351,8 @@ export default function JobOpeningDetailPage() {
 
   const [addAppOpen, setAddAppOpen] = useState(false);
   const [transitionApp, setTransitionApp] = useState<JobApplication | null>(null);
+  // TSK-034 — Offer drawer state
+  const [offerApp, setOfferApp] = useState<JobApplication | null>(null);
 
   const isExecutive =
     user?.roles.some((r) => r.code === 'DIREKTUR_UTAMA' || r.code === 'WAKIL_DIREKTUR_UTAMA') ?? false;
@@ -710,7 +713,18 @@ export default function JobOpeningDetailPage() {
                     </div>
                   ) : (
                     bucket.applications.map((app) => (
-                      <CandidateCard key={app.id} app={app} onClick={() => setTransitionApp(app)} />
+                      <CandidateCard
+                        key={app.id}
+                        app={app}
+                        onClick={() => {
+                          // TSK-034 — open OfferDrawer for OFFERING stage
+                          if (app.stage === 'OFFERING') {
+                            setOfferApp(app);
+                          } else {
+                            setTransitionApp(app);
+                          }
+                        }}
+                      />
                     ))
                   )}
                 </div>
@@ -733,6 +747,16 @@ export default function JobOpeningDetailPage() {
         onClose={() => setTransitionApp(null)}
         onSuccess={refresh}
       />
+
+      {/* TSK-034 Offer Drawer */}
+      {offerApp && (
+        <OfferDrawer
+          application={offerApp as any}
+          open={offerApp !== null}
+          onClose={() => setOfferApp(null)}
+          onChanged={refresh}
+        />
+      )}
     </div>
   );
 }

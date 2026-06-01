@@ -188,6 +188,53 @@ class JobApplication(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     offered_salary: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     offered_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # ─── TSK-034 Offering Letter workflow (US-OP-002 AC-04..07) ───
+    # Status flow:
+    #   DRAFT → PENDING_APPROVAL (submit_for_approval)
+    #   PENDING_APPROVAL → APPROVED (GM/C-Level approve, NC-OP-002-03)
+    #   PENDING_APPROVAL → REJECTED (GM reject)
+    #   APPROVED → SENT (mark_sent)
+    #   SENT → ACCEPTED | NEGOTIATING | REJECTED (candidate response, AC-06)
+    offer_status: Mapped[str] = mapped_column(
+        String(20), default="DRAFT", nullable=False, index=True
+    )
+    offer_pdf_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    offer_pdf_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    offer_additional_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Salary range warning flag (NC-OP-002-04: salary > position max)
+    salary_override_approved: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+
+    # Approval audit
+    offer_submitted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    offer_submitted_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    offer_approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    offer_approved_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    offer_approval_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    offer_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Candidate response (AC-06)
+    candidate_response: Mapped[str | None] = mapped_column(
+        String(20), nullable=True
+    )  # ACCEPTED | NEGOTIATING | REJECTED
+    candidate_response_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    candidate_response_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Relationships
     job_opening: Mapped[JobOpening] = relationship(back_populates="applications")
     interviews: Mapped[list[Interview]] = relationship(
@@ -196,6 +243,7 @@ class JobApplication(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     __table_args__ = (
         Index("ix_applications_opening_stage", "job_opening_id", "stage"),
+        Index("ix_applications_offer_status", "offer_status"),
     )
 
 
