@@ -247,7 +247,8 @@ async def notify_from_template(
     type: NotificationType,
     context: dict[str, Any],
     override_priority: NotificationPriority | None = None,
-) -> Notification:
+    dedupe_key: str | None = None,
+) -> Notification | None:
     """Render template + create notification.
 
     Variables in template ({key}) substituted from `context`.
@@ -290,6 +291,7 @@ async def notify_from_template(
         link_url=link,
         priority=priority,
         meta=context,  # preserve full context untuk debug/replay
+        dedupe_key=dedupe_key,
     )
 
 

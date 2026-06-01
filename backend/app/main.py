@@ -37,8 +37,50 @@ async def lifespan(app: FastAPI) -> Any:
     """Application lifespan — startup/shutdown hooks."""
     # Startup
     print(f"🚀 {settings.app_name} v{__version__} starting in {settings.app_env}")
+
+    # TSK-059 — Alert Rules Engine scheduler (daily 06:00 WIB)
+    scheduler_started = False
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.cron import CronTrigger
+
+        from app.database import async_session_factory
+        from app.notification.alert_rules import run_all_alert_rules
+
+        async def _scheduled_alerts():
+            async with async_session_factory() as session:
+                try:
+                    await run_all_alert_rules(session)
+                except Exception as e:  # noqa: BLE001
+                    print(f"⚠ Alert Rules Engine error: {e}")
+
+        scheduler = AsyncIOScheduler()
+        # Cron: setiap hari 06:00 Asia/Jakarta time
+        scheduler.add_job(
+            _scheduled_alerts,
+            CronTrigger(hour=6, minute=0, timezone="Asia/Jakarta"),
+            id="alert_rules_daily",
+            replace_existing=True,
+        )
+        scheduler.start()
+        app.state.scheduler = scheduler
+        scheduler_started = True
+        print("⏰ Alert Rules scheduler ON — daily 06:00 WIB")
+    except ImportError:
+        print("⚠ APScheduler tidak terinstall — alert rules manual only")
+        print("   Install: pip install apscheduler")
+    except Exception as e:  # noqa: BLE001
+        print(f"⚠ Scheduler setup failed: {e}")
+
     yield
-    # Shutdown — close Redis connection
+
+    # Shutdown
+    if scheduler_started and hasattr(app.state, "scheduler"):
+        try:
+            app.state.scheduler.shutdown(wait=False)
+        except Exception:  # noqa: BLE001
+            pass
+
     from app.core.redis_client import close_redis
 
     await close_redis()
@@ -100,6 +142,7 @@ from app.payroll.thr_router import router as thr_router
 from app.sales.router import router as sales_router
 from app.dashboard.router import router as dashboard_router
 from app.finance.router import router as finance_router
+from app.notification.admin_router import router as notification_admin_router
 from app.notification.router import router as notification_router
 
 app.include_router(identity_router, prefix="/api/v1")
@@ -123,6 +166,7 @@ app.include_router(sales_router, prefix="/api/v1")  # M3.1 TSK-024
 app.include_router(dashboard_router, prefix="/api/v1")  # M3.2 TSK-025
 app.include_router(finance_router, prefix="/api/v1")  # TSK-022C — invoice moved from project
 app.include_router(notification_router, prefix="/api/v1")  # M1.4 TSK-057 — in-app notification
+app.include_router(notification_admin_router, prefix="/api/v1")  # M1.4 TSK-059 + TSK-061
 
 # Sprint 2+ (EP-02): app.include_router(employees_router, prefix="/api/v1")
 # (etc. per roadmap milestone)

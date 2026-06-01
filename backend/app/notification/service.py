@@ -36,11 +36,33 @@ async def notify(
     link_url: str | None = None,
     priority: NotificationPriority = NotificationPriority.NORMAL,
     meta: dict[str, Any] | None = None,
-) -> Notification:
+    dedupe_key: str | None = None,
+) -> Notification | None:
     """Create a single notification row.
 
     Caller's session must commit after — service only adds + flushes.
+
+    TSK-059: kalau dedupe_key dipasang dan sudah ada notif dengan
+    (user_id, dedupe_key), skip (return None) untuk avoid duplicate same-day alerts.
+
+    TSK-061: catch exceptions → mark FAILED dan log, return notif row.
     """
+    # TSK-059 dedupe check
+    if dedupe_key:
+        from sqlalchemy import select as _sel
+        existing_stmt = (
+            _sel(Notification)
+            .where(Notification.user_id == user_id)
+            .where(Notification.dedupe_key == dedupe_key)
+            .where(Notification.deleted_at.is_(None))
+        )
+        existing = (await session.execute(existing_stmt)).scalar_one_or_none()
+        if existing is not None:
+            logger.debug(
+                "notify dedupe hit: user=%s key=%s — skip", user_id, dedupe_key
+            )
+            return None
+
     notif = Notification(
         user_id=user_id,
         type=type.value if isinstance(type, NotificationType) else type,
@@ -49,10 +71,39 @@ async def notify(
         body=body,
         link_url=link_url,
         meta=meta,
+        dedupe_key=dedupe_key,
+        delivery_status="DELIVERED",
     )
-    session.add(notif)
-    await session.flush()
-    logger.info("notify: user=%s type=%s title=%r", user_id, type, title[:60])
+    try:
+        session.add(notif)
+        await session.flush()
+        logger.info("notify: user=%s type=%s title=%r", user_id, type, title[:60])
+    except Exception as e:
+        # TSK-061 — mark FAILED, don't crash caller
+        logger.exception("notify failed: user=%s type=%s err=%s", user_id, type, e)
+        await session.rollback()
+        # Re-add as FAILED for visibility / retry
+        notif = Notification(
+            user_id=user_id,
+            type=type.value if isinstance(type, NotificationType) else type,
+            priority=priority.value if isinstance(priority, NotificationPriority) else priority,
+            title=title,
+            body=body,
+            link_url=link_url,
+            meta=meta,
+            dedupe_key=dedupe_key,
+            delivery_status="FAILED",
+            retry_count=1,
+            last_attempt_at=datetime.now(timezone.utc),
+            error_message=str(e)[:500],
+        )
+        try:
+            session.add(notif)
+            await session.flush()
+        except Exception:  # noqa: BLE001
+            # Final fail — give up gracefully
+            await session.rollback()
+            return None
     return notif
 
 

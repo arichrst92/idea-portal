@@ -112,12 +112,32 @@ class Notification(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     # NULL = unread, datetime = when user marked read
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # ─── TSK-059 Dedup key ──────────────────────────────────────
+    # Optional identifier untuk avoid duplicate alerts same-day.
+    # Format: "{rule_name}:{resource_id}:{YYYY-MM-DD}"
+    # Example: "contract_expiring_h30:8c5d2..uuid..a8:2026-06-01"
+    dedupe_key: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+
+    # ─── TSK-061 Delivery audit ─────────────────────────────────
+    # In-app delivery is synchronous DB insert — DELIVERED on success.
+    # FAILED kalau notify() raises (eg DB constraint, FK error).
+    delivery_status: Mapped[str] = mapped_column(
+        String(20), default="DELIVERED", nullable=False
+    )
+    # DELIVERED | FAILED | RETRYING
+    retry_count: Mapped[int] = mapped_column(default=0, nullable=False)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Relationship — User
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
 
     __table_args__ = (
         Index("ix_notifications_user_unread", "user_id", "read_at"),
         Index("ix_notifications_user_created", "user_id", "created_at"),
+        Index("ix_notifications_dedupe_user", "user_id", "dedupe_key"),
     )
 
     def __repr__(self) -> str:
