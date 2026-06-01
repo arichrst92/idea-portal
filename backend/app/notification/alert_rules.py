@@ -199,7 +199,7 @@ async def kpi_deadline_alerts(session: AsyncSession) -> int:
 
     stmt = (
         select(ClientKpiAssessment)
-        .where(ClientKpiAssessment.is_submitted.is_(False))
+        .where(ClientKpiAssessment.submitted_at.is_(None))
         .where(ClientKpiAssessment.token_expires_at == target)
     )
     assessments = list((await session.execute(stmt)).scalars().all())
