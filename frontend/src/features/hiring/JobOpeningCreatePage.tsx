@@ -6,7 +6,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button} from 'antd';
+import { Alert, Button, Tag } from 'antd';
 import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import { useState } from 'react';
@@ -14,7 +14,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import { createJobOpening, type JobOpeningCreateRequest } from '@/api/hiring';
+import {
+  checkDuplicateOpening,
+  createJobOpening,
+  type JobOpeningCreateRequest,
+} from '@/api/hiring';
 import { listDepartments, listPositions } from '@/api/organization';
 
 const schema = z.object({
@@ -86,6 +90,8 @@ function FieldRow({
 export default function JobOpeningCreatePage() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
+  // TSK-037 — user must confirm override if duplicate found (NC-OP-001-04)
+  const [dupConfirmed, setDupConfirmed] = useState(false);
 
   const {
     control,
@@ -109,12 +115,20 @@ export default function JobOpeningCreatePage() {
   });
 
   const selectedDept = watch('department_id');
+  const selectedPos = watch('position_id');
 
   const deptQuery = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
   const posQuery = useQuery({
     queryKey: ['positions', selectedDept],
     queryFn: () => listPositions(selectedDept || undefined),
     enabled: !!selectedDept,
+  });
+
+  // TSK-037 — duplicate check (NC-OP-001-04)
+  const dupQuery = useQuery({
+    queryKey: ['hiring-duplicate-check', selectedDept, selectedPos],
+    queryFn: () => checkDuplicateOpening(selectedDept, selectedPos!),
+    enabled: !!selectedDept && !!selectedPos,
   });
 
   const mutation = useMutation({
@@ -131,6 +145,14 @@ export default function JobOpeningCreatePage() {
 
   const onSubmit = (values: FormValues) => {
     setServerError(null);
+    // TSK-037 — block submit kalau duplicate detected & user belum confirm
+    if ((dupQuery.data?.count ?? 0) > 0 && !dupConfirmed) {
+      setServerError(
+        `${dupQuery.data?.count} hiring request similar terdeteksi (NC-OP-001-04). ` +
+        'Centang "Saya konfirmasi tetap submit (override)" untuk lanjut.'
+      );
+      return;
+    }
     const payload: JobOpeningCreateRequest = {
       title: values.title.trim(),
       description: values.description?.trim() || null,
@@ -229,6 +251,55 @@ export default function JobOpeningCreatePage() {
               />
             </FieldRow>
           </div>
+
+          {/* TSK-037 — Duplicate detection warning (NC-OP-001-04) */}
+          {dupQuery.data && dupQuery.data.count > 0 && (
+            <div
+              style={{
+                background: 'rgba(255,149,0,0.08)',
+                border: '1.5px solid rgba(255,149,0,0.4)',
+                borderRadius: 8,
+                padding: 14,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ fontWeight: 700, color: 'var(--ide-orange, #FF9500)', fontSize: 13 }}>
+                ⚠ Potential Duplicate Detected (NC-OP-001-04)
+              </div>
+              <div style={{ fontSize: 12, marginTop: 6, color: 'var(--ide-ink2)' }}>
+                {dupQuery.data.count} hiring request similar (same dept + position) terdeteksi
+                dalam 30 hari terakhir:
+              </div>
+              <ul style={{ margin: '8px 0 8px 18px', fontSize: 12, color: 'var(--ide-ink)' }}>
+                {dupQuery.data.duplicates.slice(0, 5).map((d) => (
+                  <li key={d.id}>
+                    <strong>{d.title}</strong> — status <Tag style={{ marginLeft: 4 }}>{d.status}</Tag>{' '}
+                    ({d.slots_filled}/{d.slots_needed} slots filled,{' '}
+                    created {d.created_at ? new Date(d.created_at).toLocaleDateString('id-ID') : '—'})
+                  </li>
+                ))}
+              </ul>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginTop: 8,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={dupConfirmed}
+                  onChange={(e) => setDupConfirmed(e.target.checked)}
+                />
+                <span>
+                  Saya konfirmasi tetap submit (override duplicate detection)
+                </span>
+              </label>
+            </div>
+          )}
 
           <FieldRow label="Deskripsi" hint="Job description (markdown supported)">
             <Controller

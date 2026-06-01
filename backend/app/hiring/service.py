@@ -394,3 +394,60 @@ def days_in_stage(app_obj: JobApplication) -> int | None:
         return None
     delta = datetime.now(UTC) - app_obj.stage_changed_at
     return delta.days
+
+
+# ─── TSK-037 Duplicate Request Detection ──────────────────────────
+
+
+async def check_duplicate_request(
+    session: AsyncSession,
+    position_id: UUID,
+    department_id: UUID,
+    ref_date: "date | None" = None,
+    window_days: int = 30,
+) -> list[JobOpening]:
+    """Cari JobOpening lain dengan position_id+department sama yang masih
+    DRAFT/PENDING/OPEN, dalam window same-month.
+
+    Per NC-OP-001-04: warn user kalau ada request similar (allow override).
+    Default window 30 hari dari `ref_date` (default today).
+
+    Returns list of conflicting openings. Empty list = clear to submit.
+    """
+    from datetime import date as _date, timedelta as _td
+
+    ref = ref_date or _date.today()
+    window_start = ref - _td(days=window_days)
+    window_end = ref + _td(days=window_days)
+
+    stmt = (
+        select(JobOpening)
+        .where(JobOpening.position_id == position_id)
+        .where(JobOpening.department_id == department_id)
+        .where(JobOpening.deleted_at.is_(None))
+        .where(
+            JobOpening.status.in_(
+                (
+                    JobOpeningStatus.DRAFT,
+                    JobOpeningStatus.PENDING_APPROVAL,
+                    JobOpeningStatus.OPEN,
+                )
+            )
+        )
+    )
+    rows = list((await session.execute(stmt)).scalars().all())
+
+    # Filter: openings dengan created_at atau posted_date dalam window
+    matched = []
+    for o in rows:
+        check_dates: list[date] = []
+        if o.posted_date is not None:
+            check_dates.append(o.posted_date)
+        if o.deadline is not None:
+            check_dates.append(o.deadline)
+        # Created_at fallback (timezone-aware → strip)
+        check_dates.append(o.created_at.date())
+
+        if any(window_start <= d <= window_end for d in check_dates):
+            matched.append(o)
+    return matched

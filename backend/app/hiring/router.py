@@ -202,6 +202,48 @@ async def list_openings(
     )
 
 
+# TSK-037 — Duplicate check (NC-OP-001-04)
+@router.get("/job-openings/check-duplicate")
+async def check_duplicate_endpoint(
+    session: DBSession,
+    department_id: UUID,
+    position_id: UUID,
+    _user=Depends(require_permission("hiring.create")),
+    window_days: int = 30,
+) -> dict:
+    """Pre-flight check sebelum create new JobOpening.
+
+    Returns: {duplicates: [{id, title, status, created_at}], count, warning}
+    Empty list = clear to submit. Caller bisa override dengan tetap submit.
+    """
+    rows = await service.check_duplicate_request(
+        session,
+        position_id=position_id,
+        department_id=department_id,
+        window_days=window_days,
+    )
+    return {
+        "count": len(rows),
+        "warning": (
+            f"NC-OP-001-04: ada {len(rows)} hiring request similar dalam {window_days} hari window. "
+            "Konfirmasi untuk override."
+            if rows else None
+        ),
+        "duplicates": [
+            {
+                "id": str(o.id),
+                "title": o.title,
+                "status": o.status.value if hasattr(o.status, "value") else str(o.status),
+                "slots_needed": o.slots_needed,
+                "slots_filled": o.slots_filled,
+                "posted_date": o.posted_date.isoformat() if o.posted_date else None,
+                "created_at": o.created_at.isoformat() if o.created_at else None,
+            }
+            for o in rows
+        ],
+    }
+
+
 @router.post("/job-openings", response_model=JobOpeningOut, status_code=status.HTTP_201_CREATED)
 async def create_opening(
     request: Request,

@@ -388,6 +388,34 @@ export interface ApplicationOfferFields {
   salary_override_approved?: boolean;
 }
 
+// ─── TSK-037 Duplicate Detection ──────────────────────────────────
+
+export interface DuplicateCheckResult {
+  count: number;
+  warning: string | null;
+  duplicates: Array<{
+    id: string;
+    title: string;
+    status: string;
+    slots_needed: number;
+    slots_filled: number;
+    posted_date: string | null;
+    created_at: string | null;
+  }>;
+}
+
+export async function checkDuplicateOpening(
+  department_id: string,
+  position_id: string,
+  window_days: number = 30
+): Promise<DuplicateCheckResult> {
+  const r = await apiClient.get<DuplicateCheckResult>(
+    '/api/v1/hiring/job-openings/check-duplicate',
+    { params: { department_id, position_id, window_days } }
+  );
+  return r.data;
+}
+
 export const OFFER_STATUS_COLOR: Record<OfferStatus, { label: string; color: string }> = {
   DRAFT: { label: 'Draft', color: 'default' },
   PENDING_APPROVAL: { label: 'Pending Approval', color: 'orange' },

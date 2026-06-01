@@ -20,6 +20,7 @@ import EmployeeCreatePage from '@/features/employees/EmployeeCreatePage';
 import EmployeeDetailPage from '@/features/employees/EmployeeDetailPage';
 import EmployeeListPage from '@/features/employees/EmployeeListPage';
 import OrgChartPage from '@/features/employees/OrgChartPage';
+import JobBoardPage from '@/features/hiring/JobBoardPage';
 import JobOpeningCreatePage from '@/features/hiring/JobOpeningCreatePage';
 import JobOpeningDetailPage from '@/features/hiring/JobOpeningDetailPage';
 import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
@@ -134,6 +135,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><JobOpeningListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/jobs"
+          element={
+            <RequireAuth>
+              <AppShell><JobBoardPage /></AppShell>
             </RequireAuth>
           }
         />
