@@ -399,6 +399,48 @@ async def employee_history_endpoint(
     return [OrgChangeOut.model_validate(c) for c in changes]
 
 
+# TSK-197/198 — global org changes history (admin view)
+@router.get("/org-changes", response_model=dict)
+async def list_all_org_changes_endpoint(
+    session: DBSession,
+    _user=Depends(require_permission("employee.view")),
+    change_type: str | None = Query(None, description="promosi | mutasi | role | salary"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=200),
+) -> dict:
+    """List all org changes — admin history page (TSK-197 + TSK-198 shared).
+
+    Enriched dengan employee_name + nik untuk display.
+    """
+    offset = (page - 1) * page_size
+    items, total = await service.list_all_org_changes(
+        session, change_type=change_type, limit=page_size, offset=offset
+    )
+
+    # Enrich
+    enriched = []
+    from app.identity.models import User as _User
+    from app.organization.models import Employee as _Emp
+    for c in items:
+        emp_stmt = (
+            select(_Emp.full_name, _User.nik)
+            .join(_User, _Emp.user_id == _User.id)
+            .where(_Emp.id == c.employee_id)
+        )
+        row = (await session.execute(emp_stmt)).first()
+        enriched.append({
+            **OrgChangeOut.model_validate(c).model_dump(mode="json"),
+            "employee_name": row[0] if row else None,
+            "employee_nik": row[1] if row else None,
+        })
+    return {
+        "items": enriched,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
 # ─── Departments ───────────────────────────────────────────────────
 
 

@@ -15,39 +15,53 @@ FE_BASE = Path("frontend/src")
 
 
 def audit_hooks_after_return(out: list):
-    """A1: Find `if (!x) return null` followed by hook call."""
+    """A1: Find `if (!x) return null` followed by hook call.
+
+    Note: only flag if return + hook are at component-level scope (indent <= 2).
+    Returns inside useMemo/useCallback closures are valid and shouldn't trigger.
+    """
     hook_re = re.compile(r"\b(use[A-Z]\w*)\s*\(")
-    return_re = re.compile(r"^\s*if\s*\(.*\)\s*return\s+null\s*;?\s*$")
+    # Limit to component-level: max 2 spaces indent before `if` (top-level fn body).
+    return_re = re.compile(r"^(?P<indent>\s{0,2})if\s*\(.*\)\s*return\s+null\s*;?\s*$")
     findings = []
     for py_file in FE_BASE.rglob("*.tsx"):
         text = py_file.read_text()
         lines = text.splitlines()
         # Find function declarations + scan for return-then-hook
         for i, line in enumerate(lines):
-            if return_re.match(line):
-                # Look forward for hook in same function scope (max 30 lines)
-                for j in range(i + 1, min(i + 30, len(lines))):
-                    after = lines[j].strip()
-                    if after.startswith("//"):
+            m_ret = return_re.match(line)
+            if not m_ret:
+                continue
+            return_indent = len(m_ret.group("indent"))
+            # Look forward for hook in same function scope (max 30 lines)
+            for j in range(i + 1, min(i + 30, len(lines))):
+                after_raw = lines[j]
+                after = after_raw.strip()
+                if after.startswith("//"):
+                    continue
+                if hook_re.search(after) and "/" not in after.split("(")[0]:
+                    # Check it's NOT inside JSX (return statement could be JSX)
+                    m = hook_re.search(after)
+                    # Skip if it looks like a method call (e.g. `this.useX()`)
+                    prefix = after[: m.start()]
+                    if prefix.rstrip().endswith("."):
                         continue
-                    if hook_re.search(after) and "/" not in after.split("(")[0]:
-                        # Check it's NOT inside JSX (return statement could be JSX)
-                        m = hook_re.search(after)
-                        # Skip if it looks like a method call (e.g. `this.useX()`)
-                        prefix = after[: m.start()]
-                        if prefix.rstrip().endswith("."):
-                            continue
-                        findings.append({
-                            "file": str(py_file.relative_to(FE_BASE)),
-                            "return_line": i + 1,
-                            "hook_line": j + 1,
-                            "hook": m.group(1),
-                            "code": after[:120],
-                        })
-                        break
-                    # Stop if we hit closing of function
-                    if line.startswith("function ") or after == "}":
-                        break
+                    # Only flag if hook indent <= return indent (same scope).
+                    # If hook is more indented, it's inside a callback (safe).
+                    hook_indent = len(after_raw) - len(after_raw.lstrip())
+                    if hook_indent > return_indent:
+                        continue
+                    findings.append({
+                        "file": str(py_file.relative_to(FE_BASE)),
+                        "return_line": i + 1,
+                        "hook_line": j + 1,
+                        "hook": m.group(1),
+                        "code": after[:120],
+                    })
+                    break
+                # Stop if we hit closing of function
+                if line.startswith("function ") or after == "}":
+                    break
     out.append("## A1: Hooks called AFTER early return")
     out.append("")
     if not findings:

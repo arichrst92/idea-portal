@@ -1,14 +1,28 @@
 /**
- * MutateModal — TSK-013 Polish
+ * MutateModal — TSK-013 Polish + TSK-198 (pre-check warnings).
  *
  * Modal untuk lateral move: change dept, position, supervisor.
  * Bisa pilih salah satu / kombinasi (semua field optional).
  *
- * Per US-OP-013: reason + effective_date wajib, audit ke OrgChange.
+ * Per US-OP-013:
+ *   AC-03: Active project memberships harus diresolve sebelum mutation efektif
+ *   AC-07: Block kalau pending SP1/SP2 — harus resolved first
+ * Reason + effective_date wajib, audit ke OrgChange.
  */
 
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, Modal, Select} from 'antd';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  DatePicker,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Typography,
+} from 'antd';
 import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import dayjs from 'dayjs';
@@ -20,6 +34,8 @@ import {
   mutateEmployee,
   type EmployeeDetail,
 } from '@/api/organization';
+
+const { Text } = Typography;
 
 interface MutateModalProps {
   employee: EmployeeDetail;
@@ -37,11 +53,17 @@ export function MutateModal({ employee, open, onClose, onSuccess }: MutateModalP
     employee.department_id || undefined,
   );
 
+  // TSK-198 AC-03/AC-07 — pre-flight checklist (manual confirmation)
+  const [noActiveSP, setNoActiveSP] = useState(false);
+  const [projectsResolved, setProjectsResolved] = useState(false);
+
   useEffect(() => {
     if (open) {
       form.resetFields();
       setSelectedDept(employee.department_id || undefined);
       setServerError(null);
+      setNoActiveSP(false);
+      setProjectsResolved(false);
     }
   }, [open, form, employee.department_id]);
 
@@ -82,6 +104,14 @@ export function MutateModal({ employee, open, onClose, onSuccess }: MutateModalP
 
       if (!payload.new_department_id && !payload.new_position_id) {
         setServerError('Pilih minimal 1 perubahan (dept atau posisi)');
+        return;
+      }
+
+      // TSK-198 — block kalau pre-check belum lengkap
+      if (!noActiveSP || !projectsResolved) {
+        setServerError(
+          'Pre-check belum lengkap. Konfirmasi: (1) tidak ada SP1/SP2 aktif, (2) project memberships sudah di-resolve.'
+        );
         return;
       }
 
@@ -131,6 +161,38 @@ export function MutateModal({ employee, open, onClose, onSuccess }: MutateModalP
         Saat ini: <strong>{employee.department_name || '—'}</strong> · <strong>{employee.position_name || '—'}</strong>
         <br />
         Pilih minimal 1 field yang berubah (dept atau posisi). Supervisor change akan diaktivasi setelah supervisor picker dengan UUID lookup tersedia.
+      </div>
+
+      {/* TSK-198 AC-03 + AC-07 — pre-flight checklist */}
+      <div
+        style={{
+          background: 'rgba(255,149,0,0.06)',
+          border: '1px solid rgba(255,149,0,0.3)',
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 16,
+        }}
+      >
+        <Text strong style={{ fontSize: 12, color: 'var(--ide-orange, #FF9500)' }}>
+          <ExclamationCircleOutlined /> Pre-flight Check (wajib confirm semua)
+        </Text>
+        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Checkbox checked={noActiveSP} onChange={(e) => setNoActiveSP(e.target.checked)}>
+            <Text style={{ fontSize: 12 }}>
+              Karyawan ini <strong>tidak punya SP1/SP2 aktif</strong> yang belum di-clear
+              (NC US-OP-013 AC-07).
+            </Text>
+          </Checkbox>
+          <Checkbox
+            checked={projectsResolved}
+            onChange={(e) => setProjectsResolved(e.target.checked)}
+          >
+            <Text style={{ fontSize: 12 }}>
+              Active project memberships sudah di-<strong>released</strong> atau di-transfer
+              (AC-03). PMs sudah diberitahu.
+            </Text>
+          </Checkbox>
+        </div>
       </div>
 
       <Form form={form} layout="vertical">

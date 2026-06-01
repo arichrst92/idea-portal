@@ -507,6 +507,12 @@ export default function ContractsListPage() {
     queryFn: () => getExpiringAlerts(30),
   });
 
+  // TSK-199 AC-07 — dashboard widget contracts expiring 60 days
+  const alerts60Query = useQuery({
+    queryKey: ['contracts-expiring-60'],
+    queryFn: () => getExpiringAlerts(60),
+  });
+
   const listQuery = useQuery({
     queryKey: ['contracts', typeFilter, activeFilter],
     queryFn: () =>
@@ -578,11 +584,11 @@ export default function ContractsListPage() {
         />
       )}
 
-      {/* KPIs */}
+      {/* KPIs — TSK-199 AC-07 widget */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(5, 1fr)',
           gap: 12,
           marginBottom: 18,
         }}
@@ -590,6 +596,18 @@ export default function ContractsListPage() {
         <div className="ide-kpi">
           <div className="ide-kpi-val">{items.filter((c) => c.is_active).length}</div>
           <div className="ide-kpi-lbl">Active Contracts</div>
+        </div>
+        <div className="ide-kpi">
+          <div
+            className="ide-kpi-val"
+            style={{ color: 'var(--ide-blue, #0071E3)' }}
+          >
+            {(alerts60Query.data?.total_h30 ?? 0) -
+              (alertsQuery.data?.total_h30 ?? 0) +
+              (alerts60Query.data?.total_h7 ?? 0) -
+              (alertsQuery.data?.total_h7 ?? 0)}
+          </div>
+          <div className="ide-kpi-lbl">H-60 (31-60 hari)</div>
         </div>
         <div className="ide-kpi">
           <div

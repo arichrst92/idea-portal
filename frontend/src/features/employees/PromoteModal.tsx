@@ -1,20 +1,30 @@
 /**
- * PromoteModal — TSK-013 Polish
+ * PromoteModal — TSK-013 Polish + TSK-197 (salary suggestion).
  *
  * Modal untuk promote employee ke posisi lebih tinggi (level lebih rendah).
  * Validasi: new_position_level < current_position_level (backend enforce 400).
  *
- * Per US-OP-012: reason + effective_date wajib, audit ke OrgChange.
+ * Per US-OP-012 AC-02: System suggests salary range based on the new level.
+ * Per US-OP-012 AC-05: history logged in org_changes dengan before/after.
  */
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, Modal, Select} from 'antd';
+import { Alert, Button, DatePicker, Form, Input, Modal, Select, Typography } from 'antd';
 import { message } from '@/lib/notify';
 import type { AxiosError } from 'axios';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { listPositions, promoteEmployee, type EmployeeDetail } from '@/api/organization';
+
+const { Text } = Typography;
+
+const fmtIDR = (v: string | null | undefined): string => {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = parseFloat(v);
+  if (!Number.isFinite(n)) return '—';
+  return `Rp ${n.toLocaleString('id-ID')}`;
+};
 
 interface PromoteModalProps {
   employee: EmployeeDetail;
@@ -54,6 +64,20 @@ export function PromoteModal({
   const eligiblePositions = (posQuery.data || []).filter(
     (p) => currentPositionLevel === null || p.level < currentPositionLevel,
   );
+
+  // TSK-197 — salary suggestion when new position selected
+  const selectedPositionId = Form.useWatch('new_position_id', form);
+  const suggestedRange = useMemo(() => {
+    if (!selectedPositionId) return null;
+    const pos = eligiblePositions.find((p) => p.id === selectedPositionId);
+    if (!pos) return null;
+    return {
+      min: pos.salary_range_min,
+      max: pos.salary_range_max,
+      level: pos.level,
+      name: pos.name,
+    };
+  }, [selectedPositionId, eligiblePositions]);
 
   const mutation = useMutation({
     mutationFn: (values: {
@@ -141,6 +165,39 @@ export function PromoteModal({
             }))}
           />
         </Form.Item>
+
+        {/* TSK-197 AC-02 — salary range suggestion */}
+        {suggestedRange && (
+          <div
+            style={{
+              background: 'rgba(0,113,227,0.06)',
+              border: '1px solid rgba(0,113,227,0.2)',
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 16,
+            }}
+          >
+            <Text strong style={{ fontSize: 12, color: 'var(--ide-blue, #0071E3)' }}>
+              💡 Salary Range — {suggestedRange.name} (Level {suggestedRange.level})
+            </Text>
+            <div style={{ marginTop: 6, fontSize: 13 }}>
+              {suggestedRange.min || suggestedRange.max ? (
+                <>
+                  <strong>{fmtIDR(suggestedRange.min)}</strong>
+                  {' – '}
+                  <strong>{fmtIDR(suggestedRange.max)}</strong>
+                </>
+              ) : (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Range belum di-set di Position master. Mohon konfigurasi dulu di Settings.
+                </Text>
+              )}
+            </div>
+            <Text type="secondary" style={{ fontSize: 11, marginTop: 4, display: 'block' }}>
+              Gaji baru akan ditetapkan oleh Operation. Override di luar range butuh approval C-Level (US-OP-012 AC-02).
+            </Text>
+          </div>
+        )}
 
         <Form.Item
           label="Tanggal Efektif"

@@ -10,6 +10,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '@/components/AppShell';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { NotifyBinder } from '@/components/NotifyBinder';
+import OrgChangesPage from '@/features/admin/OrgChangesPage';
 import PermissionMatrixPage from '@/features/admin/PermissionMatrixPage';
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
 import LoginPage from '@/features/auth/LoginPage';
@@ -77,6 +78,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><PermissionMatrixPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/org-changes"
+          element={
+            <RequireAuth>
+              <AppShell><OrgChangesPage /></AppShell>
             </RequireAuth>
           }
         />

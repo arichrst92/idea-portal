@@ -557,6 +557,34 @@ async def list_org_changes(
     return list(result.scalars().all())
 
 
+async def list_all_org_changes(
+    session: AsyncSession,
+    change_type: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[list[OrgChange], int]:
+    """TSK-197/198 — global list of org changes untuk admin history page.
+
+    Returns: (items, total).
+    """
+    base = select(OrgChange)
+    if change_type:
+        base = base.where(OrgChange.change_type == change_type)
+
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = int((await session.execute(count_stmt)).scalar_one())
+
+    items_stmt = (
+        base.order_by(
+            OrgChange.effective_date.desc(), OrgChange.created_at.desc()
+        )
+        .offset(offset)
+        .limit(limit)
+    )
+    items = list((await session.execute(items_stmt)).scalars().all())
+    return items, total
+
+
 # ─── Helpers untuk service consumers ───────────────────────────────
 
 
