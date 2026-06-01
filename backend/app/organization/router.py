@@ -399,6 +399,88 @@ async def employee_history_endpoint(
     return [OrgChangeOut.model_validate(c) for c in changes]
 
 
+# TSK-040 — Welcome page info for new employees
+@router.get("/employees/me/welcome-info")
+async def get_my_welcome_info(
+    session: DBSession,
+    user: CurrentUser,
+) -> dict:
+    """Return welcome page payload untuk current user.
+
+    Per US-OP-003 AC-04+AC-05:
+    - new_employee: True jika joined dalam 30 hari terakhir
+    - show_welcome: True jika new_employee + belum seen
+    - Display info: name, position, department, supervisor, handbook links
+    """
+    from datetime import date as _date, timedelta as _td
+
+    from app.identity.models import User as _User
+    from app.organization.models import Department as _Dept
+    from app.organization.models import Employee as _Emp
+    from app.organization.models import Position as _Pos
+
+    emp_stmt = select(Employee).where(Employee.user_id == user.id)
+    emp = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if emp is None:
+        return {"new_employee": False, "show_welcome": False}
+
+    today = _date.today()
+    cutoff = today - _td(days=30)
+    is_new = emp.joined_date is not None and emp.joined_date >= cutoff and emp.joined_date <= today
+
+    # Resolve names
+    dept_name = None
+    if emp.department_id:
+        d = await session.get(_Dept, emp.department_id)
+        dept_name = d.name if d else None
+    position_name = None
+    if emp.position_id:
+        p = await session.get(_Pos, emp.position_id)
+        position_name = p.name if p else None
+    supervisor_name = None
+    if emp.supervisor_id:
+        s = await session.get(_Emp, emp.supervisor_id)
+        supervisor_name = s.full_name if s else None
+
+    return {
+        "new_employee": is_new,
+        "show_welcome": is_new and emp.welcome_seen_at is None,
+        "welcome_seen_at": emp.welcome_seen_at.isoformat() if emp.welcome_seen_at else None,
+        "employee_name": emp.full_name,
+        "joined_date": emp.joined_date.isoformat() if emp.joined_date else None,
+        "department_name": dept_name,
+        "position_name": position_name,
+        "supervisor_name": supervisor_name,
+        # Hardcoded company resources (TSK-045 CMS akan replace ini)
+        "resources": [
+            {"label": "Employee Handbook", "url": "https://ide.asia/handbook", "icon": "📘"},
+            {"label": "Company SOP", "url": "https://ide.asia/sop", "icon": "📋"},
+            {"label": "Code of Conduct", "url": "https://ide.asia/code-of-conduct", "icon": "⚖️"},
+            {"label": "IT Support Slack", "url": "slack://channel?id=hr-support", "icon": "💬"},
+            {"label": "HR Contact", "url": "mailto:hr@ide.asia", "icon": "📧"},
+        ],
+    }
+
+
+@router.post("/employees/me/welcome-seen")
+async def mark_welcome_seen(
+    session: DBSession,
+    user: CurrentUser,
+) -> dict:
+    """Mark welcome page as seen (idempotent)."""
+    emp_stmt = select(Employee).where(Employee.user_id == user.id)
+    emp = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if emp is None:
+        raise HTTPException(status_code=404, detail={"message": "Employee record not found"})
+
+    if emp.welcome_seen_at is None:
+        from datetime import datetime as _dt, timezone as _tz
+        emp.welcome_seen_at = _dt.now(_tz.utc)
+        await session.commit()
+
+    return {"welcome_seen_at": emp.welcome_seen_at.isoformat() if emp.welcome_seen_at else None}
+
+
 # TSK-197/198 — global org changes history (admin view)
 @router.get("/org-changes", response_model=dict)
 async def list_all_org_changes_endpoint(

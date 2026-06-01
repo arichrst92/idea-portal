@@ -381,6 +381,91 @@ async def payroll_pending_alerts(session: AsyncSession) -> int:
     return count
 
 
+# ─── Rule: Pre-Join H-3 Alert (TSK-042) ────────────────────────────
+
+
+async def pre_join_h3_alerts(session: AsyncSession) -> int:
+    """Alert Operation + supervisor H-3 sebelum employee joined_date.
+
+    Per US-OP-003 AC-03: 'H-3 before join date: Operation receives
+    notification to prepare account and assets'.
+
+    Skip kalau employee.is_active already true (sudah join).
+    """
+    from app.organization.models import Employee, EmployeeStatus, Position
+
+    today = date.today()
+    target_date = today + timedelta(days=3)
+
+    stmt = (
+        select(Employee)
+        .where(Employee.joined_date == target_date)
+        .where(Employee.deleted_at.is_(None))
+        .where(
+            Employee.status.in_(
+                (EmployeeStatus.PROBATION, EmployeeStatus.ACTIVE)
+            )
+        )
+    )
+    employees = list((await session.execute(stmt)).scalars().all())
+
+    if not employees:
+        return 0
+
+    ops_ids = await _get_user_ids_with_permission(session, "employee.view")
+    count = 0
+
+    for emp in employees:
+        # Resolve position name
+        position_name = "—"
+        if emp.position_id:
+            pos = await session.get(Position, emp.position_id)
+            if pos:
+                position_name = pos.name
+
+        ctx = {
+            "employee_name": emp.full_name,
+            "employee_id": str(emp.id),
+            "position": position_name,
+            "join_date": emp.joined_date.strftime("%d %b %Y") if emp.joined_date else "—",
+        }
+
+        # Notify supervisor (direct + supervisor's supervisor)
+        l1, l2 = await find_l1_l2_approver_user_ids(session, emp.id)
+        for uid in (l1, l2):
+            if not uid:
+                continue
+            key = _dedupe_key(f"pre_join_h3_sup:{uid}", emp.id)
+            res = await notify_from_template(
+                session,
+                user_id=uid,
+                type=NotificationType.PRE_JOIN_H3,
+                context=ctx,
+                dedupe_key=key,
+            )
+            if res:
+                count += 1
+
+        # Notify Operation (employee.view permission)
+        for uid in ops_ids:
+            if uid in (l1, l2):
+                continue
+            key = _dedupe_key(f"pre_join_h3_ops:{uid}", emp.id)
+            res = await notify_from_template(
+                session,
+                user_id=uid,
+                type=NotificationType.PRE_JOIN_H3,
+                context=ctx,
+                dedupe_key=key,
+            )
+            if res:
+                count += 1
+
+    await session.commit()
+    logger.info("pre_join_h3_alerts: %d notifs sent", count)
+    return count
+
+
 # ─── Master entrypoint ─────────────────────────────────────────────
 
 
@@ -398,6 +483,7 @@ async def run_all_alert_rules(session: AsyncSession) -> dict[str, int]:
         ("kpi_deadline", kpi_deadline_alerts),
         ("task_deadline", task_deadline_alerts),
         ("payroll_pending", payroll_pending_alerts),
+        ("pre_join_h3", pre_join_h3_alerts),
     ]:
         try:
             count = await rule_func(session)

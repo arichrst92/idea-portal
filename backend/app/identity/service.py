@@ -201,6 +201,19 @@ async def authenticate(
             code="INVALID_CREDENTIALS",
         )
 
+    # TSK-043 — NC-OP-003-01: block login kalau belum tanggal join
+    # Skip check kalau user tidak terhubung ke employee (system/admin account)
+    from datetime import date as _date
+    from app.organization.models import Employee
+    emp_stmt = select(Employee).where(Employee.user_id == user.id)
+    emp = (await session.execute(emp_stmt)).scalar_one_or_none()
+    if emp and emp.joined_date and emp.joined_date > _date.today():
+        raise AuthenticationError(
+            f"Akun Anda akan aktif pada {emp.joined_date.strftime('%d %b %Y')}. "
+            f"Silakan login kembali pada tanggal tersebut.",
+            code="ACCOUNT_NOT_YET_ACTIVE",
+        )
+
     user.failed_login_attempts = 0
     user.last_login_at = datetime.now(UTC)
     user.last_login_ip = client_ip

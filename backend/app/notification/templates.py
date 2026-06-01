@@ -206,6 +206,14 @@ NOTIFICATION_TEMPLATES: dict[NotificationType, TemplateSpec] = {
         "link": "/projects/{project_id}?tab=cr&id={cr_id}",
         "priority": NotificationPriority.NORMAL,
     },
+    # ─── Onboarding (TSK-042) ───────────────────────────────────
+    NotificationType.PRE_JOIN_H3: {
+        "title": "H-3 sebelum {employee_name} join",
+        "body": "{employee_name} ({position}) akan join {join_date}. Siapkan email, akses portal, asset (laptop), workspace.",
+        "link": "/onboarding?employee_id={employee_id}",
+        "priority": NotificationPriority.HIGH,
+    },
+
     # ─── System ───────────────────────────────────────────────────────────
     NotificationType.SYSTEM: {
         "title": "{title}",

@@ -122,6 +122,11 @@ class Employee(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     probation_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_working_day: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # TSK-040 — Welcome page seen tracking
+    welcome_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # Financial (basic — payroll detail di EP-05)
     bank_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     bank_account: Mapped[str | None] = mapped_column(String(50), nullable=True)

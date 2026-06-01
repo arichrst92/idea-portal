@@ -25,6 +25,7 @@ import JobOpeningCreatePage from '@/features/hiring/JobOpeningCreatePage';
 import JobOpeningDetailPage from '@/features/hiring/JobOpeningDetailPage';
 import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
 import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
+import WelcomePage from '@/features/onboarding/WelcomePage';
 import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import OutsourcePage from '@/features/outsource/OutsourcePage';
 import PublicKpiPage from '@/features/outsource/PublicKpiPage';
@@ -167,6 +168,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><OnboardingListPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/welcome"
+          element={
+            <RequireAuth>
+              <AppShell><WelcomePage /></AppShell>
             </RequireAuth>
           }
         />

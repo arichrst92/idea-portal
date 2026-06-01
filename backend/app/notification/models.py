@@ -76,6 +76,9 @@ class NotificationType(str, enum.Enum):
     CHANGE_REQUEST_PENDING = "CHANGE_REQUEST_PENDING"
     CHANGE_REQUEST_RESOLVED = "CHANGE_REQUEST_RESOLVED"
 
+    # Onboarding (TSK-042)
+    PRE_JOIN_H3 = "PRE_JOIN_H3"  # H-3 sebelum join date
+
     # Catch-all
     SYSTEM = "SYSTEM"
 
