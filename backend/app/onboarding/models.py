@@ -20,6 +20,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -213,4 +214,88 @@ class TaskCompletion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     __table_args__ = (
         UniqueConstraint("assignment_id", "task_id", name="uq_completion_assignment_task"),
+    )
+
+
+class CmsArticle(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Company Info Portal article — TSK-045 (US-GL-008).
+
+    Berisi: HR policy, SOP, handbook, code of conduct, vision/mission, templates.
+    All authenticated users read. HR-only edit.
+    """
+
+    __tablename__ = "cms_articles"
+
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
+    category: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    # Categories: HR_POLICY | IT_POLICY | SOP | HANDBOOK | CODE_OF_CONDUCT |
+    #             VISION_MISSION | TEMPLATE | ONBOARDING | OTHER
+
+    content: Mapped[str] = mapped_column(Text, nullable=False)  # markdown
+    summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Pinned articles appear di top (untuk Welcome Page integration)
+
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Audit
+    created_by_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    updated_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        Index("ix_cms_articles_category_published", "category", "is_published"),
+    )
+
+
+class ProbationAssessment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Probation assessment — TSK-044.
+
+    Per knowledge.md sec.11: karyawan baru masuk PROBATION 3 bulan
+    (probation_end_date di Employee). H-7 sebelum probation_end_date,
+    supervisor + HR review → decision PASS / EXTEND / TERMINATE.
+
+    Decision flow:
+    - PASS → Employee.status PROBATION → ACTIVE (handled by Operation)
+    - EXTEND → probation_end_date diperpanjang (caller decide tanggal baru)
+    - TERMINATE → trigger separation (handled by Operation)
+    """
+
+    __tablename__ = "probation_assessments"
+
+    employee_id: Mapped[UUID] = mapped_column(
+        ForeignKey("employees.id"), nullable=False, index=True
+    )
+    probation_start: Mapped[date] = mapped_column(Date, nullable=False)
+    probation_end: Mapped[date] = mapped_column(Date, nullable=False)
+
+    decision: Mapped[str] = mapped_column(
+        String(20), default="PENDING", nullable=False, index=True
+    )
+    # PENDING | PASS | EXTEND | TERMINATE
+
+    score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)  # 0-100
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Kalau EXTEND, new end date
+    extended_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    reviewer_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        Index("ix_probation_employee_decision", "employee_id", "decision"),
     )

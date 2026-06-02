@@ -128,6 +128,8 @@ from app.identity.router import router as identity_router
 from app.organization.router import router as organization_router
 from app.hiring.offer_router import router as hiring_offer_router
 from app.hiring.router import router as hiring_router
+from app.onboarding.cms_router import router as cms_router
+from app.onboarding.probation_router import router as probation_router
 from app.onboarding.router import router as onboarding_router
 from app.separation.router import router as separation_router
 from app.payroll.leave_router import router as leave_router
@@ -152,6 +154,8 @@ app.include_router(organization_router, prefix="/api/v1")  # M1.2 TSK-013
 app.include_router(hiring_router, prefix="/api/v1")  # M1.2 TSK-015
 app.include_router(hiring_offer_router, prefix="/api/v1")  # M1.3 TSK-034 — offer letter
 app.include_router(onboarding_router, prefix="/api/v1")  # M1.2 TSK-016
+app.include_router(probation_router, prefix="/api/v1")  # M1.3 TSK-044
+app.include_router(cms_router, prefix="/api/v1")  # M1.3 TSK-045
 app.include_router(separation_router, prefix="/api/v1")  # M1.2 TSK-017
 app.include_router(leave_router, prefix="/api/v1")  # M1.2 TSK-019
 app.include_router(assessment_router, prefix="/api/v1")  # M2.1 TSK-021

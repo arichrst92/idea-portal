@@ -24,7 +24,9 @@ import JobBoardPage from '@/features/hiring/JobBoardPage';
 import JobOpeningCreatePage from '@/features/hiring/JobOpeningCreatePage';
 import JobOpeningDetailPage from '@/features/hiring/JobOpeningDetailPage';
 import JobOpeningListPage from '@/features/hiring/JobOpeningListPage';
+import CompanyInfoPage from '@/features/onboarding/CompanyInfoPage';
 import OnboardingDetailPage from '@/features/onboarding/OnboardingDetailPage';
+import ProbationReviewPage from '@/features/onboarding/ProbationReviewPage';
 import WelcomePage from '@/features/onboarding/WelcomePage';
 import OnboardingListPage from '@/features/onboarding/OnboardingListPage';
 import OutsourcePage from '@/features/outsource/OutsourcePage';
@@ -176,6 +178,22 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <AppShell><WelcomePage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/company-info"
+          element={
+            <RequireAuth>
+              <AppShell><CompanyInfoPage /></AppShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/probation"
+          element={
+            <RequireAuth>
+              <AppShell><ProbationReviewPage /></AppShell>
             </RequireAuth>
           }
         />

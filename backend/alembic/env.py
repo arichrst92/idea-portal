@@ -92,10 +92,12 @@ from app.hiring.models import (  # noqa: F401  — Hiring (3) TSK-015
     JobApplication,
     JobOpening,
 )
-from app.onboarding.models import (  # noqa: F401  — Onboarding (4) TSK-016
+from app.onboarding.models import (  # noqa: F401  — Onboarding (6 incl Probation+CMS)
+    CmsArticle,
     OnboardingAssignment,
     OnboardingTask,
     OnboardingTemplate,
+    ProbationAssessment,
     TaskCompletion,
 )
 from app.separation.models import (  # noqa: F401  — Separation (1) TSK-017
